@@ -86,7 +86,7 @@ class ScreenshotTest {
     }
 
     @Test fun settings() {
-        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp)) {} } }
+        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp), onImport = {}) } }
         compose.onRoot().captureRoboImage("build/screens/4-settings.png")
     }
 }

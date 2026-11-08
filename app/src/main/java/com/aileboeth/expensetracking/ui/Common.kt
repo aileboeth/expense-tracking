@@ -42,7 +42,7 @@ import java.time.ZoneId
 
 val ExpenseRed = Color(0xFFE5533D)
 val IncomeGreen = Color(0xFF2E9E6A)
-val PendingAmber = Color(0xFFF2A007)
+val PendingAmber = Color(0xFF7C6CF6)
 
 /** Brand purple, matching the launcher icon. */
 val Brand = Color(0xFF5B45E0)
@@ -155,6 +155,16 @@ object Perms {
         if (!start(ctx, Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${ctx.packageName}")))) {
             start(ctx, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
         }
+    }
+
+    /** Android 11+ "pause app activity if unused" would take the permissions away after months without opening. */
+    fun hibernationExempt(ctx: Context): Boolean =
+        if (Build.VERSION.SDK_INT >= 30) ctx.packageManager.isAutoRevokeWhitelisted else true
+
+    fun openHibernation(ctx: Context) {
+        val ok = Build.VERSION.SDK_INT >= 30 &&
+            start(ctx, Intent(Intent.ACTION_AUTO_REVOKE_PERMISSIONS, Uri.parse("package:${ctx.packageName}")))
+        if (!ok) openAppDetails(ctx)
     }
 
     fun openAppDetails(ctx: Context) =

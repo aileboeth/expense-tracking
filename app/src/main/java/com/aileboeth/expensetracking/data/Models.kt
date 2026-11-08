@@ -46,6 +46,9 @@ object Money {
         }
     }
 
+    /** 2550 -> "25.5", 3000 -> "30" (for short labels). */
+    fun short(cents: Long): String = format(cents).let { if (it.contains('.')) it.trimEnd('0').trimEnd('.') else it }
+
     fun signed(tx: Tx): String {
         val a = tx.amountCents ?: return "?"
         return (if (tx.type == TxType.EXPENSE) "-" else "+") + format(a)

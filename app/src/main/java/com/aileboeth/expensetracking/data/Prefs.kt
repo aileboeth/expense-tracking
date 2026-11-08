@@ -37,6 +37,13 @@ class Prefs(ctx: Context) {
         get() = p.getLong("budgetCents", 0L)
         set(v) = p.edit().putLong("budgetCents", v.coerceAtLeast(0)).apply()
 
+    /** Usual amounts the user set for the quick-pick chips (cents). Empty = pick them from the history. */
+    fun usualAmounts(type: com.aileboeth.expensetracking.parse.TxType): List<Long> =
+        (p.getString("usual_" + type.name, "") ?: "").split(',').mapNotNull { it.trim().toLongOrNull() }.filter { it > 0 }
+
+    fun setUsualAmounts(type: com.aileboeth.expensetracking.parse.TxType, cents: List<Long>) =
+        p.edit().putString("usual_" + type.name, cents.distinct().joinToString(",")).apply()
+
     var autoUpdate: Boolean
         get() = p.getBoolean("autoUpdate", true)
         set(v) = p.edit().putBoolean("autoUpdate", v).apply()

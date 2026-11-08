@@ -128,6 +128,26 @@ object Repo {
         return list(where.joinToString(" AND "), args.toTypedArray(), "time DESC, id DESC LIMIT $limit")
     }
 
+    /** Categories of [type] ordered by how often they were used since [since]; unused ones follow in their usual order. */
+    fun categoriesByUse(type: TxType, since: Long): List<String> {
+        val used = db.rawQuery(
+            "SELECT category, COUNT(*) c FROM tx WHERE status='OK' AND type=? AND time>=? AND category<>'' GROUP BY category ORDER BY c DESC",
+            arrayOf(type.name, since.toString()),
+        ).use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
+        val all = categories(type)
+        // 其他 is the fallback for skipped categories; it stays last no matter how often it is used.
+        val ranked = used.filter { it in all && it != "其他" } + all.filter { it !in used && it != "其他" }
+        return if ("其他" in all) ranked + "其他" else ranked
+    }
+
+    /** The amounts paid most often since [since] (most frequent first, then most recent). */
+    fun frequentAmounts(type: TxType, since: Long, limit: Int): List<Long> =
+        db.rawQuery(
+            "SELECT amount, COUNT(*) c, MAX(time) t FROM tx WHERE status='OK' AND type=? AND time>=? AND amount IS NOT NULL " +
+                "GROUP BY amount ORDER BY c DESC, t DESC LIMIT ?",
+            arrayOf(type.name, since.toString(), limit.toString()),
+        ).use { c -> buildList { while (c.moveToNext()) add(c.getLong(0)) } }
+
     fun channels(): List<String> =
         db.rawQuery("SELECT DISTINCT channel FROM tx WHERE channel<>'' ORDER BY channel", null)
             .use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }

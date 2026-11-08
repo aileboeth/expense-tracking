@@ -109,7 +109,7 @@ fun ImportScreen(uri: Uri, onBack: () -> Unit) {
                     for (i in chosen) {
                         val line = st.lines[i]
                         val r = line.row
-                        val category = BillImporter.guessCategory(r, st.source.kind)
+                        val category = BillImporter.guessCategory(r, st.source.kind).ifBlank { "其他" }
                         val note = r.goods.takeIf { it.isNotBlank() && it != r.counterpart }.orEmpty()
                         when (line.outcome) {
                             Outcome.MISSING -> {

@@ -35,6 +35,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.aileboeth.expensetracking.bubble.Bubble
+import com.aileboeth.expensetracking.capture.ListenerKeeper
 import com.aileboeth.expensetracking.data.LogEntry
 import com.aileboeth.expensetracking.data.Prefs
 import com.aileboeth.expensetracking.data.Repo
@@ -63,7 +65,12 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun SettingsScreen(padding: PaddingValues, onImport: (android.net.Uri) -> Unit) {
+fun SettingsScreen(
+    padding: PaddingValues,
+    onImport: (android.net.Uri) -> Unit,
+    openUsual: Boolean = false,
+    onUsualOpened: () -> Unit = {},
+) {
     val ctx = LocalContext.current
     val prefs = remember { Prefs(ctx) }
     val scope = rememberCoroutineScope()
@@ -79,6 +86,7 @@ fun SettingsScreen(padding: PaddingValues, onImport: (android.net.Uri) -> Unit) 
     var otherApps by remember { mutableStateOf(prefs.otherApps) }
     var autoUpdate by remember { mutableStateOf(prefs.autoUpdate) }
     var dialog by remember { mutableStateOf("") }
+    LaunchedEffect(openUsual) { if (openUsual) { dialog = "usual"; onUsualOpened() } }
     val (versionName, _) = remember { Updater.currentVersion(ctx) }
     val pickBill = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) onImport(uri) }
 
@@ -88,6 +96,9 @@ fun SettingsScreen(padding: PaddingValues, onImport: (android.net.Uri) -> Unit) 
             PermRow("通知使用权", "读取微信、支付宝的付款通知（必需）", listener) { Perms.openListener(ctx) }
             PermRow("悬浮窗", "付款后在屏幕边上显示小圆球", overlay) { Perms.openOverlay(ctx) }
             PermRow("忽略电池优化", "减少后台被系统停掉", battery) { Perms.openBattery(ctx) }
+            Row2("重新连接通知监听", "偶尔发现漏记时点一下；App 更新后打开一次也会自动重连") {
+                ListenerKeeper.force(ctx); Toast.makeText(ctx, "已重新连接", Toast.LENGTH_SHORT).show()
+            }
             Row2("后台耗电 / 自启动", "vivo：应用详情里允许「后台高耗电」和「自启动」，监听才稳定") { Perms.openAppDetails(ctx) }
             Hint("如果「通知使用权」开不了（提示受限设置）：应用详情 → 右上角 ⋮ → 允许受限设置，再回来开。")
         } }
@@ -105,6 +116,7 @@ fun SettingsScreen(padding: PaddingValues, onImport: (android.net.Uri) -> Unit) 
                     valueRange = 2f..30f,
                 )
             }
+            Row2("常用金额", "没写金额的账（手表付款等）点一下就能选；不设就按你最常付的金额") { dialog = "usual" }
             Row2("显示待补金额的悬浮球", "把还没填金额的账再弹出来") {
                 if (!Perms.overlay(ctx)) Toast.makeText(ctx, "先打开悬浮窗权限", Toast.LENGTH_SHORT).show()
                 else scope.launch {
@@ -154,6 +166,7 @@ fun SettingsScreen(padding: PaddingValues, onImport: (android.net.Uri) -> Unit) 
         "log" -> LogDialog { dialog = "" }
         "cats" -> CategoriesDialog { dialog = "" }
         "mirror" -> MirrorDialog(prefs) { dialog = "" }
+        "usual" -> UsualAmountsDialog(prefs) { dialog = "" }
         "budget" -> BudgetDialog(prefs) { dialog = ""; Widgets.scheduleUpdate(ctx) }
     }
 }
@@ -394,5 +407,53 @@ private fun MirrorDialog(prefs: Prefs, onClose: () -> Unit) {
             }) { Text("保存") }
         },
         dismissButton = { TextButton(onClose) { Text("取消") } },
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun UsualAmountsDialog(prefs: Prefs, onClose: () -> Unit) {
+    var type by remember { mutableStateOf(TxType.EXPENSE) }
+    var list by remember(type) { mutableStateOf(prefs.usualAmounts(type)) }
+    var input by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text("常用金额") },
+        text = {
+            Column {
+                Text(
+                    "没写金额的账（手表付款、转账到账）会把这些金额列出来，点一下就选好。" +
+                        "一个都不设时，按你最近最常付的金额自动给出。点金额可以删掉。",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                    SegmentedButton(type == TxType.EXPENSE, { type = TxType.EXPENSE }, SegmentedButtonDefaults.itemShape(0, 2)) { Text("支出") }
+                    SegmentedButton(type == TxType.INCOME, { type = TxType.INCOME }, SegmentedButtonDefaults.itemShape(1, 2)) { Text("收入") }
+                }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (list.isEmpty()) Text("还没设（现在用自动的）", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    for (c in list) InputChip(
+                        selected = false,
+                        onClick = { list = list - c; prefs.setUsualAmounts(type, list) },
+                        label = { Text("¥" + Money.short(c) + "  ×") },
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        input, { input = it; error = false }, label = { Text("新金额") }, singleLine = true, isError = error,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton({
+                        val c = Money.parse(input)
+                        if (c == null) error = true else {
+                            list = (list + c).distinct(); prefs.setUsualAmounts(type, list); input = ""
+                        }
+                    }) { Text("添加") }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClose) { Text("完成") } },
     )
 }

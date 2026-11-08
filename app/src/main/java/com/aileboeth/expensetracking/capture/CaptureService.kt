@@ -20,7 +20,14 @@ import java.util.concurrent.Executors
 
 class CaptureService : NotificationListenerService() {
 
+    companion object {
+        /** True while the system has this listener bound in the current process. */
+        @Volatile var connected = false
+            private set
+    }
+
     override fun onListenerConnected() {
+        connected = true
         Repo.init(this)
         Prefs(this).listenerConnectedAt = System.currentTimeMillis()
         // Payments posted while we were not connected: the signature check drops ones already recorded.
@@ -31,6 +38,7 @@ class CaptureService : NotificationListenerService() {
     }
 
     override fun onListenerDisconnected() {
+        connected = false
         try {
             requestRebind(ComponentName(this, CaptureService::class.java))
         } catch (_: Throwable) {
@@ -112,7 +120,7 @@ object Ingest {
                 val tx = Tx(
                     type = result.type,
                     amountCents = result.amountCents,
-                    category = Categorizer.guess(result.type, result.counterpart, result.kind),
+                    category = Categorizer.guess(result.type, result.counterpart, result.kind).ifBlank { if (pending) "" else "其他" },
                     channel = result.channel,
                     counterpart = result.counterpart,
                     time = if (n.postTime > 0) n.postTime else System.currentTimeMillis(),

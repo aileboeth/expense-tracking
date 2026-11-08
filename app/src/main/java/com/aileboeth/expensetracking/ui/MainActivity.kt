@@ -38,18 +38,32 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.aileboeth.expensetracking.capture.ListenerKeeper
 import com.aileboeth.expensetracking.update.Updater
 import com.aileboeth.expensetracking.widget.Widgets
 
 class MainActivity : ComponentActivity() {
     /** Set when opened from the widget's "+ 记一笔". */
     private val addRequest = mutableStateOf(false)
+    /** Set when the bubble's ✎ 改 asks to edit the usual amounts. */
+    private val usualRequest = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handle(intent)
-        setContent { AppTheme { AppRoot(addRequest) } }
+        setContent { AppTheme { AppRoot(addRequest, usualRequest) } }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        com.aileboeth.expensetracking.bubble.Bubble.setAppInFront(true)
+        ListenerKeeper.ensure(this, 1500)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        com.aileboeth.expensetracking.bubble.Bubble.setAppInFront(false)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -59,6 +73,7 @@ class MainActivity : ComponentActivity() {
 
     private fun handle(intent: Intent?) {
         if (intent?.action == Widgets.ACTION_ADD) addRequest.value = true
+        if (intent?.action == com.aileboeth.expensetracking.bubble.Bubble.ACTION_USUAL_AMOUNTS) usualRequest.value = true
     }
 }
 
@@ -68,12 +83,13 @@ private sealed interface Overlay {
 }
 
 @Composable
-private fun AppRoot(addRequest: MutableState<Boolean>) {
+private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableState<Boolean>) {
     val ctx = LocalContext.current
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var overlay by remember { mutableStateOf<Overlay?>(null) }
     LaunchedEffect(Unit) { Updater.autoCheck(ctx) }
     LaunchedEffect(addRequest.value) { if (addRequest.value) { overlay = null; tab = 0 } }
+    LaunchedEffect(usualRequest.value) { if (usualRequest.value) { overlay = null; tab = 2 } }
 
     when (val o = overlay) {
         Overlay.Search -> SearchScreen(onBack = { overlay = null })
@@ -97,7 +113,12 @@ private fun AppRoot(addRequest: MutableState<Boolean>) {
                     onAddHandled = { addRequest.value = false },
                 )
                 1 -> StatsScreen(padding)
-                else -> SettingsScreen(padding, onImport = { overlay = Overlay.Import(it) })
+                else -> SettingsScreen(
+                    padding,
+                    onImport = { overlay = Overlay.Import(it) },
+                    openUsual = usualRequest.value,
+                    onUsualOpened = { usualRequest.value = false },
+                )
             }
         }
     }

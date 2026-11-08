@@ -2,14 +2,18 @@ package com.aileboeth.expensetracking.bubble
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.PorterDuff
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
 import android.view.Gravity
@@ -19,12 +23,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.aileboeth.expensetracking.R
 import com.aileboeth.expensetracking.data.CategoryStyle
 import com.aileboeth.expensetracking.data.Kinds
 import com.aileboeth.expensetracking.data.Money
@@ -33,17 +39,20 @@ import com.aileboeth.expensetracking.data.Repo
 import com.aileboeth.expensetracking.data.Status
 import com.aileboeth.expensetracking.data.Tx
 import com.aileboeth.expensetracking.parse.TxType
+import com.aileboeth.expensetracking.ui.MainActivity
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.time.YearMonth
 import java.time.ZoneId
+import java.util.Date
+import java.util.Locale
 import kotlin.math.abs
 
 /**
- * The small round bubble at the screen edge. It never takes focus or opens the app, so whatever
- * the user is doing keeps working. Tapping it opens a small card to fix the amount, pick a
- * category and note what the money was for.
+ * After a payment: a purple capsule docked on the screen edge (lavender when the amount is missing).
+ * It never takes focus, so the current app keeps working. Tapping it opens
+ *  - a drawer at the TOP for entries that already have an amount: tap a category = saved;
+ *  - a card at the BOTTOM for entries without amount: usual amounts to tap (or type another).
+ * A category is optional: "保存" without one files the entry under 其他.
  */
 @SuppressLint("StaticFieldLeak") // only the application context is kept
 object Bubble {
@@ -51,20 +60,42 @@ object Bubble {
     private var appCtx: Context? = null
     private var wm: WindowManager? = null
 
-    private var ball: TextView? = null
-    private var ballParams: WindowManager.LayoutParams? = null
+    private var capsule: LinearLayout? = null
+    private var capsuleParams: WindowManager.LayoutParams? = null
+    private var onLeft = false
     private var card: View? = null
 
-    /** Entries shown by the bubble in this session, oldest first. */
+    /** Entries shown by the capsule in this session, oldest first. */
     private val queue = ArrayDeque<Long>()
     private val autoHide = Runnable { hideIfOnlyDone() }
 
-    private const val EXPENSE_COLOR = 0xFFE5533D.toInt()
-    private const val INCOME_COLOR = 0xFF2E9E6A.toInt()
-    private const val PENDING_COLOR = 0xFFF2A007.toInt()
-    private const val INK = 0xFF1F2421.toInt()
-    private const val MUTED = 0xFF6B736E.toInt()
-    private const val ACCENT = 0xFF2E7D5B.toInt()
+    const val OTHER = "其他"
+    const val ACTION_USUAL_AMOUNTS = "com.aileboeth.expensetracking.USUAL_AMOUNTS"
+
+    private const val BRAND = 0xFF5B45E0.toInt()
+    private const val BRAND_2 = 0xFF8F7BFF.toInt()
+    private const val BRAND_DEEP = 0xFF3F2CC4.toInt()
+    private const val SOFT = 0xFFECE8FF.toInt()
+    private const val INK = 0xFF1D1A2B.toInt()
+    private const val MUTED = 0xFF6C6880.toInt()
+    private const val CHIP = 0xFFF3F1FA.toInt()
+    private const val LINE = 0xFFDCD8E8.toInt()
+    private const val EXPENSE = 0xFFE5533D.toInt()
+    private const val INCOME = 0xFF2E9E6A.toInt()
+    private const val INCOME_2 = 0xFF5FD3A0.toInt()
+    private const val PENDING_1 = 0xFFF4F1FF.toInt()
+    private const val PENDING_2 = 0xFFDCD4FF.toInt()
+    private const val SCRIM = 0x3A120C28
+
+    /** True while this app's own screen is in front: the capsule hides there and comes back afterwards. */
+    @Volatile private var appInFront = false
+
+    fun setAppInFront(front: Boolean) {
+        main.post {
+            appInFront = front
+            if (card == null) capsule?.visibility = if (front) View.GONE else View.VISIBLE
+        }
+    }
 
     fun canDraw(ctx: Context) = Settings.canDrawOverlays(ctx)
 
@@ -75,27 +106,27 @@ object Bubble {
         wm = app.getSystemService(WindowManager::class.java)
         queue.remove(txId)
         queue.addLast(txId)
-        if (card != null) return // the open card picks it up with "下一笔"
+        if (card != null) return // the open card shows the next one when it closes
         try {
-            showBall()
+            showCapsule()
         } catch (_: Throwable) {
             return
         }
         scheduleHide()
     }
 
-    /** Call after an entry was edited or deleted elsewhere (in the app), so the bubble does not show stale data. */
+    /** Call after an entry was edited or deleted elsewhere (in the app). */
     fun refresh() {
         main.post {
-            if (ball == null || card != null) return@post
+            if (capsule == null || card != null) return@post
             queue.removeAll { Repo.get(it) == null }
             if (queue.isEmpty()) { hideAll(); return@post }
-            refreshBall()
+            refreshCapsule()
             scheduleHide()
         }
     }
 
-    /** Re-show the bubble for entries still waiting for an amount (e.g. from the app). */
+    /** Show the capsule again for entries still waiting for an amount. */
     fun showPending(ctx: Context) {
         Repo.pending().asReversed().forEach { show(ctx, it.id) }
     }
@@ -103,88 +134,107 @@ object Bubble {
     private fun dp(v: Float): Int =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, appCtx!!.resources.displayMetrics).toInt()
 
-    private fun overlayParams(w: Int, h: Int, focusable: Boolean) = WindowManager.LayoutParams(
-        w, h,
-        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-        (if (focusable) 0 else WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) or
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-        PixelFormat.TRANSLUCENT,
-    ).apply { gravity = Gravity.TOP or Gravity.START }
+    private fun items() = queue.mapNotNull { Repo.get(it) }
+    private fun head(): Tx? = items().let { l -> l.firstOrNull { it.amountCents == null } ?: l.lastOrNull() }
 
-    // ---- ball ---------------------------------------------------------------------------
+    // ---- capsule ------------------------------------------------------------------------
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun showBall() {
+    private fun showCapsule() {
         val ctx = appCtx!!
-        val size = dp(54f)
-        val v = ball ?: TextView(ctx).also { tv ->
-            tv.gravity = Gravity.CENTER
-            tv.setTextColor(Color.WHITE)
-            tv.typeface = Typeface.DEFAULT_BOLD
-            tv.elevation = dp(6f).toFloat()
-            tv.setOnTouchListener(BallTouch())
-            val dm = ctx.resources.displayMetrics
-            val p = overlayParams(size, size, focusable = false).apply {
-                x = dm.widthPixels - size - dp(6f)
-                y = (dm.heightPixels * 0.32f).toInt()
+        if (capsule == null) {
+            val icon = FrameLayout(ctx).apply {
+                addView(ImageView(ctx).apply {
+                    setImageResource(R.mipmap.ic_launcher_mono)
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    scaleX = 1.7f; scaleY = 1.7f
+                }, FrameLayout.LayoutParams(dp(30f), dp(30f)))
             }
-            ballParams = p
-            wm!!.addView(tv, p)
-            ball = tv
+            val text = TextView(ctx).apply {
+                setTextColor(Color.WHITE)
+                typeface = Typeface.DEFAULT_BOLD
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                maxLines = 1
+            }
+            val v = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                elevation = dp(6f).toFloat()
+                addView(icon, LinearLayout.LayoutParams(dp(30f), dp(30f)))
+                addView(text)
+                setOnTouchListener(CapsuleTouch())
+            }
+            val dm = ctx.resources.displayMetrics
+            val p = WindowManager.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44f),
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                PixelFormat.TRANSLUCENT,
+            ).apply {
+                gravity = Gravity.TOP or Gravity.END
+                x = 0
+                y = (dm.heightPixels * 0.34f).toInt()
+            }
+            capsuleParams = p
+            capsule = v
+            wm!!.addView(v, p)
         }
-        refreshBall(v)
+        capsule?.visibility = if (appInFront) View.GONE else View.VISIBLE
+        refreshCapsule()
     }
 
-    private fun refreshBall(target: TextView? = ball) {
-        val v = target ?: return
-        val items = queue.mapNotNull { Repo.get(it) }
-        val head = items.lastOrNull { it.status == Status.PENDING } ?: items.lastOrNull()
-        if (head == null) {
-            hideAll(); return
+    private fun refreshCapsule() {
+        val v = capsule ?: return
+        val p = capsuleParams ?: return
+        val all = items()
+        val t = head() ?: run { hideAll(); return }
+        val pending = t.amountCents == null
+        val icon = v.getChildAt(if (v.getChildAt(0) is FrameLayout) 0 else 1) as FrameLayout
+        val text = v.getChildAt(if (v.getChildAt(0) is TextView) 0 else 1) as TextView
+
+        // Icon on the inner side: [icon][amount] on the right edge, [amount][icon] on the left.
+        v.removeAllViews()
+        if (onLeft) { v.addView(text); v.addView(icon, LinearLayout.LayoutParams(dp(30f), dp(30f))) }
+        else { v.addView(icon, LinearLayout.LayoutParams(dp(30f), dp(30f))); v.addView(text) }
+        (text.layoutParams as LinearLayout.LayoutParams).apply {
+            leftMargin = if (onLeft) 0 else dp(7f)
+            rightMargin = if (onLeft) dp(7f) else 0
         }
-        val waiting = items.count { it.status == Status.PENDING }
-        val color = when {
-            head.status == Status.PENDING -> PENDING_COLOR
-            head.type == TxType.EXPENSE -> EXPENSE_COLOR
-            else -> INCOME_COLOR
+        v.setPadding(if (onLeft) dp(14f) else dp(7f), 0, if (onLeft) dp(7f) else dp(14f), 0)
+
+        val r = dp(22f).toFloat()
+        val (c1, c2, c3) = when {
+            pending -> Triple(PENDING_1, PENDING_2, PENDING_2)
+            t.type == TxType.INCOME -> Triple(INCOME_2, INCOME, INCOME)
+            else -> Triple(BRAND_2, BRAND, BRAND_DEEP)
         }
-        val ring = budgetRing()
-        v.background = GradientDrawable().apply {
+        v.background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(c1, c2, c3)).apply {
+            cornerRadii = if (onLeft) floatArrayOf(0f, 0f, r, r, r, r, 0f, 0f) else floatArrayOf(r, r, 0f, 0f, 0f, 0f, r, r)
+            if (overBudget(t)) setStroke(dp(2f), EXPENSE)
+        }
+        icon.background = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
-            setColor(color)
-            setStroke(dp(if (ring == Color.WHITE) 2f else 3.5f), ring)
+            setColor(if (pending) BRAND else 0x38FFFFFF)
         }
-        val label = if (head.amountCents == null) "?" else shortAmount(head)
-        v.text = if (items.size > 1) "$label\n${items.size}笔" else label
-        v.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (label.length > 5) 11f else 13f)
-        v.contentDescription = "记账：${Money.signed(head)}，$waiting 笔待补"
+        val label = if (pending) "待补金额" else Money.signed(t).let { s -> if (s.endsWith(".00")) s.dropLast(3) else s }
+        text.text = if (all.size > 1) "$label · ${all.size}笔" else label
+        text.setTextColor(if (pending) BRAND_DEEP else Color.WHITE)
+        v.contentDescription = "记账：$label"
+
+        p.gravity = Gravity.TOP or (if (onLeft) Gravity.START else Gravity.END)
+        p.x = 0
+        runCatching { wm?.updateViewLayout(v, p) }
     }
 
-    /** White normally; amber from 80% of the monthly budget, red once it is used up. */
-    private fun budgetRing(): Int {
-        val (spent, budget) = budgetState() ?: return Color.WHITE
-        return when {
-            spent >= budget -> 0xFFFF3B30.toInt()
-            spent * 5 >= budget * 4 -> 0xFFFFC107.toInt()
-            else -> Color.WHITE
-        }
-    }
-
-    private fun budgetState(): Pair<Long, Long>? {
+    private fun overBudget(t: Tx): Boolean {
+        if (t.type != TxType.EXPENSE) return false
         val budget = Prefs(appCtx!!).budgetCents
-        if (budget <= 0) return null
+        if (budget <= 0) return false
         val zone = ZoneId.systemDefault()
         val m = YearMonth.now()
-        val start = m.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-        val end = m.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-        return Repo.sum(TxType.EXPENSE, start, end) to budget
-    }
-
-    private fun shortAmount(tx: Tx): String {
-        val a = tx.amountCents ?: return "?"
-        val sign = if (tx.type == TxType.EXPENSE) "-" else "+"
-        val yuan = if (a % 100 == 0L) (a / 100).toString() else Money.format(a)
-        return sign + yuan
+        val spent = Repo.sum(TxType.EXPENSE, m.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli(),
+            m.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli())
+        return spent >= budget
     }
 
     private fun scheduleHide() {
@@ -195,50 +245,47 @@ object Bubble {
 
     private fun hideIfOnlyDone() {
         if (card != null) return
-        val anyPending = queue.any { Repo.get(it)?.status == Status.PENDING }
-        if (!anyPending) hideAll()
+        if (queue.none { Repo.get(it)?.status == Status.PENDING }) hideAll()
     }
 
     private fun hideAll() {
         main.removeCallbacks(autoHide)
         closeCard()
-        ball?.let { runCatching { wm?.removeView(it) } }
-        ball = null
+        capsule?.let { runCatching { wm?.removeView(it) } }
+        capsule = null
         queue.clear()
     }
 
-    private class BallTouch : View.OnTouchListener {
+    private class CapsuleTouch : View.OnTouchListener {
         private var downX = 0f
         private var downY = 0f
-        private var startX = 0
         private var startY = 0
         private var moved = false
         private var downAt = 0L
 
         override fun onTouch(v: View, e: MotionEvent): Boolean {
-            val p = ballParams ?: return false
+            val p = capsuleParams ?: return false
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    downX = e.rawX; downY = e.rawY; startX = p.x; startY = p.y; moved = false
+                    downX = e.rawX; downY = e.rawY; startY = p.y; moved = false
                     downAt = System.currentTimeMillis()
                     main.removeCallbacks(autoHide)
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    val dx = e.rawX - downX
-                    val dy = e.rawY - downY
-                    if (abs(dx) > 12 || abs(dy) > 12) moved = true
+                    if (abs(e.rawX - downX) > 12 || abs(e.rawY - downY) > 12) moved = true
                     if (moved) {
-                        p.x = startX + dx.toInt(); p.y = startY + dy.toInt()
+                        val dm = v.resources.displayMetrics
+                        p.y = (startY + (e.rawY - downY).toInt()).coerceIn(dp(40f), dm.heightPixels - dp(120f))
                         runCatching { wm?.updateViewLayout(v, p) }
                     }
                 }
                 MotionEvent.ACTION_UP -> {
                     if (moved) {
-                        snapToEdge(v, p)
+                        onLeft = e.rawX < v.resources.displayMetrics.widthPixels / 2f
+                        refreshCapsule()
                         scheduleHide()
                     } else if (System.currentTimeMillis() - downAt > 600) {
-                        // Long press: put it away. Entries without amount stay in the app's list.
-                        hideAll()
+                        hideAll() // long press: put it away; entries without amount stay in the app's list
                     } else {
                         openCard()
                     }
@@ -247,223 +294,351 @@ object Bubble {
             }
             return true
         }
-
-        private fun snapToEdge(v: View, p: WindowManager.LayoutParams) {
-            val dm = v.resources.displayMetrics
-            p.x = if (p.x + v.width / 2 < dm.widthPixels / 2) dp(6f) else dm.widthPixels - v.width - dp(6f)
-            p.y = p.y.coerceIn(dp(40f), dm.heightPixels - v.height - dp(60f))
-            runCatching { wm?.updateViewLayout(v, p) }
-        }
     }
 
     // ---- card ---------------------------------------------------------------------------
 
-    private fun currentEntry(): Tx? {
-        val items = queue.mapNotNull { Repo.get(it) }
-        return items.firstOrNull { it.status == Status.PENDING } ?: items.firstOrNull()
-    }
-
     private fun openCard() {
-        val tx = currentEntry() ?: run { hideAll(); return }
+        val t = head() ?: run { hideAll(); return }
         main.removeCallbacks(autoHide)
         closeCard()
-        ball?.visibility = View.GONE
-
+        capsule?.visibility = View.GONE
         val ctx = ContextThemeWrapper(appCtx!!, android.R.style.Theme_DeviceDefault_Light_NoActionBar)
-        val dm = ctx.resources.displayMetrics
-        val width = minOf(dm.widthPixels - dp(24f), dp(380f))
+        val pending = t.amountCents == null
 
-        var type = tx.type
-        var category = tx.category
-
-        val root = object : LinearLayout(ctx) {
+        val root = object : FrameLayout(ctx) {
             override fun dispatchKeyEvent(event: KeyEvent): Boolean {
                 if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
-                    collapse(); return true
+                    dismiss(t); return true
                 }
                 return super.dispatchKeyEvent(event)
             }
-        }.apply {
+        }
+        root.setBackgroundColor(SCRIM)
+        root.setOnClickListener { dismiss(t) }
+
+        val sheet = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16f), dp(14f), dp(16f), dp(10f))
-            background = GradientDrawable().apply { cornerRadius = dp(18f).toFloat(); setColor(Color.WHITE) }
+            isClickable = true // taps inside do not reach the scrim
+            val r = dp(22f).toFloat()
+            background = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadii = if (pending) floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f) else floatArrayOf(0f, 0f, 0f, 0f, r, r, r, r)
+            }
             elevation = dp(10f).toFloat()
         }
+        root.addView(sheet, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+            if (pending) Gravity.BOTTOM else Gravity.TOP))
 
-        val time = SimpleDateFormat("MM-dd HH:mm", Locale.CHINA).format(Date(tx.time))
-        root.addView(TextView(ctx).apply {
-            text = listOf(tx.channel, Kinds.label(tx.kind), time).filter { it.isNotBlank() }.distinct().joinToString(" · ")
-            setTextColor(MUTED); textSize = 12f
-        })
-        val detail = listOf(tx.counterpart, tx.raw).filter { it.isNotBlank() }.distinct().joinToString("  ")
-        if (detail.isNotBlank()) root.addView(TextView(ctx).apply {
-            text = detail; setTextColor(MUTED); textSize = 12f; maxLines = 2
-        })
-
-        budgetState()?.let { (spent, budget) ->
-            val left = budget - spent
-            root.addView(TextView(ctx).apply {
-                text = if (left >= 0) "本月预算还剩 ¥${Money.format(left)}" else "本月已超预算 ¥${Money.format(-left)}"
-                setTextColor(if (left >= 0) MUTED else EXPENSE_COLOR); textSize = 12f
-            })
+        // Clear the status bar (top drawer) or the gesture bar (bottom card), plus breathing room.
+        root.setOnApplyWindowInsetsListener { _, insets ->
+            @Suppress("DEPRECATION")
+            if (pending) sheet.setPadding(dp(16f), dp(14f), dp(16f), dp(30f) + insets.systemWindowInsetBottom)
+            else sheet.setPadding(dp(16f), dp(12f) + insets.systemWindowInsetTop, dp(16f), dp(16f))
+            insets
         }
+        if (pending) sheet.setPadding(dp(16f), dp(14f), dp(16f), dp(30f)) else sheet.setPadding(dp(16f), dp(36f), dp(16f), dp(16f))
 
-        // amount + type
+        if (pending) buildPending(ctx, sheet, t) else buildWithAmount(ctx, sheet, t)
+
+        val p = WindowManager.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            0,
+            PixelFormat.TRANSLUCENT,
+        ).apply { softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE }
+        wm!!.addView(root, p)
+        card = root
+    }
+
+    /** Top drawer: amount, categories (tap = saved), note + 保存. */
+    private fun buildWithAmount(ctx: Context, sheet: LinearLayout, t: Tx) {
+        var type = t.type
+        val amount = TextView(ctx).apply {
+            textSize = 26f; typeface = Typeface.DEFAULT_BOLD
+        }
+        fun paintAmount() {
+            amount.text = (if (type == TxType.EXPENSE) "-" else "+") + Money.format(t.amountCents ?: 0)
+            amount.setTextColor(if (type == TxType.INCOME) INCOME else INK)
+        }
+        paintAmount()
+        val more = moreRow(ctx, t, canFlip = true) { type = if (type == TxType.EXPENSE) TxType.INCOME else TxType.EXPENSE; paintAmount() }
+        sheet.addView(headRow(ctx, amount, meta(t)) { more.visibility = if (more.visibility == View.VISIBLE) View.GONE else View.VISIBLE })
+        sheet.addView(more)
+        val note = noteField(ctx, t.note)
+        val cats = categoryRow(ctx, type) { cat -> save(t.copy(type = type), cat, note.text.toString()) }
+        sheet.addView(cats, spaced())
+        sheet.addView(noteRow(ctx, note, saveButton(ctx) { save(t.copy(type = type), t.category.ifBlank { OTHER }, note.text.toString()) }), spaced())
+    }
+
+    /** Bottom card: usual amounts (or type one), categories, note + 保存. */
+    private fun buildPending(ctx: Context, sheet: LinearLayout, t: Tx) {
+        val prefs = Prefs(appCtx!!)
+        val usual = prefs.usualAmounts(t.type).ifEmpty {
+            Repo.frequentAmounts(t.type, System.currentTimeMillis() - 60L * 24 * 3600 * 1000, if (t.type == TxType.EXPENSE) 4 else 3)
+        }
         val amount = EditText(ctx).apply {
-            hint = if (tx.amountCents == null) "这笔多少钱？" else "金额"
-            setText(tx.amountCents?.let { Money.format(it) } ?: "")
+            hint = "这笔多少钱？"
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
-            textSize = 24f
-            setTextColor(INK)
-            typeface = Typeface.DEFAULT_BOLD
+            textSize = 24f; typeface = Typeface.DEFAULT_BOLD
+            setTextColor(INK); setHintTextColor(0xFFB9B4CC.toInt())
+            background = null
+            setPadding(0, 0, 0, 0)
+            isSingleLine = true
         }
-        val expenseBtn = pill(ctx, "支出")
-        val incomeBtn = pill(ctx, "收入")
+        val save = saveButton(ctx) {}
         val chips = FlowLayout(ctx, dp(6f))
-
-        fun renderChips() {
-            chips.removeAllViews()
-            for (name in Repo.categories(type)) {
-                val chip = pill(ctx, CategoryStyle.label(name))
-                styleSelected(chip, name == category)
-                chip.setOnClickListener {
-                    category = if (category == name) "" else name
-                    renderChips()
-                }
-                chips.addView(chip)
-            }
-        }
-        fun renderType() {
-            styleSelected(expenseBtn, type == TxType.EXPENSE, EXPENSE_COLOR)
-            styleSelected(incomeBtn, type == TxType.INCOME, INCOME_COLOR)
-        }
-        expenseBtn.setOnClickListener { if (type != TxType.EXPENSE) { type = TxType.EXPENSE; category = ""; renderType(); renderChips() } }
-        incomeBtn.setOnClickListener { if (type != TxType.INCOME) { type = TxType.INCOME; category = ""; renderType(); renderChips() } }
-
-        root.addView(LinearLayout(ctx).apply {
+        val more = moreRow(ctx, t, canFlip = false) {}
+        val yuan = TextView(ctx).apply { text = "¥"; textSize = 24f; typeface = Typeface.DEFAULT_BOLD; setTextColor(INK); visibility = View.GONE }
+        val amountBox = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            addView(TextView(ctx).apply { text = "¥"; textSize = 22f; setTextColor(INK) })
+            tag = "amountBox"
+            addView(yuan)
             addView(amount, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            addView(expenseBtn)
-            addView(View(ctx), LinearLayout.LayoutParams(dp(6f), 1))
-            addView(incomeBtn)
-        })
-
-        root.addView(TextView(ctx).apply { text = "分类"; setTextColor(MUTED); textSize = 12f; setPadding(0, dp(6f), 0, dp(4f)) })
-        root.addView(chips)
-
-        val note = EditText(ctx).apply {
-            hint = "用途 / 备注（可不填）"
-            setText(tx.note)
-            textSize = 15f
-            isSingleLine = true
-            setTextColor(INK)
         }
-        root.addView(note)
+        sheet.addView(headRow(ctx, amountBox, meta(t)) { more.visibility = if (more.visibility == View.VISIBLE) View.GONE else View.VISIBLE })
+        sheet.addView(more)
 
-        val left = queue.mapNotNull { Repo.get(it) }.count { it.id != tx.id }
-        if (left > 0) root.addView(TextView(ctx).apply {
-            text = "还有 $left 笔，保存后显示下一笔"; setTextColor(MUTED); textSize = 12f
-        })
-
-        val delete = textButton(ctx, "不是这笔/删除", EXPENSE_COLOR)
-        val later = textButton(ctx, "收起", MUTED)
-        val save = textButton(ctx, "保存", ACCENT)
-        root.addView(LinearLayout(ctx).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.END
-            setPadding(0, dp(6f), 0, 0)
-            addView(delete)
-            addView(View(ctx), LinearLayout.LayoutParams(0, 1, 1f))
-            addView(later)
-            addView(save)
-        })
-
-        renderType()
-        renderChips()
-
-        save.setOnClickListener {
-            val text = amount.text.toString()
-            val cents = if (text.isBlank()) null else Money.parse(text)
-            if (text.isNotBlank() && cents == null) {
-                Toast.makeText(appCtx, "金额不对，例：12.5", Toast.LENGTH_SHORT).show(); return@setOnClickListener
+        fun amountCents() = Money.parse(amount.text.toString())
+        fun paintChips() {
+            chips.removeAllViews()
+            val current = amountCents()
+            for (c in usual) {
+                chips.addView(chip(ctx, "¥" + Money.short(c), selected = current == c && !amount.hasFocus()) {
+                    amount.setText(Money.short(c))
+                    amount.clearFocus()
+                    hideKeyboard(amount)
+                    paintChips()
+                })
             }
-            val updated = tx.copy(
-                type = type, amountCents = cents, category = category, note = note.text.toString().trim(),
-                status = if (cents == null) Status.PENDING else Status.OK,
-            )
-            Thread { Repo.update(updated) }.start()
-            if (cents == null) Toast.makeText(appCtx, "先放进待补列表，之后在 App 里补金额", Toast.LENGTH_SHORT).show()
-            queue.remove(tx.id)
-            next()
+            chips.addView(chip(ctx, "其他金额", selected = amount.hasFocus(), accent = true) {
+                if (current != null && current in usual) amount.setText("")
+                amount.requestFocus()
+                showKeyboard(amount)
+                paintChips()
+            })
+            chips.addView(chip(ctx, "✎ 改", dashed = true) {
+                val i = Intent(appCtx, MainActivity::class.java).setAction(ACTION_USUAL_AMOUNTS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                collapse()
+                runCatching { appCtx!!.startActivity(i) }
+            })
         }
-        delete.setOnClickListener {
-            Thread { Repo.delete(tx.id) }.start()
-            queue.remove(tx.id)
-            next()
-        }
-        later.setOnClickListener { collapse() }
+        amount.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                save.isEnabled = amountCents() != null
+                save.alpha = if (save.isEnabled) 1f else 0.4f
+                yuan.visibility = if (s.isNullOrEmpty()) View.GONE else View.VISIBLE
+            }
+        })
+        amount.setOnFocusChangeListener { _, _ -> paintChips() }
+        sheet.addView(chips, spaced())
 
-        val frame = FrameLayout(ctx).apply { addView(root, FrameLayout.LayoutParams(width, ViewGroup.LayoutParams.WRAP_CONTENT)) }
-        val p = overlayParams(width, ViewGroup.LayoutParams.WRAP_CONTENT, focusable = true).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            y = dp(72f)
-            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
+        val note = noteField(ctx, t.note)
+        fun commit(cat: String) {
+            val cents = amountCents()
+            if (cents == null) { toast("先选一个金额"); return }
+            save(t.copy(amountCents = cents), cat, note.text.toString())
         }
-        wm!!.addView(frame, p)
-        card = frame
-        if (tx.amountCents == null) amount.post {
-            amount.requestFocus()
-            ctx.getSystemService(InputMethodManager::class.java)?.showSoftInput(amount, 0)
+        sheet.addView(categoryRow(ctx, t.type) { cat -> commit(cat) }, spaced())
+        save.setOnClickListener { commit(OTHER) }
+        save.isEnabled = false; save.alpha = 0.4f
+        sheet.addView(noteRow(ctx, note, save), spaced())
+        sheet.addView(TextView(ctx).apply {
+            text = "点分类直接记好；不选分类点保存，记到「其他」"
+            textSize = 11f; setTextColor(MUTED)
+        }, spaced(8f))
+        paintChips()
+        // Nothing to pick from yet: go straight to typing.
+        if (usual.isEmpty()) amount.postDelayed({ amount.requestFocus(); showKeyboard(amount) }, 250)
+    }
+
+    // ---- pieces -------------------------------------------------------------------------
+
+    private fun meta(t: Tx): String {
+        val time = SimpleDateFormat("HH:mm", Locale.CHINA).format(Date(t.time))
+        val left = queue.size - 1
+        return listOf(t.channel, if (t.amountCents == null) Kinds.label(t.kind).removePrefix(t.channel) else "", time).filter { it.isNotBlank() }.joinToString(" · ") +
+            if (left > 0) " · 还有 $left 笔" else ""
+    }
+
+    private fun headRow(ctx: Context, amount: View, meta: String, onMore: () -> Unit) = LinearLayout(ctx).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        addView(amount, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            if (amount.tag == "amountBox") { width = 0; weight = 1f }
+        })
+        addView(TextView(ctx).apply {
+            text = meta; textSize = 11f; setTextColor(MUTED); maxLines = 1
+            setPadding(dp(8f), 0, dp(8f), 0)
+        }, if (amount.tag == "amountBox") LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        else LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        addView(TextView(ctx).apply {
+            text = "⋯"; textSize = 16f; setTextColor(INK); gravity = Gravity.CENTER
+            background = round(CHIP, 12f)
+            setOnClickListener { onMore() }
+            contentDescription = "更多"
+        }, LinearLayout.LayoutParams(dp(36f), dp(30f)))
+    }
+
+    /** Hidden row behind "⋯": switch expense/income, delete. */
+    private fun moreRow(ctx: Context, t: Tx, canFlip: Boolean, onFlip: () -> Unit) = LinearLayout(ctx).apply {
+        orientation = LinearLayout.HORIZONTAL
+        visibility = View.GONE
+        setPadding(0, dp(10f), 0, 0)
+        if (canFlip) addView(chip(ctx, "改成收入/支出") { onFlip() })
+        addView(View(ctx), LinearLayout.LayoutParams(dp(6f), 1))
+        addView(chip(ctx, "不是这笔", danger = true) {
+            Thread { Repo.delete(t.id) }.start()
+            queue.remove(t.id)
+            toast("已删除")
+            next()
+        })
+    }
+
+    private fun categoryRow(ctx: Context, type: TxType, onPick: (String) -> Unit): View {
+        val since = System.currentTimeMillis() - 90L * 24 * 3600 * 1000
+        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
+        for (name in Repo.categoriesByUse(type, since)) {
+            val st = CategoryStyle.of(name)
+            row.addView(LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                addView(TextView(ctx).apply {
+                    text = st.emoji; textSize = 19f; gravity = Gravity.CENTER
+                    background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(CHIP) }
+                }, LinearLayout.LayoutParams(dp(42f), dp(42f)))
+                addView(TextView(ctx).apply {
+                    text = name; textSize = 10.5f; setTextColor(MUTED); gravity = Gravity.CENTER; maxLines = 1
+                })
+                setOnClickListener { onPick(name) }
+                contentDescription = name
+            }, LinearLayout.LayoutParams(dp(54f), ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
+        return HorizontalScrollView(ctx).apply {
+            isHorizontalScrollBarEnabled = false
+            addView(row)
         }
     }
 
-    /** After save/delete: next waiting entry, or close everything. */
-    private fun next() {
-        closeCard()
-        // Let the background write land before we read the queue again.
-        main.postDelayed({
-            val rest = queue.mapNotNull { Repo.get(it) }
-            if (rest.isEmpty()) hideAll() else openCard()
-        }, 150)
+    private fun noteField(ctx: Context, initial: String) = EditText(ctx).apply {
+        hint = "备注（可不填）"
+        setText(initial)
+        textSize = 14f
+        isSingleLine = true
+        setTextColor(INK); setHintTextColor(0xFF9A95AE.toInt())
+        background = round(CHIP, 12f)
+        setPadding(dp(12f), dp(9f), dp(12f), dp(9f))
     }
 
+    private fun noteRow(ctx: Context, note: EditText, save: TextView) = LinearLayout(ctx).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        addView(note, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        addView(View(ctx), LinearLayout.LayoutParams(dp(8f), 1))
+        addView(save)
+    }
+
+    private fun saveButton(ctx: Context, onClick: () -> Unit) = TextView(ctx).apply {
+        text = "保存"
+        textSize = 14f
+        typeface = Typeface.DEFAULT_BOLD
+        setTextColor(Color.WHITE)
+        gravity = Gravity.CENTER
+        background = round(BRAND, 12f)
+        setPadding(dp(18f), dp(9f), dp(18f), dp(9f))
+        setOnClickListener { onClick() }
+    }
+
+    private fun chip(
+        ctx: Context, label: String, selected: Boolean = false, accent: Boolean = false,
+        dashed: Boolean = false, danger: Boolean = false, onClick: () -> Unit,
+    ) = TextView(ctx).apply {
+        text = label
+        textSize = 13.5f
+        typeface = if (label.startsWith("¥")) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+        setTextColor(when { danger -> EXPENSE; selected || accent -> BRAND; dashed -> MUTED; else -> INK })
+        gravity = Gravity.CENTER
+        setPadding(dp(12f), dp(7f), dp(12f), dp(7f))
+        background = GradientDrawable().apply {
+            cornerRadius = dp(14f).toFloat()
+            when {
+                selected -> { setColor(SOFT); setStroke(dp(1.5f), BRAND) }
+                dashed -> { setColor(Color.TRANSPARENT); setStroke(dp(1f), LINE, dp(4f).toFloat(), dp(3f).toFloat()) }
+                else -> setColor(CHIP)
+            }
+        }
+        setOnClickListener { onClick() }
+    }
+
+    private fun round(color: Int, radiusDp: Float) = GradientDrawable().apply { cornerRadius = dp(radiusDp).toFloat(); setColor(color) }
+
+    private fun spaced(topDp: Float = 12f) = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        .apply { topMargin = dp(topDp) }
+
+    private fun showKeyboard(v: EditText) {
+        val imm = appCtx!!.getSystemService(InputMethodManager::class.java)
+        // The overlay only gets input focus a moment after it is shown; vivo ignores an earlier request.
+        val run = Runnable { if (v.isAttachedToWindow) { v.requestFocus(); imm?.showSoftInput(v, InputMethodManager.SHOW_IMPLICIT) } }
+        v.postDelayed(run, 120)
+        v.postDelayed(run, 450)
+    }
+
+    private fun hideKeyboard(v: View) {
+        appCtx!!.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(v.windowToken, 0)
+    }
+
+    private fun toast(msg: String) = Toast.makeText(appCtx, msg, Toast.LENGTH_SHORT).show()
+
+    // ---- actions ------------------------------------------------------------------------
+
+    private fun save(t: Tx, category: String, note: String) {
+        val updated = t.copy(category = category.ifBlank { OTHER }, note = note.trim(), status = Status.OK)
+        Thread { Repo.update(updated) }.start()
+        queue.remove(t.id)
+        toast("已记好：${updated.category} ${Money.signed(updated)}")
+        next()
+    }
+
+    /** Tap on the dim area / back: entries with an amount are already saved; amount-less ones stay waiting. */
+    private fun dismiss(t: Tx) {
+        if (t.amountCents != null) {
+            if (t.category.isBlank()) Thread { Repo.update(t.copy(category = OTHER)) }.start()
+            queue.remove(t.id)
+        }
+        next()
+    }
+
+    /** Hide the card but keep the capsule (e.g. while the app edits the usual amounts). */
     private fun collapse() {
         closeCard()
-        ball?.visibility = View.VISIBLE
-        refreshBall()
+        capsule?.visibility = if (appInFront) View.GONE else View.VISIBLE
+        refreshCapsule()
         scheduleHide()
     }
 
+    /** After save/delete/dismiss: the next waiting entry, or close everything. */
+    private fun next() {
+        closeCard()
+        main.postDelayed({
+            val rest = items()
+            when {
+                rest.isEmpty() -> hideAll()
+                rest.any { it.amountCents == null } -> collapse()
+                else -> openCard()
+            }
+        }, 200)
+    }
+
     private fun closeCard() {
-        card?.let { runCatching { wm?.removeView(it) } }
-        card = null
-    }
-
-    // ---- little view helpers ------------------------------------------------------------
-
-    private fun pill(ctx: Context, label: String) = TextView(ctx).apply {
-        text = label
-        textSize = 14f
-        gravity = Gravity.CENTER
-        setPadding(dp(12f), dp(6f), dp(12f), dp(6f))
-        isClickable = true
-    }
-
-    private fun styleSelected(v: TextView, selected: Boolean, color: Int = ACCENT) {
-        v.background = GradientDrawable().apply {
-            cornerRadius = dp(16f).toFloat()
-            if (selected) setColor(color) else { setColor(0xFFF1F3F1.toInt()); setStroke(dp(1f), 0xFFDDE2DE.toInt()) }
+        card?.let { c ->
+            hideKeyboard(c)
+            runCatching { wm?.removeView(c) }
         }
-        v.setTextColor(if (selected) Color.WHITE else INK)
-    }
-
-    private fun textButton(ctx: Context, label: String, color: Int) = Button(ctx, null, android.R.attr.borderlessButtonStyle).apply {
-        text = label
-        isAllCaps = false
-        setTextColor(color)
-        textSize = 15f
+        card = null
     }
 }
 

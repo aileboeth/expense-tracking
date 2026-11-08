@@ -71,7 +71,7 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
             error = "请填金额，例如 12.5"; return
         }
         val tx = (initial ?: Tx(type = type, amountCents = cents, time = time, channel = "手动")).copy(
-            type = type, amountCents = cents, category = category, note = note.trim(), time = time, status = Status.OK,
+            type = type, amountCents = cents, category = category.ifBlank { "其他" }, note = note.trim(), time = time, status = Status.OK,
         )
         scope.launch {
             withContext(Dispatchers.IO) { if (initial == null) Repo.insert(tx) else Repo.update(tx) }
