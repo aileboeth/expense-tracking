@@ -302,7 +302,7 @@ fun CalendarHeatmap(
 fun Sparkline(values: List<Long?>, color: Color, modifier: Modifier = Modifier) {
     Canvas(modifier.fillMaxWidth().height(36.dp)) {
         val pts0 = values.mapIndexedNotNull { i, v -> v?.let { i to it } }
-        if (pts0.size < 2) return@Canvas
+        if (pts0.size < 2 || pts0.all { it.second == 0L }) return@Canvas
         val maxV = (pts0.maxOf { it.second }).coerceAtLeast(1L) * 1.1f
         val step = size.width / (values.size - 1).coerceAtLeast(1)
         val pts = pts0.map { (i, v) -> Offset(i * step, size.height - (v / maxV) * size.height) }
