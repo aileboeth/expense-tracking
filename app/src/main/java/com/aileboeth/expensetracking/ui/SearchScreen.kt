@@ -1,0 +1,152 @@
+package com.aileboeth.expensetracking.ui
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import com.aileboeth.expensetracking.data.CategoryStyle
+import com.aileboeth.expensetracking.data.Money
+import com.aileboeth.expensetracking.data.Repo
+import com.aileboeth.expensetracking.data.Tx
+import com.aileboeth.expensetracking.data.TxFilter
+import com.aileboeth.expensetracking.parse.TxType
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
+
+private enum class Period(val label: String) { MONTH("本月"), THREE("近 3 个月"), YEAR("今年"), ALL("全部") }
+
+@Composable
+fun SearchScreen(onBack: () -> Unit) {
+    BackHandler(onBack = onBack)
+    var query by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf<TxType?>(null) }
+    var period by remember { mutableStateOf(Period.THREE) }
+    var channel by remember { mutableStateOf<String?>(null) }
+    var category by remember { mutableStateOf<String?>(null) }
+    var min by remember { mutableStateOf("") }
+    var max by remember { mutableStateOf("") }
+    var editing by remember { mutableStateOf<Tx?>(null) }
+
+    val zone = ZoneId.systemDefault()
+    val start = when (period) {
+        Period.MONTH -> monthRange(YearMonth.now()).first
+        Period.THREE -> monthRange(YearMonth.now().minusMonths(2)).first
+        Period.YEAR -> LocalDate.now().withDayOfYear(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        Period.ALL -> null
+    }
+    val filter = TxFilter(
+        query = query, type = type, channel = channel, category = category,
+        minCents = Money.parse(min), maxCents = Money.parse(max), start = start,
+    )
+    val results = repoQuery(filter, initial = emptyList<Tx>()) { Repo.search(filter) }
+    val channels = repoQuery(initial = emptyList<String>()) { Repo.channels() }
+    val categories = repoQuery(type, initial = emptyList<String>()) {
+        when (type) {
+            null -> (Repo.categories(TxType.EXPENSE) + Repo.categories(TxType.INCOME)).distinct()
+            else -> Repo.categories(type!!)
+        }
+    }
+
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(Modifier.fillMaxSize().statusBarsPadding()) {
+            Row(Modifier.padding(start = 4.dp, end = 12.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+                OutlinedTextField(
+                    value = query, onValueChange = { query = it },
+                    placeholder = { Text("搜备注、对方、分类…") },
+                    leadingIcon = { Icon(Icons.Filled.Search, null) },
+                    trailingIcon = { if (query.isNotEmpty()) IconButton({ query = "" }) { Icon(Icons.Filled.Clear, "清空") } },
+                    singleLine = true, shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            ChipRow {
+                FilterChip(type == null, { type = null; category = null }, label = { Text("全部") })
+                FilterChip(type == TxType.EXPENSE, { type = TxType.EXPENSE; category = null }, label = { Text("支出") })
+                FilterChip(type == TxType.INCOME, { type = TxType.INCOME; category = null }, label = { Text("收入") })
+                Spacer(Modifier.width(8.dp))
+                Period.entries.forEach { p -> FilterChip(period == p, { period = p }, label = { Text(p.label) }) }
+            }
+            ChipRow {
+                FilterChip(channel == null, { channel = null }, label = { Text("全部渠道") })
+                channels.forEach { c -> FilterChip(channel == c, { channel = if (channel == c) null else c }, label = { Text(c) }) }
+            }
+            ChipRow {
+                FilterChip(category == null, { category = null }, label = { Text("全部分类") })
+                categories.forEach { c -> FilterChip(category == c, { category = if (category == c) null else c }, label = { Text(CategoryStyle.label(c)) }) }
+            }
+            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(min, { min = it }, label = { Text("最少 ¥") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
+                Text("  —  ")
+                OutlinedTextField(max, { max = it }, label = { Text("最多 ¥") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
+            }
+            val ex = results.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
+            val inc = results.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
+            Text(
+                "共 ${results.size} 笔 · 支出 ¥${Money.format(ex)} · 收入 ¥${Money.format(inc)}" + if (results.size >= 500) "（只显示最近 500 笔）" else "",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            )
+            LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
+                item {
+                    if (results.isNotEmpty()) SoftCard(padding = 10.dp) {
+                        results.forEach { tx ->
+                            val d = localDate(tx.time)
+                            Text("${d.year}-${d.monthValue}-${d.dayOfMonth}", style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp, top = 6.dp))
+                            TxRow(tx) { editing = tx }
+                        }
+                    } else Text("没有符合条件的账", Modifier.padding(8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+    editing?.let { tx -> TxEditor(initial = tx, onDone = { editing = null }) }
+}
+
+@Composable
+private fun ChipRow(content: @Composable () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) { content() }
+}

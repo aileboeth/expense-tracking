@@ -32,6 +32,11 @@ class Prefs(ctx: Context) {
         get() = p.getStringSet("blacklistWords", emptySet())!!.toSet()
         set(v) = p.edit().putStringSet("blacklistWords", v).apply()
 
+    /** Monthly spending budget in cents; 0 = not set. */
+    var budgetCents: Long
+        get() = p.getLong("budgetCents", 0L)
+        set(v) = p.edit().putLong("budgetCents", v.coerceAtLeast(0)).apply()
+
     var autoUpdate: Boolean
         get() = p.getBoolean("autoUpdate", true)
         set(v) = p.edit().putBoolean("autoUpdate", v).apply()

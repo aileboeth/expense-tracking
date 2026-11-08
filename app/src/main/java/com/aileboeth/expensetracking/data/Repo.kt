@@ -9,6 +9,18 @@ import com.aileboeth.expensetracking.parse.TxType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+/** Search filter; null fields mean "any". */
+data class TxFilter(
+    val query: String = "",
+    val type: TxType? = null,
+    val channel: String? = null,
+    val category: String? = null,
+    val minCents: Long? = null,
+    val maxCents: Long? = null,
+    val start: Long? = null,
+    val end: Long? = null,
+)
+
 /** Local SQLite store. Calls are blocking: run them off the main thread (except tiny lookups). */
 object Repo {
     private lateinit var helper: Helper
@@ -17,16 +29,39 @@ object Repo {
     /** Bumped after every write; screens reload when it changes. */
     val version: StateFlow<Long> = _version
 
+    /** Called after every write (the widget listens). */
+    @Volatile var onChanged: (() -> Unit)? = null
+
     fun init(ctx: Context) {
         if (!::helper.isInitialized) helper = Helper(ctx.applicationContext)
     }
 
     private val db: SQLiteDatabase get() = helper.writableDatabase
-    private fun changed() { _version.value = _version.value + 1 }
+    private fun changed() {
+        _version.value = _version.value + 1
+        onChanged?.invoke()
+    }
 
     // ---- transactions -------------------------------------------------------------------
 
     fun insert(tx: Tx): Long = db.insert("tx", null, values(tx)).also { changed() }
+
+    /** Several inserts/updates in one transaction, one change notification. */
+    fun batch(block: Batch.() -> Unit) {
+        db.beginTransaction()
+        try {
+            Batch().block()
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        changed()
+    }
+
+    class Batch {
+        fun insert(tx: Tx): Long = db.insert("tx", null, values(tx))
+        fun update(tx: Tx) { db.update("tx", values(tx), "id=?", arrayOf(tx.id.toString())) }
+    }
 
     fun update(tx: Tx) {
         db.update("tx", values(tx), "id=?", arrayOf(tx.id.toString()))
@@ -42,18 +77,60 @@ object Repo {
         if (c.moveToFirst()) read(c) else null
     }
 
+    private fun list(where: String?, args: Array<String>?, order: String = "time DESC, id DESC"): List<Tx> =
+        db.query("tx", null, where, args, null, null, order).use { c -> buildList { while (c.moveToNext()) add(read(c)) } }
+
     /** Confirmed entries with start <= time < end, newest first. */
     fun listRange(start: Long, end: Long): List<Tx> =
-        db.query("tx", null, "status='OK' AND time>=? AND time<?", arrayOf(start.toString(), end.toString()),
-            null, null, "time DESC, id DESC").use { c -> buildList { while (c.moveToNext()) add(read(c)) } }
+        list("status='OK' AND time>=? AND time<?", arrayOf(start.toString(), end.toString()))
 
-    fun pending(): List<Tx> =
-        db.query("tx", null, "status='PENDING'", null, null, null, "time DESC, id DESC")
-            .use { c -> buildList { while (c.moveToNext()) add(read(c)) } }
+    /** Everything (confirmed and pending) in a time range, for reconciling an imported bill. */
+    fun listAll(start: Long, end: Long): List<Tx> =
+        list("time>=? AND time<?", arrayOf(start.toString(), end.toString()), "time ASC, id ASC")
 
-    fun all(): List<Tx> =
-        db.query("tx", null, null, null, null, null, "time ASC, id ASC")
-            .use { c -> buildList { while (c.moveToNext()) add(read(c)) } }
+    fun pending(): List<Tx> = list("status='PENDING'", null)
+
+    fun all(): List<Tx> = list(null, null, "time ASC, id ASC")
+
+    fun sum(type: TxType, start: Long, end: Long): Long =
+        db.rawQuery(
+            "SELECT COALESCE(SUM(amount),0) FROM tx WHERE status='OK' AND type=? AND time>=? AND time<?",
+            arrayOf(type.name, start.toString(), end.toString()),
+        ).use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }
+
+    fun refs(refs: Collection<String>): Set<String> {
+        if (refs.isEmpty()) return emptySet()
+        val found = HashSet<String>()
+        refs.chunked(400).forEach { chunk ->
+            val marks = chunk.joinToString(",") { "?" }
+            db.rawQuery("SELECT ref FROM tx WHERE ref IN ($marks)", chunk.toTypedArray()).use { c ->
+                while (c.moveToNext()) found.add(c.getString(0))
+            }
+        }
+        return found
+    }
+
+    fun search(f: TxFilter, limit: Int = 500): List<Tx> {
+        val where = mutableListOf("status='OK'")
+        val args = mutableListOf<String>()
+        if (f.query.isNotBlank()) {
+            where += "(note LIKE ? OR counterpart LIKE ? OR category LIKE ? OR raw LIKE ? OR channel LIKE ?)"
+            val like = "%" + f.query.trim().replace("%", "").replace("_", "") + "%"
+            repeat(5) { args += like }
+        }
+        f.type?.let { where += "type=?"; args += it.name }
+        f.channel?.let { where += "channel=?"; args += it }
+        f.category?.let { where += "category=?"; args += it }
+        f.minCents?.let { where += "amount>=?"; args += it.toString() }
+        f.maxCents?.let { where += "amount<=?"; args += it.toString() }
+        f.start?.let { where += "time>=?"; args += it.toString() }
+        f.end?.let { where += "time<?"; args += it.toString() }
+        return list(where.joinToString(" AND "), args.toTypedArray(), "time DESC, id DESC LIMIT $limit")
+    }
+
+    fun channels(): List<String> =
+        db.rawQuery("SELECT DISTINCT channel FROM tx WHERE channel<>'' ORDER BY channel", null)
+            .use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
 
     private fun values(tx: Tx) = ContentValues().apply {
         put("type", tx.type.name)
@@ -67,6 +144,7 @@ object Repo {
         put("source", tx.source)
         put("kind", tx.kind)
         put("raw", tx.raw)
+        put("ref", tx.ref)
     }
 
     private fun read(c: Cursor): Tx {
@@ -85,6 +163,7 @@ object Repo {
             source = s("source"),
             kind = s("kind"),
             raw = s("raw"),
+            ref = s("ref"),
         )
     }
 
@@ -137,7 +216,7 @@ object Repo {
         changed()
     }
 
-    private class Helper(ctx: Context) : SQLiteOpenHelper(ctx, "ledger.db", null, 1) {
+    private class Helper(ctx: Context) : SQLiteOpenHelper(ctx, "ledger.db", null, 2) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 """CREATE TABLE tx (
@@ -152,10 +231,12 @@ object Repo {
                     status TEXT NOT NULL,
                     source TEXT NOT NULL,
                     kind TEXT NOT NULL DEFAULT '',
-                    raw TEXT NOT NULL DEFAULT '')"""
+                    raw TEXT NOT NULL DEFAULT '',
+                    ref TEXT NOT NULL DEFAULT '')"""
             )
             db.execSQL("CREATE INDEX tx_time ON tx(time)")
             db.execSQL("CREATE INDEX tx_status ON tx(status)")
+            db.execSQL("CREATE INDEX tx_ref ON tx(ref)")
             db.execSQL("CREATE TABLE seen (sig TEXT PRIMARY KEY, time INTEGER NOT NULL)")
             db.execSQL("CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, time INTEGER, pkg TEXT, title TEXT, text TEXT, result TEXT)")
             db.execSQL("CREATE TABLE category (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, type TEXT NOT NULL, sort INTEGER NOT NULL, UNIQUE(name, type))")
@@ -167,7 +248,13 @@ object Repo {
             db.insert("category", null, ContentValues().apply { put("name", name); put("type", type.name); put("sort", sort) })
         }
 
-        override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+        override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+            if (oldVersion < 2) {
+                // 0.1.1: order number of an imported bill line, so the same bill is not imported twice.
+                db.execSQL("ALTER TABLE tx ADD COLUMN ref TEXT NOT NULL DEFAULT ''")
+                db.execSQL("CREATE INDEX IF NOT EXISTS tx_ref ON tx(ref)")
+            }
+        }
     }
 
     val DEFAULT_EXPENSE = listOf("餐饮", "零食饮料", "交通", "购物", "日用", "娱乐", "生活缴费", "通讯", "学习", "医疗", "人情", "其他")

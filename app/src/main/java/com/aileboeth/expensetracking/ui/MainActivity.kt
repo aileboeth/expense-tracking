@@ -1,5 +1,7 @@
 package com.aileboeth.expensetracking.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,8 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -25,43 +27,78 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.aileboeth.expensetracking.update.Updater
+import com.aileboeth.expensetracking.widget.Widgets
 
 class MainActivity : ComponentActivity() {
+    /** Set when opened from the widget's "+ 记一笔". */
+    private val addRequest = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { AppTheme { AppRoot() } }
+        handle(intent)
+        setContent { AppTheme { AppRoot(addRequest) } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handle(intent)
+    }
+
+    private fun handle(intent: Intent?) {
+        if (intent?.action == Widgets.ACTION_ADD) addRequest.value = true
     }
 }
 
+private sealed interface Overlay {
+    data object Search : Overlay
+    data class Import(val uri: Uri) : Overlay
+}
+
 @Composable
-private fun AppRoot() {
+private fun AppRoot(addRequest: MutableState<Boolean>) {
     val ctx = LocalContext.current
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    var overlay by remember { mutableStateOf<Overlay?>(null) }
     LaunchedEffect(Unit) { Updater.autoCheck(ctx) }
+    LaunchedEffect(addRequest.value) { if (addRequest.value) { overlay = null; tab = 0 } }
 
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(tab == 0, { tab = 0 }, icon = { Icon(Icons.Filled.Home, null) }, label = { Text("账单") })
-                NavigationBarItem(tab == 1, { tab = 1 }, icon = { Icon(Icons.Filled.Info, null) }, label = { Text("统计") })
-                NavigationBarItem(tab == 2, { tab = 2 }, icon = { Icon(Icons.Filled.Settings, null) }, label = { Text("设置") })
+    when (val o = overlay) {
+        Overlay.Search -> SearchScreen(onBack = { overlay = null })
+        is Overlay.Import -> ImportScreen(o.uri, onBack = { overlay = null })
+        null -> Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            bottomBar = {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                    NavigationBarItem(tab == 0, { tab = 0 }, icon = { Icon(Icons.Filled.Home, null) }, label = { Text("账单") })
+                    NavigationBarItem(tab == 1, { tab = 1 }, icon = { Icon(Icons.Filled.DateRange, null) }, label = { Text("统计") })
+                    NavigationBarItem(tab == 2, { tab = 2 }, icon = { Icon(Icons.Filled.Settings, null) }, label = { Text("设置") })
+                }
+            },
+        ) { padding ->
+            when (tab) {
+                0 -> HomeScreen(
+                    padding,
+                    openSettings = { tab = 2 },
+                    openSearch = { overlay = Overlay.Search },
+                    addRequested = addRequest.value,
+                    onAddHandled = { addRequest.value = false },
+                )
+                1 -> StatsScreen(padding)
+                else -> SettingsScreen(padding, onImport = { overlay = Overlay.Import(it) })
             }
-        },
-    ) { padding ->
-        when (tab) {
-            0 -> HomeScreen(padding, openSettings = { tab = 2 })
-            1 -> StatsScreen(padding)
-            else -> SettingsScreen(padding)
         }
     }
     UpdateDialog()

@@ -1,96 +1,274 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.aileboeth.expensetracking.data.CategoryStyle
 import com.aileboeth.expensetracking.data.Money
 import com.aileboeth.expensetracking.data.Repo
 import com.aileboeth.expensetracking.data.Tx
 import com.aileboeth.expensetracking.parse.TxType
+import java.time.LocalDate
 import java.time.YearMonth
+
+@Composable
+fun MonthBar(month: YearMonth, onChange: (YearMonth) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        IconButton({ onChange(month.minusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "上个月") }
+        Text("${month.year}年${month.monthValue}月", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        IconButton({ onChange(month.plusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "下个月") }
+        Spacer(Modifier.weight(1f))
+        if (month != YearMonth.now()) TextButton({ onChange(YearMonth.now()) }) { Text("回到本月") }
+    }
+}
+
+private fun change(cur: Long, prev: Long): String = when {
+    prev == 0L && cur == 0L -> ""
+    prev == 0L -> "新增"
+    else -> {
+        val pct = (cur - prev) * 100 / prev
+        if (pct >= 0) "▲$pct%" else "▼${-pct}%"
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen(padding: PaddingValues) {
     var month by remember { mutableStateOf(YearMonth.now()) }
     var type by remember { mutableStateOf(TxType.EXPENSE) }
-    val range = monthRange(month)
-    val txs = repoQuery(month, initial = emptyList<Tx>()) { Repo.listRange(range.first, range.second) }
+    var selectedDay by remember(month) { mutableStateOf<Int?>(null) }
+    var span by remember { mutableIntStateOf(6) }
+    var trendSel by remember(span, month) { mutableStateOf<Int?>(null) }
+    var editing by remember { mutableStateOf<Tx?>(null) }
 
+    val range = monthRange(month)
+    val prevMonth = month.minusMonths(1)
+    val prevRange = monthRange(prevMonth)
+    val txs = repoQuery(month, initial = emptyList<Tx>()) { Repo.listRange(range.first, range.second) }
+    val prevTxs = repoQuery(month, initial = emptyList<Tx>()) { Repo.listRange(prevRange.first, prevRange.second) }
+    val trendFirst = month.minusMonths((span - 1).toLong())
+    val trendTxs = repoQuery(month, span, initial = emptyList<Tx>()) { Repo.listRange(monthRange(trendFirst).first, range.second) }
+
+    val color = if (type == TxType.EXPENSE) ExpenseRed else IncomeGreen
     val picked = txs.filter { it.type == type }
     val total = picked.sumOf { it.amountCents ?: 0 }
+    val cur = remember(txs, type, month) { dailyTotals(txs, month, type) }
+    val prev = remember(prevTxs, type, month) { dailyTotals(prevTxs, prevMonth, type).map { it ?: 0L } }
+    val elapsed = cur.count { it != null }
+    val prevSame = prev.take(elapsed).sum()
+
     val groups = picked.groupBy { it.category.ifEmpty { "未分类" } }
         .map { (name, list) -> Triple(name, list.sumOf { it.amountCents ?: 0 }, list.size) }
         .sortedByDescending { it.second }
-    val color = if (type == TxType.EXPENSE) ExpenseRed else IncomeGreen
-    val daysInMonth = if (month == YearMonth.now()) java.time.LocalDate.now().dayOfMonth else month.lengthOfMonth()
+    val prevGroups = prevTxs.filter { it.type == type }.groupBy { it.category.ifEmpty { "未分类" } }
+        .mapValues { (_, l) -> l.sumOf { it.amountCents ?: 0 } }
+    val heat = picked.groupBy { localDate(it.time).dayOfMonth }.mapValues { (_, l) -> l.sumOf { it.amountCents ?: 0 } }
 
     LazyColumn(
         Modifier.fillMaxSize().padding(padding),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { MonthBar(month) { month = it } }
         item {
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 SegmentedButton(type == TxType.EXPENSE, { type = TxType.EXPENSE }, SegmentedButtonDefaults.itemShape(0, 2)) { Text("支出") }
                 SegmentedButton(type == TxType.INCOME, { type = TxType.INCOME }, SegmentedButtonDefaults.itemShape(1, 2)) { Text("收入") }
             }
         }
+
+        // 1. daily line
         item {
-            Column(Modifier.padding(vertical = 8.dp)) {
-                Text(if (type == TxType.EXPENSE) "本月支出" else "本月收入", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("¥" + Money.format(total), style = MaterialTheme.typography.headlineMedium, color = color, fontWeight = FontWeight.SemiBold)
+            SoftCard {
+                SectionTitle("每日走势")
+                Text("¥" + Money.format(total), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = color)
+                val diff = total - prevSame
+                val word = if (type == TxType.EXPENSE) "花" else "收"
                 Text(
-                    "${picked.size} 笔 · 日均 ¥" + Money.format(if (daysInMonth > 0) total / daysInMonth else 0),
+                    when {
+                        elapsed == 0 -> "这个月还没开始"
+                        prevSame == 0L -> "上月同期没有记录"
+                        diff >= 0 -> "比上月同期多$word ¥${Money.format(diff)}（${change(total, prevSame)}）"
+                        else -> "比上月同期少$word ¥${Money.format(-diff)}（${change(total, prevSame)}）"
+                    } + if (elapsed > 0) " · 日均 ¥${Money.format(total / elapsed)}" else "",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.height(8.dp))
+                DailyLineChart(cur, prev, color, selectedDay?.minus(1), { selectedDay = it + 1 })
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Legend(color, "本月")
+                    Spacer(Modifier.width(16.dp))
+                    Legend(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), "上月（虚线）")
+                    Spacer(Modifier.weight(1f))
+                    Text("点图或左右滑动看某一天", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
-        if (groups.isEmpty()) item {
-            Text("没有记录", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 24.dp))
+
+        // 2. calendar
+        item {
+            SoftCard {
+                SectionTitle(if (type == TxType.EXPENSE) "消费日历" else "收入日历")
+                Spacer(Modifier.height(8.dp))
+                CalendarHeatmap(month, heat, color, selectedDay) { selectedDay = if (selectedDay == it) null else it }
+            }
         }
-        for ((name, cents, count) in groups) {
-            item(key = name) {
-                val share = if (total > 0) cents.toFloat() / total else 0f
-                Column(Modifier.padding(vertical = 8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(name, modifier = Modifier.weight(1f))
-                        Text("¥${Money.format(cents)}", fontWeight = FontWeight.SemiBold)
+
+        // 3. the picked day
+        selectedDay?.let { day ->
+            val list = txs.filter { localDate(it.time).dayOfMonth == day }
+            item {
+                SoftCard(padding = 12.dp) {
+                    val d = month.atDay(day)
+                    val ex = list.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
+                    val inc = list.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
+                    Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("${d.monthValue}月${d.dayOfMonth}日", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        Text("支 ${Money.format(ex)}  收 ${Money.format(inc)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    LinearProgressIndicator(
-                        progress = { share },
-                        color = color,
-                        strokeCap = StrokeCap.Round,
-                        modifier = Modifier.fillMaxWidth().height(8.dp).padding(top = 4.dp),
-                    )
+                    if (list.isEmpty()) Text("这天没有记录", Modifier.padding(4.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    list.forEach { TxRow(it) { editing = it } }
+                }
+            }
+        }
+
+        // 4. categories
+        item {
+            SoftCard {
+                SectionTitle("分类")
+                if (groups.isEmpty()) {
+                    Text("没有记录", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
+                } else {
+                    Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                        DonutChart(
+                            groups.map { it.second to Color(CategoryStyle.of(it.first).color) },
+                            if (type == TxType.EXPENSE) "总支出" else "总收入",
+                            "¥" + shortYuan(total),
+                        )
+                    }
+                    groups.forEach { (name, cents, count) ->
+                        val share = if (total > 0) cents.toFloat() / total else 0f
+                        val ch = change(cents, prevGroups[name] ?: 0L)
+                        val up = ch.startsWith("▲") || ch == "新增"
+                        val chColor = when {
+                            ch.isEmpty() -> Color.Unspecified
+                            (type == TxType.EXPENSE) == up -> ExpenseRed
+                            else -> IncomeGreen
+                        }
+                        Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            CategoryBadge(name, 36)
+                            Spacer(Modifier.width(10.dp))
+                            Column(Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(name, fontWeight = FontWeight.Medium)
+                                    Text("  %.1f%% · %d 笔".format(share * 100, count), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(Modifier.weight(1f))
+                                    Text("¥${Money.format(cents)}", fontWeight = FontWeight.SemiBold)
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    LinearProgressIndicator(
+                                        progress = { share },
+                                        color = Color(CategoryStyle.of(name).color),
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        strokeCap = StrokeCap.Round,
+                                        gapSize = 0.dp,
+                                        drawStopIndicator = {},
+                                        modifier = Modifier.weight(1f).height(6.dp),
+                                    )
+                                    if (ch.isNotEmpty()) Text("  比上月 $ch", style = MaterialTheme.typography.labelSmall, color = chColor)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. months trend
+        item {
+            val months = (0 until span).map { trendFirst.plusMonths(it.toLong()) }
+            val exp = months.map { m -> trendTxs.filter { it.type == TxType.EXPENSE && sameMonth(it, m) }.sumOf { it.amountCents ?: 0 } }
+            val inc = months.map { m -> trendTxs.filter { it.type == TxType.INCOME && sameMonth(it, m) }.sumOf { it.amountCents ?: 0 } }
+            SoftCard {
+                SectionTitle("近 $span 个月") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FilterChip(span == 6, { span = 6 }, label = { Text("6 个月") })
+                        FilterChip(span == 12, { span = 12 }, label = { Text("12 个月") })
+                    }
+                }
+                TrendChart(months.map { "${it.monthValue}月" }, exp, inc, trendSel, { trendSel = it })
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Legend(ExpenseRed, "支出")
+                    Spacer(Modifier.width(16.dp))
+                    Legend(IncomeGreen, "收入")
+                }
+                Spacer(Modifier.height(8.dp))
+                val active = months.indices.filter { exp[it] > 0 || inc[it] > 0 }
+                if (active.isNotEmpty()) {
+                    val avgE = active.sumOf { exp[it] } / active.size
+                    val avgI = active.sumOf { inc[it] } / active.size
+                    val most = active.maxBy { exp[it] }
                     Text(
-                        "%.1f%% · %d 笔".format(share * 100, count),
+                        "月均支出 ¥${Money.format(avgE)} · 月均收入 ¥${Money.format(avgI)}\n花得最多：${months[most].monthValue}月 ¥${Money.format(exp[most])}",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
         }
+    }
+
+    editing?.let { tx -> TxEditor(initial = tx, onDone = { editing = null }) }
+}
+
+private fun sameMonth(t: Tx, m: YearMonth): Boolean {
+    val d: LocalDate = localDate(t.time)
+    return d.year == m.year && d.monthValue == m.monthValue
+}
+
+@Composable
+private fun Legend(color: Color, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(10.dp).background(color, CircleShape))
+        Spacer(Modifier.width(6.dp))
+        Text(text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

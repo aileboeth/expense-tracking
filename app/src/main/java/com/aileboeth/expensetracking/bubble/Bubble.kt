@@ -25,6 +25,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.aileboeth.expensetracking.data.CategoryStyle
 import com.aileboeth.expensetracking.data.Kinds
 import com.aileboeth.expensetracking.data.Money
 import com.aileboeth.expensetracking.data.Prefs
@@ -35,6 +36,8 @@ import com.aileboeth.expensetracking.parse.TxType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.time.YearMonth
+import java.time.ZoneId
 import kotlin.math.abs
 
 /**
@@ -145,15 +148,36 @@ object Bubble {
             head.type == TxType.EXPENSE -> EXPENSE_COLOR
             else -> INCOME_COLOR
         }
+        val ring = budgetRing()
         v.background = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
             setColor(color)
-            setStroke(dp(2f), Color.WHITE)
+            setStroke(dp(if (ring == Color.WHITE) 2f else 3.5f), ring)
         }
         val label = if (head.amountCents == null) "?" else shortAmount(head)
         v.text = if (items.size > 1) "$label\n${items.size}笔" else label
         v.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (label.length > 5) 11f else 13f)
         v.contentDescription = "记账：${Money.signed(head)}，$waiting 笔待补"
+    }
+
+    /** White normally; amber from 80% of the monthly budget, red once it is used up. */
+    private fun budgetRing(): Int {
+        val (spent, budget) = budgetState() ?: return Color.WHITE
+        return when {
+            spent >= budget -> 0xFFFF3B30.toInt()
+            spent * 5 >= budget * 4 -> 0xFFFFC107.toInt()
+            else -> Color.WHITE
+        }
+    }
+
+    private fun budgetState(): Pair<Long, Long>? {
+        val budget = Prefs(appCtx!!).budgetCents
+        if (budget <= 0) return null
+        val zone = ZoneId.systemDefault()
+        val m = YearMonth.now()
+        val start = m.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val end = m.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        return Repo.sum(TxType.EXPENSE, start, end) to budget
     }
 
     private fun shortAmount(tx: Tx): String {
@@ -276,6 +300,14 @@ object Bubble {
             text = detail; setTextColor(MUTED); textSize = 12f; maxLines = 2
         })
 
+        budgetState()?.let { (spent, budget) ->
+            val left = budget - spent
+            root.addView(TextView(ctx).apply {
+                text = if (left >= 0) "本月预算还剩 ¥${Money.format(left)}" else "本月已超预算 ¥${Money.format(-left)}"
+                setTextColor(if (left >= 0) MUTED else EXPENSE_COLOR); textSize = 12f
+            })
+        }
+
         // amount + type
         val amount = EditText(ctx).apply {
             hint = if (tx.amountCents == null) "这笔多少钱？" else "金额"
@@ -292,7 +324,7 @@ object Bubble {
         fun renderChips() {
             chips.removeAllViews()
             for (name in Repo.categories(type)) {
-                val chip = pill(ctx, name)
+                val chip = pill(ctx, CategoryStyle.label(name))
                 styleSelected(chip, name == category)
                 chip.setOnClickListener {
                     category = if (category == name) "" else name

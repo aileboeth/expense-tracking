@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.aileboeth.expensetracking.bubble.Bubble
+import com.aileboeth.expensetracking.data.CategoryStyle
 import com.aileboeth.expensetracking.data.Kinds
 import com.aileboeth.expensetracking.data.Money
 import com.aileboeth.expensetracking.data.Repo
@@ -130,7 +131,7 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                         FilterChip(
                             selected = c == category,
                             onClick = { category = if (category == c) "" else c },
-                            label = { Text(c) },
+                            label = { Text(CategoryStyle.label(c)) },
                         )
                     }
                 }

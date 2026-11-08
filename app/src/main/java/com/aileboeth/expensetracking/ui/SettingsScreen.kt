@@ -3,6 +3,10 @@ package com.aileboeth.expensetracking.ui
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.aileboeth.expensetracking.data.Money
+import com.aileboeth.expensetracking.widget.Widgets
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -59,7 +63,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun SettingsScreen(padding: PaddingValues) {
+fun SettingsScreen(padding: PaddingValues, onImport: (android.net.Uri) -> Unit) {
     val ctx = LocalContext.current
     val prefs = remember { Prefs(ctx) }
     val scope = rememberCoroutineScope()
@@ -76,19 +80,20 @@ fun SettingsScreen(padding: PaddingValues) {
     var autoUpdate by remember { mutableStateOf(prefs.autoUpdate) }
     var dialog by remember { mutableStateOf("") }
     val (versionName, _) = remember { Updater.currentVersion(ctx) }
+    val pickBill = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) onImport(uri) }
 
-    LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(vertical = 8.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)) {
         item { Section("自动记账") }
-        item {
+        item { SoftCard(padding = 4.dp) {
             PermRow("通知使用权", "读取微信、支付宝的付款通知（必需）", listener) { Perms.openListener(ctx) }
             PermRow("悬浮窗", "付款后在屏幕边上显示小圆球", overlay) { Perms.openOverlay(ctx) }
             PermRow("忽略电池优化", "减少后台被系统停掉", battery) { Perms.openBattery(ctx) }
             Row2("后台耗电 / 自启动", "vivo：应用详情里允许「后台高耗电」和「自启动」，监听才稳定") { Perms.openAppDetails(ctx) }
             Hint("如果「通知使用权」开不了（提示受限设置）：应用详情 → 右上角 ⋮ → 允许受限设置，再回来开。")
-        }
+        } }
 
         item { Section("悬浮球") }
-        item {
+        item { SoftCard(padding = 4.dp) {
             SwitchRow("付款后显示悬浮球", "小圆球，不挡你正在用的 App，点开能写用途", bubbleOn) {
                 bubbleOn = it; prefs.bubbleEnabled = it
             }
@@ -97,7 +102,7 @@ fun SettingsScreen(padding: PaddingValues) {
                 Slider(
                     value = seconds, onValueChange = { seconds = it },
                     onValueChangeFinished = { prefs.bubbleSeconds = seconds.toInt() },
-                    valueRange = 2f..30f, steps = 27,
+                    valueRange = 2f..30f,
                 )
             }
             Row2("显示待补金额的悬浮球", "把还没填金额的账再弹出来") {
@@ -107,20 +112,22 @@ fun SettingsScreen(padding: PaddingValues) {
                     if (n == 0) Toast.makeText(ctx, "没有待补的账", Toast.LENGTH_SHORT).show() else Bubble.showPending(ctx)
                 }
             }
-        }
+        } }
 
         item { Section("识别") }
-        item {
+        item { SoftCard(padding = 4.dp) {
             Row2("黑名单 App", "${prefs.blacklistApps.size} 个 · 这些 App 的通知不会记账") { dialog = "apps" }
             Row2("黑名单关键词", "${prefs.blacklistWords.size} 个 · 付款方/商户/内容含这些词就不记（如「多点科技」）") { dialog = "words" }
             SwitchRow("也识别其他 App 的收支通知", "默认只认微信、支付宝；打开后其他 App 的金额通知也会弹出来，要你确认才记", otherApps) {
                 otherApps = it; prefs.otherApps = it
             }
             Row2("识别记录", "最近收到的付款类通知，以及记了还是没记、为什么") { dialog = "log" }
-        }
+        } }
 
         item { Section("分类和数据") }
-        item {
+        item { SoftCard(padding = 4.dp) {
+            Row2("月预算", if (prefs.budgetCents > 0) "每月 ¥${Money.format(prefs.budgetCents)}" else "未设置 · 首页会显示还能花多少") { dialog = "budget" }
+            Row2("导入微信/支付宝账单对账", "选导出的 .xlsx / .csv：找出漏记的，补上手表付款的金额") { pickBill.launch(arrayOf("*/*")) }
             Row2("管理分类", "增加或删除支出、收入的分类") { dialog = "cats" }
             Row2("导出 CSV", "全部账单导出到 下载/记账/，可用 Excel / WPS 打开") {
                 scope.launch {
@@ -128,17 +135,17 @@ fun SettingsScreen(padding: PaddingValues) {
                     Toast.makeText(ctx, msg.fold({ "已导出到 $it" }, { "导出失败：${it.message}" }), Toast.LENGTH_LONG).show()
                 }
             }
-        }
+        } }
 
         item { Section("更新") }
-        item {
+        item { SoftCard(padding = 4.dp) {
             Row2("检查更新", "当前版本 $versionName") { Updater.check(ctx, manual = true) }
             SwitchRow("自动检查更新", "打开 App 时检查（最多 12 小时一次）", autoUpdate) {
                 autoUpdate = it; prefs.autoUpdate = it
             }
             Row2("下载加速前缀", prefs.mirrorPrefix.ifBlank { "不使用（直连 GitHub）" }) { dialog = "mirror" }
             Hint("更新从 github.com/${Updater.REPO} 的最新 Release 下载。账单数据只存在手机里，不会上传。")
-        }
+        } }
     }
 
     when (dialog) {
@@ -147,6 +154,7 @@ fun SettingsScreen(padding: PaddingValues) {
         "log" -> LogDialog { dialog = "" }
         "cats" -> CategoriesDialog { dialog = "" }
         "mirror" -> MirrorDialog(prefs) { dialog = "" }
+        "budget" -> BudgetDialog(prefs) { dialog = ""; Widgets.scheduleUpdate(ctx) }
     }
 }
 
@@ -154,7 +162,7 @@ fun SettingsScreen(padding: PaddingValues) {
 private fun Section(title: String) {
     Text(
         title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 4.dp),
+        modifier = Modifier.padding(start = 8.dp, top = 20.dp, bottom = 6.dp),
     )
 }
 

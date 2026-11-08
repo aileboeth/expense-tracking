@@ -24,6 +24,8 @@ data class Tx(
     val kind: String = "",
     /** The notification text it came from. */
     val raw: String = "",
+    /** Order number from an imported bill (empty otherwise); stops importing the same line twice. */
+    val ref: String = "",
 )
 
 data class LogEntry(val id: Long, val time: Long, val pkg: String, val title: String, val text: String, val result: String)
@@ -60,6 +62,8 @@ object Kinds {
         "alipay_transfer_in" -> "支付宝转账到账"
         "alipay_received", "alipay_received_no_amount", "alipay_income" -> "支付宝收款"
         "generic" -> "其他 App"
+        "wechat_bill" -> "微信账单导入"
+        "alipay_bill" -> "支付宝账单导入"
         "" -> "手动"
         else -> kind
     }

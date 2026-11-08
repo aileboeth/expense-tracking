@@ -1,4 +1,4 @@
-﻿import java.util.Properties
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -6,7 +6,7 @@ plugins {
 }
 
 // Version: bump the last number for each release (0.1.0 -> 0.1.1).
-val appVersion = "0.1.0"
+val appVersion = "0.1.1"
 val appVersionCode = appVersion.split(".").map { it.toInt() }.let { (a, b, c) -> a * 10000 + b * 100 + c }
 
 // Release key lives OUTSIDE the repository (../keys). Without it, release builds use the debug key.
@@ -64,6 +64,25 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all {
+                // Screenshot tests (Robolectric + Roborazzi) only run with -Pscreenshots=true.
+                it.systemProperty("screenshots", project.findProperty("screenshots") ?: "false")
+                it.systemProperty("robolectric.dependency.repo.url", "https://maven.aliyun.com/repository/central")
+                it.systemProperty("robolectric.dependency.repo.id", "aliyun")
+                it.systemProperty("roborazzi.test.record", project.findProperty("screenshots") ?: "false")
+                it.maxHeapSize = "2g"
+                // Robolectric needs JDK <= 21: pass -PtestJavaHome=<jdk17/21 home> when Gradle runs on a newer JDK.
+                (project.findProperty("testJavaHome") as String?)?.let { home ->
+                    val exe = if (System.getProperty("os.name").startsWith("Windows")) "java.exe" else "java"
+                    it.executable = File(home, "bin/$exe").absolutePath
+                }
+            }
+        }
+    }
 }
 
 dependencies {
@@ -78,4 +97,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.78.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.78.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.test.ext:junit:1.3.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
