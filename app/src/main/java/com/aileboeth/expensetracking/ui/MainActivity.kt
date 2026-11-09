@@ -90,6 +90,7 @@ private sealed interface Overlay {
     data object Categories : Overlay
     data object UsualAmounts : Overlay
     data object Rules : Overlay
+    data object Stability : Overlay
     data class Import(val uri: Uri) : Overlay
 }
 
@@ -115,6 +116,7 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
         Overlay.Categories -> CategoriesScreen(onBack = { overlay = null })
         Overlay.UsualAmounts -> UsualAmountsScreen(onBack = { overlay = null })
         Overlay.Rules -> CategoryRulesScreen(onBack = { overlay = null })
+        Overlay.Stability -> StabilityScreen(onBack = { overlay = null })
         is Overlay.Import -> ImportScreen(o.uri, onBack = { overlay = null })
         null -> Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -143,6 +145,7 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
                     openLog = { overlay = Overlay.Log },
                     openCategories = { overlay = Overlay.Categories },
                     openRules = { overlay = Overlay.Rules },
+                    openStability = { overlay = Overlay.Stability },
                     openUsual = { overlay = Overlay.UsualAmounts },
                     listState = settingsList,
                 )

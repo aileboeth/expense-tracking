@@ -46,7 +46,11 @@ class CaptureService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        if (sbn == null || sbn.packageName == packageName) return
+        if (sbn == null) return
+        if (sbn.packageName == packageName) {
+            if (sbn.notification.extras.getBoolean(SelfTest.EXTRA)) SelfTest.lastSeen = System.currentTimeMillis()
+            return
+        }
         if ((sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return
         try {
             Ingest.post(this, toInput(sbn))

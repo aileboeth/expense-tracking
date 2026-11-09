@@ -199,6 +199,15 @@ class ScreenshotTest {
         compose.onRoot().captureRoboImage("build/screens/2c-stats-insights.png")
     }
 
+    @Config(qualifiers = "w393dp-h1700dp-xxhdpi")
+    @Test fun stability() {
+        org.robolectric.shadows.ShadowBuild.setManufacturer("Xiaomi")
+        org.robolectric.shadows.ShadowBuild.setModel("Redmi K70")
+        compose.setContent { AppTheme { StabilityScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/12-stability.png")
+    }
+
     @Config(qualifiers = "w393dp-h1900dp-xxhdpi")
     @Test fun settingsFull() {
         compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp), onImport = {}) } }

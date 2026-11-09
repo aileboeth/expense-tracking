@@ -98,6 +98,7 @@ fun SettingsScreen(
     openLog: () -> Unit = {},
     openCategories: () -> Unit = {},
     openRules: () -> Unit = {},
+    openStability: () -> Unit = {},
     openUsual: () -> Unit = {},
     listState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
@@ -122,6 +123,7 @@ fun SettingsScreen(
     val budget = remember(dialog, tick) { prefs.budgetCents }
     val mirror = remember(dialog, tick) { prefs.mirrorPrefix }
     val (versionName, _) = remember { Updater.currentVersion(ctx) }
+    val brand = remember { com.aileboeth.expensetracking.capture.Brands.current() }
     val pickBill = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) onImport(uri) }
 
     LazyColumn(Modifier.fillMaxSize().padding(padding), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)) {
@@ -133,7 +135,7 @@ fun SettingsScreen(
                 { SettingRow(Icons.Filled.Notifications, Tint.Purple, "通知使用权", "读取微信、支付宝的付款通知（必需）", { StatusPill(listener) }) { Perms.openListener(ctx) } },
                 { SettingRow(Icons.Filled.PictureInPictureAlt, Tint.Blue, "悬浮窗", "付款后在屏幕边上显示记账胶囊", { StatusPill(overlay) }) { Perms.openOverlay(ctx) } },
                 { SettingRow(Icons.Filled.BatteryChargingFull, Tint.Green, "忽略电池优化", "减少后台被系统停掉", { StatusPill(battery) }) { Perms.openBattery(ctx) } },
-                { SettingRow(Icons.Filled.Bolt, Tint.Orange, "后台耗电 / 自启动", "vivo：应用详情里允许「后台高耗电」和「自启动」") { Perms.openAppDetails(ctx) } },
+                { SettingRow(Icons.Filled.Bolt, Tint.Orange, "自检和后台设置", "${brand.brand}：自启动、后台运行；发条测试通知看能不能收到", onClick = openStability) },
                 {
                     SettingRow(Icons.Filled.Sync, Tint.Teal, "重新连接通知监听", "发现漏记时点一下；App 更新后打开一次也会自动重连", { }) {
                         ListenerKeeper.force(ctx); Toast.makeText(ctx, "已重新连接", Toast.LENGTH_SHORT).show()
