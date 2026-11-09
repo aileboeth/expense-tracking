@@ -11,5 +11,7 @@ class App : Application() {
         Repo.init(this)
         Repo.onChanged = { Widgets.scheduleUpdate(this) }
         ListenerKeeper.ensure(this)
+        // Receipt files left behind by an editor that was closed by the system before saving.
+        Thread { runCatching { Repo.cleanOrphanAttachments(System.currentTimeMillis() - 24L * 3600 * 1000) } }.start()
     }
 }

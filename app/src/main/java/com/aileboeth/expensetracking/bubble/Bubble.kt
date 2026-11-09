@@ -31,6 +31,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.aileboeth.expensetracking.R
+import com.aileboeth.expensetracking.data.Categorizer
 import com.aileboeth.expensetracking.data.CategoryStyle
 import com.aileboeth.expensetracking.data.Kinds
 import com.aileboeth.expensetracking.data.Money
@@ -368,7 +369,48 @@ object Bubble {
         val note = noteField(ctx, t.note)
         val cats = categoryRow(ctx, type) { cat -> save(t.copy(type = type), cat, note.text.toString()) }
         sheet.addView(cats, spaced())
-        sheet.addView(noteRow(ctx, note, saveButton(ctx) { save(t.copy(type = type), t.category.ifBlank { OTHER }, note.text.toString()) }), spaced())
+        noteHelpers(ctx, sheet, note, { type }, t.counterpart, defaultHint = null) { guess ->
+            sheet.addView(noteRow(ctx, note, saveButton(ctx) {
+                // A note the app recognises beats the payer-based first guess; otherwise keep what the entry has.
+                val cat = guess() ?: t.category.takeUnless { c -> c.isBlank() || c == OTHER } ?: OTHER
+                save(t.copy(type = type), cat, note.text.toString())
+            }), spaced(8f))
+        }
+    }
+
+    /**
+     * Recent notes as chips (tap = fill the note), the note row added by [addNoteRow], and a hint
+     * under it saying which category 保存 will use. Returns the note-based guess for the save button.
+     */
+    private fun noteHelpers(
+        ctx: Context, sheet: LinearLayout, note: EditText, type: () -> TxType, counterpart: String,
+        defaultHint: String?, addNoteRow: (() -> String?) -> Unit,
+    ) {
+        fun guess(): String? = note.text.toString().trim().takeIf { it.isNotEmpty() }?.let { Categorizer.fromNote(type(), it, counterpart) }
+        val notes = Repo.recentNotes(type(), System.currentTimeMillis() - 90L * 24 * 3600 * 1000, 8)
+        if (notes.isNotEmpty()) {
+            val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
+            for (n in notes) {
+                row.addView(chip(ctx, n) { note.setText(n); note.setSelection(n.length) })
+                row.addView(View(ctx), LinearLayout.LayoutParams(dp(6f), 1))
+            }
+            sheet.addView(HorizontalScrollView(ctx).apply { isHorizontalScrollBarEnabled = false; addView(row) }, spaced())
+        }
+        addNoteRow(::guess)
+        val hint = TextView(ctx).apply { textSize = 11f; setTextColor(MUTED) }
+        fun paint() {
+            val g = guess()
+            hint.text = if (g != null) "点保存按备注记到「$g」" else defaultHint.orEmpty()
+            hint.setTextColor(if (g != null) BRAND else MUTED)
+            hint.visibility = if (hint.text.isNullOrEmpty()) View.GONE else View.VISIBLE
+        }
+        note.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) = paint()
+        })
+        paint()
+        sheet.addView(hint, spaced(8f))
     }
 
     /** Bottom card: usual amounts (or type one), categories, note + 保存. */
@@ -444,13 +486,11 @@ object Bubble {
             save(t.copy(amountCents = cents), cat, note.text.toString())
         }
         sheet.addView(categoryRow(ctx, t.type) { cat -> commit(cat) }, spaced())
-        save.setOnClickListener { commit(OTHER) }
-        save.isEnabled = false; save.alpha = 0.4f
-        sheet.addView(noteRow(ctx, note, save), spaced())
-        sheet.addView(TextView(ctx).apply {
-            text = "点分类直接记好；不选分类点保存，记到「其他」"
-            textSize = 11f; setTextColor(MUTED)
-        }, spaced(8f))
+        noteHelpers(ctx, sheet, note, { t.type }, t.counterpart, defaultHint = "点分类直接记好；不选分类点保存，记到「其他」") { guess ->
+            save.setOnClickListener { commit(guess() ?: t.category.takeUnless { it.isBlank() || it == OTHER } ?: OTHER) }
+            save.isEnabled = false; save.alpha = 0.4f
+            sheet.addView(noteRow(ctx, note, save), spaced(8f))
+        }
         paintChips()
         // Nothing to pick from yet: go straight to typing.
         if (usual.isEmpty()) amount.postDelayed({ amount.requestFocus(); showKeyboard(amount) }, 250)

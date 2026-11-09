@@ -42,7 +42,18 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.ui.draw.clip
 import com.aileboeth.expensetracking.data.CategoryStyle
+import com.aileboeth.expensetracking.data.InsightCalc
+import com.aileboeth.expensetracking.data.Insights
 import com.aileboeth.expensetracking.data.Money
 import com.aileboeth.expensetracking.data.Repo
 import com.aileboeth.expensetracking.data.Tx
@@ -96,9 +107,12 @@ fun StatsScreen(padding: PaddingValues) {
     val elapsed = cur.count { it != null }
     val prevSame = prev.take(elapsed).sum()
 
-    val groups = picked.groupBy { it.category.ifEmpty { "未分类" } }
+    val byCategory = picked.groupBy { it.category.ifEmpty { "未分类" } }
+    val groups = byCategory
         .map { (name, list) -> Triple(name, list.sumOf { it.amountCents ?: 0 }, list.size) }
         .sortedByDescending { it.second }
+    var expanded by remember(month, type) { mutableStateOf<String?>(null) }
+    val insights = remember(txs, prevTxs, month) { InsightCalc.compute(txs, prevTxs, month) }
     val prevGroups = prevTxs.filter { it.type == type }.groupBy { it.category.ifEmpty { "未分类" } }
         .mapValues { (_, l) -> l.sumOf { it.amountCents ?: 0 } }
     val heat = picked.groupBy { localDate(it.time).dayOfMonth }.mapValues { (_, l) -> l.sumOf { it.amountCents ?: 0 } }
@@ -109,6 +123,7 @@ fun StatsScreen(padding: PaddingValues) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { MonthBar(month) { month = it } }
+        insights?.let { ins -> item { InsightCard(month, ins) { editing = it } } }
         item {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 SegmentedButton(type == TxType.EXPENSE, { type = TxType.EXPENSE }, SegmentedButtonDefaults.itemShape(0, 2)) { Text("支出") }
@@ -174,7 +189,9 @@ fun StatsScreen(padding: PaddingValues) {
         // 4. categories
         item {
             SoftCard {
-                SectionTitle("分类")
+                SectionTitle("分类") {
+                    if (groups.isNotEmpty()) Text("点分类看备注明细", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 if (groups.isEmpty()) {
                     Text("没有记录", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
                 } else {
@@ -194,7 +211,10 @@ fun StatsScreen(padding: PaddingValues) {
                             (type == TxType.EXPENSE) == up -> ExpenseRed
                             else -> IncomeGreen
                         }
-                        Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            Modifier.clip(RoundedCornerShape(12.dp)).clickable { expanded = if (expanded == name) null else name }.padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             CategoryBadge(name, 36)
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
@@ -218,6 +238,7 @@ fun StatsScreen(padding: PaddingValues) {
                                 }
                             }
                         }
+                        if (expanded == name) NoteBreakdown(byCategory[name].orEmpty(), cents, Color(CategoryStyle.of(name).color))
                     }
                 }
             }
@@ -257,6 +278,115 @@ fun StatsScreen(padding: PaddingValues) {
     }
 
     editing?.let { tx -> TxEditor(initial = tx, onDone = { editing = null }) }
+}
+
+/** Under an expanded category: how much went to each note (午饭 / 奶茶 / …). */
+@Composable
+private fun NoteBreakdown(list: List<Tx>, total: Long, color: Color) {
+    val rows = remember(list) { InsightCalc.byNote(list) }
+    Column(
+        Modifier.fillMaxWidth().padding(start = 46.dp, bottom = 8.dp)
+            .clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        val shown = rows.take(8)
+        shown.forEach { (note, n, sum) ->
+            Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(6.dp).background(color, CircleShape))
+                Text(
+                    "  " + note.ifEmpty { "没写备注" }, style = MaterialTheme.typography.bodyMedium,
+                    color = if (note.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1, modifier = Modifier.weight(1f),
+                )
+                Text("$n 笔  ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("¥" + Money.format(sum), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Text(
+                    "  " + if (total > 0) "${sum * 100 / total}%" else "", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(36.dp),
+                )
+            }
+        }
+        if (rows.size > shown.size) Text(
+            "还有 ${rows.size - shown.size} 种备注", style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp),
+        )
+        if (rows.size == 1 && rows[0].first.isEmpty()) Text(
+            "记账时写个备注（如 午饭、奶茶），这里就能分开看。", style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
+/** 本月洞察: a few sentences about this month's spending. Tap the biggest expense to open it. */
+@Composable
+private fun InsightCard(month: YearMonth, ins: Insights, onOpen: (Tx) -> Unit) {
+    SoftCard(padding = 4.dp) {
+        Text(
+            (if (month == YearMonth.now()) "本月" else "${month.monthValue}月") + "洞察",
+            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 14.dp, top = 12.dp, bottom = 4.dp),
+        )
+        val lines = buildList<@Composable () -> Unit> {
+            if (ins.prevSame > 0) {
+                val diff = ins.total - ins.prevSame
+                val pct = diff * 100 / ins.prevSame
+                add {
+                    InsightLine(
+                        if (diff >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                        if (diff >= 0) ExpenseRed else IncomeGreen,
+                        (if (diff >= 0) "比上月同期多花 ¥" else "比上月同期少花 ¥") + Money.format(kotlin.math.abs(diff)),
+                        "上月前 ${ins.days} 天花了 ¥${Money.format(ins.prevSame)}（${if (pct >= 0) "▲" else "▼"}${kotlin.math.abs(pct)}%）",
+                    )
+                }
+            }
+            add {
+                InsightLine(
+                    Icons.Filled.Today, Tint.Blue, "日均 ¥" + Money.format(ins.dailyAvg),
+                    (if (month == YearMonth.now()) "按已过的 ${ins.days} 天算" else "按全月 ${ins.days} 天算") + "，共 ¥" + Money.format(ins.total),
+                )
+            }
+            ins.topGrowth?.let { (cat, now, then) ->
+                add {
+                    InsightLine(
+                        Icons.Filled.LocalFireDepartment, Tint.Orange, "涨得最多：$cat",
+                        if (then == 0L) "花了 ¥${Money.format(now)}，上月同期没花" else "多花 ¥${Money.format(now - then)}（上月同期 ¥${Money.format(then)}）",
+                    )
+                }
+            }
+            ins.biggest?.let { t ->
+                val d = localDate(t.time)
+                add {
+                    InsightLine(
+                        Icons.Filled.Payments, Tint.Purple, "最大一笔 ¥" + Money.format(t.amountCents ?: 0),
+                        listOf(t.category, t.note, "${d.monthValue}月${d.dayOfMonth}日").filter { it.isNotBlank() }.joinToString(" · "),
+                    ) { onOpen(t) }
+                }
+            }
+            ins.topNote?.let { (note, n, sum) ->
+                add { InsightLine(Icons.Filled.EditNote, Tint.Teal, "最常写的备注：$note", "$n 次，共 ¥${Money.format(sum)}") }
+            }
+        }
+        lines.forEachIndexed { i, line ->
+            line()
+            if (i != lines.lastIndex) RowDivider()
+        }
+        Spacer(Modifier.height(4.dp))
+    }
+}
+
+@Composable
+private fun InsightLine(icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, title: String, sub: String, onClick: (() -> Unit)? = null) {
+    Row(
+        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SettingIcon(icon, tint, 34)
+        Column(Modifier.padding(start = 14.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
 
 private fun sameMonth(t: Tx, m: YearMonth): Boolean {

@@ -52,7 +52,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handle(intent)
-        setContent { AppTheme { AppRoot(addRequest, usualRequest) } }
+        setContent {
+            AppTheme {
+                val counts = repoQuery(initial = emptyMap<Long, Int>()) { com.aileboeth.expensetracking.data.Repo.attachmentCounts() }
+                androidx.compose.runtime.CompositionLocalProvider(LocalAttachCounts provides counts) { AppRoot(addRequest, usualRequest) }
+            }
+        }
     }
 
     override fun onResume() {
@@ -84,6 +89,7 @@ private sealed interface Overlay {
     data object Log : Overlay
     data object Categories : Overlay
     data object UsualAmounts : Overlay
+    data object Rules : Overlay
     data class Import(val uri: Uri) : Overlay
 }
 
@@ -108,6 +114,7 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
         Overlay.Log -> RecognitionLogScreen(onBack = { overlay = null })
         Overlay.Categories -> CategoriesScreen(onBack = { overlay = null })
         Overlay.UsualAmounts -> UsualAmountsScreen(onBack = { overlay = null })
+        Overlay.Rules -> CategoryRulesScreen(onBack = { overlay = null })
         is Overlay.Import -> ImportScreen(o.uri, onBack = { overlay = null })
         null -> Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -135,6 +142,7 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
                     openWords = { overlay = Overlay.BlacklistWords },
                     openLog = { overlay = Overlay.Log },
                     openCategories = { overlay = Overlay.Categories },
+                    openRules = { overlay = Overlay.Rules },
                     openUsual = { overlay = Overlay.UsualAmounts },
                     listState = settingsList,
                 )

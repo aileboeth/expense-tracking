@@ -109,8 +109,10 @@ fun ImportScreen(uri: Uri, onBack: () -> Unit) {
                     for (i in chosen) {
                         val line = st.lines[i]
                         val r = line.row
-                        val category = BillImporter.guessCategory(r, st.source.kind).ifBlank { "其他" }
                         val note = r.goods.takeIf { it.isNotBlank() && it != r.counterpart }.orEmpty()
+                        // Your own rules and learned notes first, then the bill's own category words.
+                        val category = (com.aileboeth.expensetracking.data.Categorizer.fromNote(r.type, note, r.counterpart)
+                            ?: BillImporter.guessCategory(r, st.source.kind)).ifBlank { "其他" }
                         when (line.outcome) {
                             Outcome.MISSING -> {
                                 insert(Tx(

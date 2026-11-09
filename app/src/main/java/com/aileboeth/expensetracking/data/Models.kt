@@ -28,6 +28,22 @@ data class Tx(
     val ref: String = "",
 )
 
+/** User rule: a note / payer containing [keyword] goes to [category]. */
+data class Rule(val id: Long = 0, val type: TxType, val keyword: String, val category: String)
+
+/** A receipt photo or invoice file kept with one entry, stored in filesDir/attachments/[file]. */
+data class Attachment(
+    val id: Long = 0,
+    val txId: Long = 0,
+    val name: String,
+    val mime: String,
+    val file: String,
+    val size: Long,
+    val time: Long = System.currentTimeMillis(),
+) {
+    val isImage get() = mime.startsWith("image/")
+}
+
 data class LogEntry(val id: Long, val time: Long, val pkg: String, val title: String, val text: String, val result: String)
 
 object Money {

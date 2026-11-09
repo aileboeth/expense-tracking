@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Block
@@ -96,6 +97,7 @@ fun SettingsScreen(
     openWords: () -> Unit = {},
     openLog: () -> Unit = {},
     openCategories: () -> Unit = {},
+    openRules: () -> Unit = {},
     openUsual: () -> Unit = {},
     listState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
@@ -199,6 +201,7 @@ fun SettingsScreen(
                 { SettingRow(Icons.Filled.Savings, Tint.Green, "月预算", "首页会显示还能花多少", { ValueChevron(if (budget > 0) "¥" + Money.short(budget) else "未设置") }) { dialog = "budget" } },
                 { SettingRow(Icons.Filled.UploadFile, Tint.Blue, "导入账单对账", "选微信/支付宝导出的 .xlsx / .csv，补上漏记的") { pickBill.launch(arrayOf("*/*")) } },
                 { SettingRow(Icons.Filled.Category, Tint.Orange, "管理分类", "增加或删除支出、收入的分类", onClick = openCategories) },
+                { SettingRow(Icons.Filled.AutoFixHigh, Tint.Purple, "分类规则", "写了备注没选分类时，按备注自动归类", onClick = openRules) },
                 {
                     SettingRow(Icons.Filled.Download, Tint.Teal, "导出 CSV", "导出到 下载/记账/，Excel、WPS 都能打开") {
                         scope.launch {

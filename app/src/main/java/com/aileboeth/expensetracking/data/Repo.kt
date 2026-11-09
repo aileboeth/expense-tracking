@@ -32,8 +32,15 @@ object Repo {
     /** Called after every write (the widget listens). */
     @Volatile var onChanged: (() -> Unit)? = null
 
+    /** Where attachment files live (filesDir/attachments). */
+    lateinit var attachDir: java.io.File
+        private set
+
     fun init(ctx: Context) {
-        if (!::helper.isInitialized) helper = Helper(ctx.applicationContext)
+        if (!::helper.isInitialized) {
+            helper = Helper(ctx.applicationContext)
+            attachDir = java.io.File(ctx.applicationContext.filesDir, "attachments").apply { mkdirs() }
+        }
     }
 
     private val db: SQLiteDatabase get() = helper.writableDatabase
@@ -69,6 +76,8 @@ object Repo {
     }
 
     fun delete(id: Long) {
+        attachments(id).forEach { java.io.File(attachDir, it.file).delete() }
+        db.delete("attachment", "tx_id=?", arrayOf(id.toString()))
         db.delete("tx", "id=?", arrayOf(id.toString()))
         changed()
     }
@@ -154,6 +163,104 @@ object Repo {
             "SELECT counterpart, COUNT(*) c, MAX(time) t FROM tx WHERE counterpart<>'' GROUP BY counterpart ORDER BY c DESC, t DESC LIMIT ?",
             arrayOf(limit.toString()),
         ).use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
+
+    // ---- notes ------------------------------------------------------------------------------
+
+    /** Notes written most often since [since] (most frequent first, then most recent). */
+    fun recentNotes(type: TxType, since: Long, limit: Int): List<String> =
+        db.rawQuery(
+            "SELECT note, COUNT(*) c, MAX(time) t FROM tx WHERE status='OK' AND type=? AND time>=? AND note<>'' " +
+                "GROUP BY note ORDER BY c DESC, t DESC LIMIT ?",
+            arrayOf(type.name, since.toString(), limit.toString()),
+        ).use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
+
+    /** The category most often picked for exactly this note (其他 does not count). */
+    fun learnedCategory(type: TxType, note: String): String? {
+        val n = note.trim()
+        if (n.isEmpty()) return null
+        return db.rawQuery(
+            "SELECT category, COUNT(*) c, MAX(time) t FROM tx WHERE status='OK' AND type=? AND note=? AND category<>'' AND category<>'其他' " +
+                "GROUP BY category ORDER BY c DESC, t DESC LIMIT 1",
+            arrayOf(type.name, n),
+        ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
+    }
+
+    /** note -> (category, times) the app has learned, most used first. */
+    fun learnedNotes(type: TxType, limit: Int): List<Triple<String, String, Int>> {
+        val rows = db.rawQuery(
+            "SELECT note, category, COUNT(*) c FROM tx WHERE status='OK' AND type=? AND note<>'' AND category<>'' AND category<>'其他' " +
+                "GROUP BY note, category ORDER BY c DESC",
+            arrayOf(type.name),
+        ).use { c -> buildList { while (c.moveToNext()) add(Triple(c.getString(0), c.getString(1), c.getInt(2))) } }
+        return rows.distinctBy { it.first }.take(limit)
+    }
+
+    // ---- category rules ---------------------------------------------------------------------
+
+    fun rules(type: TxType? = null): List<Rule> =
+        db.query("rule", null, if (type == null) null else "type=?", type?.let { arrayOf(it.name) }, null, null, "id DESC").use { c ->
+            buildList {
+                while (c.moveToNext()) add(Rule(
+                    c.getLong(c.getColumnIndexOrThrow("id")),
+                    runCatching { TxType.valueOf(c.getString(c.getColumnIndexOrThrow("type"))) }.getOrDefault(TxType.EXPENSE),
+                    c.getString(c.getColumnIndexOrThrow("keyword")),
+                    c.getString(c.getColumnIndexOrThrow("category")),
+                ))
+            }
+        }
+
+    /** Adds or replaces the rule for this keyword. */
+    fun putRule(rule: Rule) {
+        val v = ContentValues().apply { put("type", rule.type.name); put("keyword", rule.keyword.trim()); put("category", rule.category) }
+        db.insertWithOnConflict("rule", null, v, SQLiteDatabase.CONFLICT_REPLACE)
+        changed()
+    }
+
+    fun deleteRule(id: Long) {
+        db.delete("rule", "id=?", arrayOf(id.toString()))
+        changed()
+    }
+
+    // ---- attachments ------------------------------------------------------------------------
+
+    fun attachments(txId: Long): List<Attachment> =
+        db.query("attachment", null, "tx_id=?", arrayOf(txId.toString()), null, null, "id ASC").use { c ->
+            buildList {
+                while (c.moveToNext()) add(Attachment(
+                    id = c.getLong(c.getColumnIndexOrThrow("id")),
+                    txId = c.getLong(c.getColumnIndexOrThrow("tx_id")),
+                    name = c.getString(c.getColumnIndexOrThrow("name")) ?: "",
+                    mime = c.getString(c.getColumnIndexOrThrow("mime")) ?: "",
+                    file = c.getString(c.getColumnIndexOrThrow("file")) ?: "",
+                    size = c.getLong(c.getColumnIndexOrThrow("size")),
+                    time = c.getLong(c.getColumnIndexOrThrow("time")),
+                ))
+            }
+        }
+
+    /** tx id -> number of attachments, for the 📎 mark in lists. */
+    fun attachmentCounts(): Map<Long, Int> =
+        db.rawQuery("SELECT tx_id, COUNT(*) FROM attachment GROUP BY tx_id", null)
+            .use { c -> buildMap { while (c.moveToNext()) put(c.getLong(0), c.getInt(1)) } }
+
+    fun addAttachment(a: Attachment): Long {
+        val v = ContentValues().apply {
+            put("tx_id", a.txId); put("name", a.name); put("mime", a.mime); put("file", a.file); put("size", a.size); put("time", a.time)
+        }
+        return db.insert("attachment", null, v).also { changed() }
+    }
+
+    fun deleteAttachment(a: Attachment) {
+        java.io.File(attachDir, a.file).delete()
+        db.delete("attachment", "id=?", arrayOf(a.id.toString()))
+        changed()
+    }
+
+    /** Removes files in the attachment folder that no entry points to (e.g. after the editor was killed). */
+    fun cleanOrphanAttachments(olderThan: Long) {
+        val known = db.rawQuery("SELECT file FROM attachment", null).use { c -> buildSet { while (c.moveToNext()) add(c.getString(0)) } }
+        attachDir.listFiles()?.forEach { f -> if (f.name !in known && f.lastModified() < olderThan) f.delete() }
+    }
 
     fun channels(): List<String> =
         db.rawQuery("SELECT DISTINCT channel FROM tx WHERE channel<>'' ORDER BY channel", null)
@@ -248,7 +355,7 @@ object Repo {
         changed()
     }
 
-    private class Helper(ctx: Context) : SQLiteOpenHelper(ctx, "ledger.db", null, 2) {
+    private class Helper(ctx: Context) : SQLiteOpenHelper(ctx, "ledger.db", null, 3) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 """CREATE TABLE tx (
@@ -274,6 +381,18 @@ object Repo {
             db.execSQL("CREATE TABLE category (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, type TEXT NOT NULL, sort INTEGER NOT NULL, UNIQUE(name, type))")
             DEFAULT_EXPENSE.forEachIndexed { i, n -> seed(db, TxType.EXPENSE, n, i) }
             DEFAULT_INCOME.forEachIndexed { i, n -> seed(db, TxType.INCOME, n, i) }
+            createV3(db)
+        }
+
+        /** 0.1.3: category rules and attachments. */
+        private fun createV3(db: SQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS rule (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, keyword TEXT NOT NULL, category TEXT NOT NULL, UNIQUE(type, keyword))")
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS attachment (id INTEGER PRIMARY KEY AUTOINCREMENT, tx_id INTEGER NOT NULL, name TEXT NOT NULL, " +
+                    "mime TEXT NOT NULL, file TEXT NOT NULL, size INTEGER NOT NULL, time INTEGER NOT NULL)"
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS attachment_tx ON attachment(tx_id)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS tx_note ON tx(note)")
         }
 
         private fun seed(db: SQLiteDatabase, type: TxType, name: String, sort: Int) {
@@ -286,6 +405,7 @@ object Repo {
                 db.execSQL("ALTER TABLE tx ADD COLUMN ref TEXT NOT NULL DEFAULT ''")
                 db.execSQL("CREATE INDEX IF NOT EXISTS tx_ref ON tx(ref)")
             }
+            if (oldVersion < 3) createV3(db)
         }
     }
 

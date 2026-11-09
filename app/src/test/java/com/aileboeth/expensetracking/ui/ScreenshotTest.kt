@@ -3,6 +3,7 @@ package com.aileboeth.expensetracking.ui
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -46,6 +47,8 @@ class ScreenshotTest {
         fun at(daysAgo: Long, h: Int, m: Int) = today.minusDays(daysAgo).atTime(LocalTime.of(h, m)).atZone(zone).toInstant().toEpochMilli()
         val rows = listOf(
             Triple(0L, "餐饮", 2350L) to "午饭", Triple(0L, "零食饮料", 1600L) to "奶茶", Triple(0L, "交通", 200L) to "",
+            Triple(1L, "餐饮", 1500L) to "午饭", Triple(2L, "零食饮料", 1300L) to "奶茶", Triple(3L, "餐饮", 1800L) to "午饭",
+            Triple(31L, "餐饮", 2000L) to "午饭", Triple(32L, "购物", 4900L) to "",
             Triple(1L, "购物", 19800L) to "耳机", Triple(1L, "餐饮", 3000L) to "晚饭", Triple(2L, "生活缴费", 5000L) to "电费",
             Triple(2L, "餐饮", 1800L) to "", Triple(3L, "娱乐", 4500L) to "电影", Triple(4L, "学习", 8900L) to "教材",
             Triple(5L, "餐饮", 2600L) to "", Triple(6L, "日用", 3990L) to "洗衣液", Triple(8L, "交通", 1200L) to "地铁",
@@ -156,6 +159,44 @@ class ScreenshotTest {
         compose.setContent { AppTheme { UsualAmountsScreen {} } }
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/9-usual-amounts.png")
+    }
+
+    @Config(qualifiers = "w393dp-h1300dp-xxhdpi")
+    @Test fun rules() {
+        Repo.putRule(com.aileboeth.expensetracking.data.Rule(type = TxType.EXPENSE, keyword = "瑞幸", category = "零食饮料"))
+        repeat(3) { Repo.insert(Tx(type = TxType.EXPENSE, amountCents = 1600, category = "零食饮料", note = "奶茶", time = System.currentTimeMillis() - it * 3600_000L)) }
+        compose.setContent { AppTheme { CategoryRulesScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/10-rules.png")
+    }
+
+    @OptIn(com.github.takahirom.roborazzi.ExperimentalRoborazziApi::class)
+    @Config(qualifiers = "w393dp-h1200dp-xxhdpi")
+    @Test fun editor() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        repeat(2) { Repo.insert(Tx(type = TxType.EXPENSE, amountCents = 1600, category = "零食饮料", note = "奶茶", time = System.currentTimeMillis() - it * 3600_000L)) }
+        val id = Repo.insert(Tx(type = TxType.EXPENSE, amountCents = 8900, category = "学习", note = "教材", channel = "支付宝", time = System.currentTimeMillis()))
+        // A fake receipt photo.
+        val bmp = android.graphics.Bitmap.createBitmap(300, 400, android.graphics.Bitmap.Config.ARGB_8888).apply { eraseColor(0xFFF4E7C8.toInt()) }
+        val f = java.io.File(Repo.attachDir, "receipt-test.jpg")
+        f.outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, it) }
+        Repo.addAttachment(com.aileboeth.expensetracking.data.Attachment(txId = id, name = "收据.jpg", mime = "image/jpeg", file = f.name, size = f.length()))
+        Repo.addAttachment(com.aileboeth.expensetracking.data.Attachment(txId = id, name = "发票.pdf", mime = "application/pdf", file = "x.pdf", size = 1))
+        compose.setContent { AppTheme { TxEditor(Repo.get(id)) {} } }
+        compose.waitForIdle()
+        Thread.sleep(300); compose.waitForIdle()
+        com.github.takahirom.roborazzi.captureScreenRoboImage("build/screens/11-editor.png")
+        ctx.hashCode()
+    }
+
+    @Config(qualifiers = "w393dp-h2600dp-xxhdpi")
+    @Test fun statsInsights() {
+        compose.setContent { AppTheme { StatsScreen(PaddingValues(0.dp)) } }
+        compose.waitForIdle()
+        // Expand 餐饮 in the ranking to show the per-note breakdown.
+        compose.onAllNodes(androidx.compose.ui.test.hasText("餐饮", substring = false))[0].performClick()
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/2c-stats-insights.png")
     }
 
     @Config(qualifiers = "w393dp-h1900dp-xxhdpi")

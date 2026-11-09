@@ -6,7 +6,7 @@ plugins {
 }
 
 // Version: bump the last number for each release (0.1.0 -> 0.1.1).
-val appVersion = "0.1.2"
+val appVersion = "0.1.3"
 val appVersionCode = appVersion.split(".").map { it.toInt() }.let { (a, b, c) -> a * 10000 + b * 100 + c }
 
 // Release key lives OUTSIDE the repository (../keys). Without it, release builds use the debug key.

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -267,8 +268,12 @@ fun CategoryBadge(category: String, size: Int = 40) {
     ) { Text(st.emoji, fontSize = (size * 0.45f).sp) }
 }
 
+/** tx id -> number of receipts, provided once at the app root so each row can show a 📎. */
+val LocalAttachCounts = androidx.compose.runtime.compositionLocalOf { emptyMap<Long, Int>() }
+
 @Composable
 fun TxRow(tx: Tx, onClick: () -> Unit) {
+    val attached = (LocalAttachCounts.current[tx.id] ?: 0) > 0
     val time = SimpleDateFormat("HH:mm", Locale.CHINA).format(Date(tx.time))
     val color = when {
         tx.amountCents == null -> PendingAmber
@@ -282,10 +287,18 @@ fun TxRow(tx: Tx, onClick: () -> Unit) {
         CategoryBadge(tx.category)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(
-                tx.category.ifEmpty { if (tx.kind.isNotEmpty()) Kinds.label(tx.kind) else "未分类" } + if (tx.note.isNotBlank()) " · ${tx.note}" else "",
-                maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    tx.category.ifEmpty { if (tx.kind.isNotEmpty()) Kinds.label(tx.kind) else "未分类" } + if (tx.note.isNotBlank()) " · ${tx.note}" else "",
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (attached) Icon(
+                    androidx.compose.material.icons.Icons.Filled.AttachFile, "有凭证",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp).size(15.dp),
+                )
+            }
             val titleIsKind = tx.category.isEmpty() && tx.kind.isNotEmpty()
             // "微信 · 微信付款" says the same thing twice: keep the kind only when it adds something (手表/凭证, 免密, 账单导入…).
             val kind = Kinds.label(tx.kind).takeUnless { titleIsKind || it == tx.channel + "付款" || it == tx.channel + "收款" }.orEmpty()

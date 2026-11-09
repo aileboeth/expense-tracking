@@ -18,7 +18,8 @@ object Export {
 
     fun csv(ctx: Context): String {
         val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA)
-        val sb = StringBuilder("﻿时间,类型,金额,分类,备注,渠道,对方,状态,来源说明\n")
+        val sb = StringBuilder("﻿时间,类型,金额,分类,备注,渠道,对方,状态,来源说明,凭证\n")
+        val counts = Repo.attachmentCounts()
         for (t in Repo.all()) {
             val cols = listOf(
                 fmt.format(Date(t.time)),
@@ -27,6 +28,7 @@ object Export {
                 t.category, t.note, t.channel, t.counterpart,
                 if (t.amountCents == null) "待补金额" else if (t.status.name == "PENDING") "待确认" else "",
                 if (t.source == "auto") Kinds.label(t.kind) else "手动",
+                counts[t.id]?.let { "$it 个（在 App 里查看）" } ?: "",
             )
             sb.append(cols.joinToString(",") { quote(it) }).append('\n')
         }
