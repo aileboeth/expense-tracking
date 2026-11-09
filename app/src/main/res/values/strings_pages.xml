@@ -144,7 +144,7 @@
     <string name="brand_vivo">vivo / iQOO</string>
     <string name="brand_samsung">Samsung</string>
     <string name="brand_meizu">Meizu</string>
-    <string name="brand_other">This phone</string>
+    <string name="brand_other">this phone</string>
     <string name="step_lock">Lock the app in Recents</string>
     <string name="step_lock_where">Open Recents (the multitasking view), find this app\'s card, pull it down or long-press it and tap Lock. \"Clear all\" then leaves it running.</string>
     <string name="step_autostart">Allow autostart</string>

@@ -104,7 +104,7 @@ fun StabilityScreen(onBack: () -> Unit) {
             item {
                 Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(HeaderBrush).padding(horizontal = 20.dp, vertical = 18.dp)) {
                     Column {
-                        Text(stringResource(R.string.st_phone, guide.brandName(ctx)), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(if (guide.brandRes == R.string.brand_other) guide.brandName(ctx).replaceFirstChar { it.uppercase() } else stringResource(R.string.st_phone, guide.brandName(ctx)), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text(
                             "${guide.system} · Android ${Build.VERSION.RELEASE} · ${Build.MODEL}",
                             color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.bodySmall,

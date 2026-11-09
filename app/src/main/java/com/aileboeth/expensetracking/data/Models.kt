@@ -59,8 +59,8 @@ object Money {
     }
 
     /** The phone region's currency (CNY in mainland China, USD in the US …). */
-    fun defaultCurrencyCode(): String =
-        runCatching { java.util.Currency.getInstance(java.util.Locale.getDefault()).currencyCode }.getOrNull() ?: "CNY"
+    fun defaultCurrencyCode(region: java.util.Locale): String =
+        runCatching { java.util.Currency.getInstance(region).currencyCode }.getOrNull() ?: "CNY"
 
     /** "¥", "$", "€", "HK$" … for the ledger currency. */
     val sym: String get() = symbolFor(currency.currencyCode)

@@ -5,6 +5,16 @@ import android.content.SharedPreferences
 
 /** User settings. */
 class Prefs(ctx: Context) {
+    private val app: Context = ctx.applicationContext
+
+    /**
+     * The phone's own locale from system settings, not the language picked inside the app (on Android 13+
+     * the per-app language also changes Locale.getDefault() and the system Resources). Region defaults use this.
+     */
+    fun systemLocale(): java.util.Locale =
+        if (android.os.Build.VERSION.SDK_INT >= 33) app.getSystemService(android.app.LocaleManager::class.java).systemLocales.get(0)
+        else java.util.Locale.getDefault()
+
     private val p: SharedPreferences =
         ctx.applicationContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
@@ -30,7 +40,7 @@ class Prefs(ctx: Context) {
     /** Payment apps (other than WeChat / Alipay) whose notifications are read. Unset = the region's defaults. */
     fun payApps(): Set<String> {
         if (p.contains("payApps")) return p.getStringSet("payApps", emptySet())!!.toSet()
-        val loc = java.util.Locale.getDefault()
+        val loc = systemLocale()
         val country = com.aileboeth.expensetracking.parse.PaymentApps.country(loc.language, loc.country)
         return com.aileboeth.expensetracking.parse.PaymentApps.ALL
             .filter { it.pkg !in com.aileboeth.expensetracking.parse.Parser.KNOWN_APPS && com.aileboeth.expensetracking.parse.PaymentApps.defaultOn(it, country) }
@@ -39,9 +49,11 @@ class Prefs(ctx: Context) {
 
     fun setPayApps(v: Set<String>) = p.edit().putStringSet("payApps", v).apply()
 
+    val hasCurrency: Boolean get() = p.contains("currency")
+
     /** Ledger currency (ISO 4217). Unset = the phone region's currency. Only changes how amounts are shown. */
     var currency: String
-        get() = p.getString("currency", null) ?: Money.defaultCurrencyCode()
+        get() = p.getString("currency", null) ?: Money.defaultCurrencyCode(systemLocale())
         set(v) = p.edit().putString("currency", v).apply()
 
     /** App language: "" = follow the phone, or "zh-Hans" / "zh-Hant" / "en". */

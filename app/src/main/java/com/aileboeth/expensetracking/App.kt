@@ -10,8 +10,11 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        com.aileboeth.expensetracking.data.Money.setCurrency(com.aileboeth.expensetracking.data.Prefs(this).currency)
         Repo.init(this)
+        val prefs = com.aileboeth.expensetracking.data.Prefs(this)
+        // Up to 0.1.x everything was in yuan: an existing ledger stays CNY whatever the phone's region is.
+        if (!prefs.hasCurrency && runCatching { Repo.all().isNotEmpty() }.getOrDefault(false)) prefs.currency = "CNY"
+        com.aileboeth.expensetracking.data.Money.setCurrency(prefs.currency)
         Repo.onChanged = { Widgets.scheduleUpdate(this) }
         ListenerKeeper.ensure(this)
         // Receipt files left behind by an editor that was closed by the system before saving.

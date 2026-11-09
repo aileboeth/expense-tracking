@@ -114,7 +114,7 @@ fun HomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
                         Box(Modifier.size(8.dp).background(PendingAmber, CircleShape))
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.home_pending), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.home_pending), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f).padding(end = 8.dp))
                         Text(pluralStringResource(R.plurals.n_entries, pending.size, pending.size), color = PendingAmber, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(Modifier.height(4.dp))

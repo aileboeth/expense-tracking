@@ -44,7 +44,7 @@ fun CurrencyDialog(prefs: Prefs, onClose: () -> Unit) {
     val ctx = LocalContext.current
     val current = remember { prefs.currency }
     val loc = AppLocale.locale(ctx)
-    val list = remember { (listOf(Money.defaultCurrencyCode()) + CURRENCIES).distinct() }
+    val list = remember { (listOf(Money.defaultCurrencyCode(prefs.systemLocale())) + CURRENCIES).distinct() }
     AlertDialog(
         onDismissRequest = onClose,
         title = { Text(stringResource(R.string.set_currency)) },

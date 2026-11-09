@@ -26,7 +26,9 @@ object Brands {
     }
 
     data class Guide(@StringRes val brandRes: Int, val system: String, val steps: List<Step>) {
-        fun brandName(ctx: Context): String = if (brandRes == R.string.brand_other) Build.MANUFACTURER.ifBlank { ctx.getString(brandRes) } else ctx.getString(brandRes)
+        fun brandName(ctx: Context): String =
+            if (brandRes == R.string.brand_other) Build.MANUFACTURER.takeUnless { it.isBlank() || it.equals("unknown", true) } ?: ctx.getString(brandRes)
+            else ctx.getString(brandRes)
     }
 
     private val lockRecents = Step(R.string.step_lock, R.string.step_lock_where)

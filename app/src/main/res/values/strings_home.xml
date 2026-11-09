@@ -2,7 +2,7 @@
 <resources>
     <string name="home_setup_title">Automatic recording isn\'t set up yet</string>
     <string name="home_setup_body">Turn on notification access and the overlay permission</string>
-    <string name="home_pending">Waiting for amount / confirmation</string>
+    <string name="home_pending">Needs amount or confirmation</string>
     <string name="home_empty_title">No entries this month</string>
     <string name="home_empty_body">Payments are recorded automatically. You can also tap \"Add\" at the bottom right.</string>
     <string name="home_add">Add</string>

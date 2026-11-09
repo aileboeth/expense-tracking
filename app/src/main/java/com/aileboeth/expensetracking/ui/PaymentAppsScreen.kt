@@ -51,7 +51,7 @@ fun PaymentAppsScreen(onBack: () -> Unit) {
     val ctx = LocalContext.current
     val prefs = remember { Prefs(ctx) }
     var on by remember { mutableStateOf(prefs.payApps()) }
-    val loc = Locale.getDefault()
+    val loc = prefs.systemLocale()
     val country = remember { PaymentApps.country(loc.language, loc.country) }
     val countryName = remember { if (country.isEmpty()) "" else Locale("", country).getDisplayCountry(AppLocale.locale(ctx)) }
     val apps = remember { PaymentApps.ranked(country).map { it to installed(ctx, it.pkg) } }

@@ -261,6 +261,7 @@ fun SettingsScreen(
 }
 
 /** Gradient card on top: is automatic recording ready? */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun StatusCard(perms: List<Boolean>) {
     val missing = perms.count { !it }
@@ -277,11 +278,11 @@ private fun StatusCard(perms: List<Boolean>) {
                     color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 2.dp),
                 )
-                Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                FlowRow(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf(stringResource(R.string.set_pill_listener), stringResource(R.string.set_pill_overlay), stringResource(R.string.set_pill_battery)).zip(perms).forEach { (name, ok) ->
                         Text(
                             (if (ok) "✓ " else "✕ ") + name, color = if (ok) Color.White else Color(0xFFFFD6CF),
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelMedium, softWrap = false,
                             modifier = Modifier.clip(RoundedCornerShape(50))
                                 .background(Color.White.copy(alpha = if (ok) 0.18f else 0.10f))
                                 .padding(horizontal = 10.dp, vertical = 4.dp),

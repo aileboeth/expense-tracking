@@ -1,0 +1,108 @@
+<p align="center"><img src="docs/icon.png" width="112" alt="Expense Tracking"></p>
+
+# Expense Tracking
+
+[简体中文](README.md) | English
+
+An Android expense tracker that records payments from their notifications. After you pay, a small purple
+capsule appears at the edge of the screen; tap it to fix the amount, pick a category or add a note.
+Your ledger stays on the phone — nothing is uploaded.
+
+UI in English, Simplified Chinese and Traditional Chinese. The currency is a setting
+(Settings → Currency: $, €, £, ¥, HK$, NT$ …); it only changes the symbol, there is no conversion.
+
+<p align="center">
+  <img src="docs/screen-home-en.png" width="250" alt="Home">
+  <img src="docs/screen-stats-en.png" width="250" alt="Stats">
+  <img src="docs/screen-settings-en.png" width="250" alt="Settings">
+</p>
+
+<sub>Screenshots show sample data.</sub>
+
+## What it reads
+
+- **WeChat Pay and Alipay** (China): full support, built from real notifications. Payments are recorded
+  directly; notifications without an amount (smartwatch payments, Alipay "someone sent you money") become
+  "needs amount" entries and stay in the capsule until you fill them in.
+- **Payment apps in other regions**: the app lists the ones common where you live — Google Wallet,
+  Samsung Wallet, PayPal, Wise, Revolut, Monzo, Venmo, Cash App, PayPay, KakaoPay, Toss, Octopus, JKOPAY,
+  GCash, Grab, PhonePe, Paytm, Mercado Pago … Turn them on in **Settings → Payment apps**. Their
+  notifications are read with a general amount detector, so each entry asks you to confirm it.
+  Formats differ by country and bank; if one isn't recognised, see "Help us add formats" below.
+
+## Features
+
+- **No duplicates, no merging**: a notification that gets updated is recorded once, but two real payments
+  of the same amount right after each other stay two entries.
+- **Edge capsule**: no focus stealing, no app switch. Drag it up/down or to the other side, long-press to
+  hide; red outline when you're over budget. Entries with an amount: tap a category in the top drawer and
+  it's saved. Entries without one: tap one of your usual amounts (editable) in the bottom card.
+  Category is optional — saving without one files it under "Other".
+- **Categories from notes**: your recent notes are one tap away. A note without a category is filed by
+  your rules → the category you picked for that note before → built-in words (coffee, uber, rent, …).
+  Add rules in **Settings → Category rules**.
+- **Charts**: monthly insights (vs. the same days last month, daily average, fastest-growing category,
+  biggest expense, most-used note), daily trend with last month overlaid, spending calendar heatmap,
+  category donut and ranking (tap for a per-note breakdown), 6/12-month income/expense trend.
+- **Receipts**: attach photos or invoice PDFs (camera / gallery / files) to any entry; stored in the
+  app's own folder, never uploaded.
+- **Monthly budget**: what's left and how much you can spend per day.
+- **Search and filters**: by note, counterpart, category, amount range, channel and date.
+- **Bill import** (WeChat .xlsx / Alipay .csv): finds missed payments and fills in amounts for
+  "needs amount" entries; the same payment is never imported twice.
+- **Home-screen widget**: spent this month, spent today, budget left, and "+ Add".
+- **Blacklist**: apps, and keywords in the payer / merchant / text.
+- **Keeping it running**: **Settings → Self-test & background settings** lists the switches to turn on for
+  your phone's brand (Xiaomi/Redmi, Huawei, Honor, OPPO/OnePlus/realme, vivo/iQOO, Samsung, Meizu, others)
+  with shortcuts to each system page. **Self-test** posts a test notification and checks the app received it.
+- Manual entries, CSV export, and a **recognition log** showing every notification and why it was or
+  wasn't recorded.
+- **Auto-update** from this repository's latest Release, verified by SHA-256.
+
+## Permissions to grant after installing
+
+1. Notification access (required). If Android says "Restricted setting": App info → ⋮ (top right) →
+   Allow restricted settings.
+2. Display over other apps (for the capsule).
+3. Background running: follow **Settings → Self-test & background settings** for your brand, then run the self-test.
+
+## Help us add formats
+
+Open **Settings → Self-test & background settings → Export diagnostics**. The report contains your phone
+model, Android version, permission state and the last 80 recognition-log lines — no ledger amounts or
+notes. Notification texts are hidden unless you choose to include them. Remove anything personal and
+open an Issue with it.
+
+## Build
+
+Needs JDK 17+ and the Android SDK (compileSdk 37, build-tools 36.1.0).
+
+```bash
+./gradlew :app:testDebugUnitTest   # unit tests: notification parsing, bill import, auto-categories
+./gradlew :app:assembleRelease
+# UI screenshots on the PC (Robolectric; tests need JDK 17/21):
+./gradlew :app:testDebugUnitTest -Pscreenshots=true -PtestJavaHome=/path/to/jdk17 --tests "*ScreenshotTest*"
+```
+
+Dependencies are fetched from Aliyun Maven mirrors first (see `settings.gradle.kts`). Release signing
+reads `../keys/keystore.properties` outside the repository; without it, release builds use the debug key.
+
+Translations: `res/values/` is English (default), `res/values-zh/` Simplified Chinese.
+Traditional Chinese (`res/values-b+zh+Hant/`) is generated from Simplified by
+`python tools/make-zh-hant.py` (OpenCC, Taiwan wording) — rerun it after editing the Simplified strings.
+
+## Releases
+
+Each Release carries three files with fixed names, read by the in-app updater:
+
+| File | Contents |
+|---|---|
+| `version.json` | `{"version","versionCode","apk","sha256","notes"}` |
+| `ExpenseTracking-<version>.apk` | the app |
+| `SHA256SUMS.txt` | checksums |
+
+Tag as `v<version>`, e.g. `v0.2.0`.
+
+## License
+
+[MIT](LICENSE)
