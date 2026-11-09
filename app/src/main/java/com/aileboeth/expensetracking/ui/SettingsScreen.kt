@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -96,6 +97,7 @@ fun SettingsScreen(
     openLog: () -> Unit = {},
     openCategories: () -> Unit = {},
     openUsual: () -> Unit = {},
+    listState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
     val ctx = LocalContext.current
     val prefs = remember { Prefs(ctx) }
@@ -120,7 +122,7 @@ fun SettingsScreen(
     val (versionName, _) = remember { Updater.currentVersion(ctx) }
     val pickBill = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) onImport(uri) }
 
-    LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(padding), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)) {
         item { StatusCard(listOf(listener, overlay, battery)) }
 
         item { Section("自动记账") }
@@ -147,14 +149,24 @@ fun SettingsScreen(
                     Column {
                         SettingRow(Icons.Filled.Timer, Tint.Blue, "自动收起", "有金额的账多久后收起；没金额的会一直留着", { }) { }
                         Row(
-                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(start = 64.dp, end = 12.dp, bottom = 10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            Modifier.padding(start = 64.dp, end = 14.dp, bottom = 12.dp).fillMaxWidth()
+                                .clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.surfaceVariant).padding(3.dp),
                         ) {
-                            for (s in SECONDS) FilterChip(
-                                selected = seconds == s,
-                                onClick = { seconds = s; prefs.bubbleSeconds = s },
-                                label = { Text("$s 秒") },
-                            )
+                            for (s in SECONDS) {
+                                val on = seconds == s
+                                Box(
+                                    Modifier.weight(1f).clip(RoundedCornerShape(50))
+                                        .background(if (on) MaterialTheme.colorScheme.surface else Color.Transparent)
+                                        .clickable { seconds = s; prefs.bubbleSeconds = s }.padding(vertical = 7.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        "$s 秒", softWrap = false, style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
+                                        color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
                         }
                     }
                 },

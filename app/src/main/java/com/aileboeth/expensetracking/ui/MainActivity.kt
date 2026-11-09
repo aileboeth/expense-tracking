@@ -92,6 +92,8 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
     val ctx = LocalContext.current
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var overlay by remember { mutableStateOf<Overlay?>(null) }
+    // Lives here so the settings list keeps its scroll position while a sub-page is open.
+    val settingsList = androidx.compose.foundation.lazy.rememberLazyListState()
     LaunchedEffect(Unit) { Updater.autoCheck(ctx) }
     LaunchedEffect(addRequest.value) { if (addRequest.value) { overlay = null; tab = 0 } }
     // The capsule's "✎ 改" opens the usual-amounts page; back from it lands on settings.
@@ -134,6 +136,7 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
                     openLog = { overlay = Overlay.Log },
                     openCategories = { overlay = Overlay.Categories },
                     openUsual = { overlay = Overlay.UsualAmounts },
+                    listState = settingsList,
                 )
             }
         }
