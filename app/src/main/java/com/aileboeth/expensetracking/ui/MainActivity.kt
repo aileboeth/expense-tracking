@@ -80,6 +80,8 @@ class MainActivity : ComponentActivity() {
 private sealed interface Overlay {
     data object Search : Overlay
     data object BlacklistApps : Overlay
+    data object BlacklistWords : Overlay
+    data object Log : Overlay
     data class Import(val uri: Uri) : Overlay
 }
 
@@ -95,6 +97,8 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
     when (val o = overlay) {
         Overlay.Search -> SearchScreen(onBack = { overlay = null })
         Overlay.BlacklistApps -> BlacklistAppsScreen(onBack = { overlay = null })
+        Overlay.BlacklistWords -> BlacklistWordsScreen(onBack = { overlay = null })
+        Overlay.Log -> RecognitionLogScreen(onBack = { overlay = null })
         is Overlay.Import -> ImportScreen(o.uri, onBack = { overlay = null })
         null -> Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -119,6 +123,8 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
                     padding,
                     onImport = { overlay = Overlay.Import(it) },
                     openBlacklist = { overlay = Overlay.BlacklistApps },
+                    openWords = { overlay = Overlay.BlacklistWords },
+                    openLog = { overlay = Overlay.Log },
                     openUsual = usualRequest.value,
                     onUsualOpened = { usualRequest.value = false },
                 )

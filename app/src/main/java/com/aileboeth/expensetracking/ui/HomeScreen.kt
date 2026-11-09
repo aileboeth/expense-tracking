@@ -235,12 +235,13 @@ fun NoticeCard(title: String, body: String, action: String, onClick: () -> Unit)
 }
 
 @Composable
-private fun DayHeader(day: LocalDate, list: List<Tx>) {
+fun DayHeader(day: LocalDate, list: List<Tx>) {
     val ex = list.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
     val inc = list.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
-    val label = when (day) {
-        LocalDate.now() -> "今天"
-        LocalDate.now().minusDays(1) -> "昨天"
+    val label = when {
+        day == LocalDate.now() -> "今天"
+        day == LocalDate.now().minusDays(1) -> "昨天"
+        day.year != LocalDate.now().year -> "${day.year}年${day.monthValue}月${day.dayOfMonth}日"
         else -> "${day.monthValue}月${day.dayOfMonth}日"
     }
     Column(Modifier.padding(horizontal = 4.dp)) {
@@ -286,7 +287,9 @@ fun TxRow(tx: Tx, onClick: () -> Unit) {
                 maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium,
             )
             val titleIsKind = tx.category.isEmpty() && tx.kind.isNotEmpty()
-            val sub = listOf(time, tx.channel, tx.counterpart.ifBlank { if (titleIsKind) "" else Kinds.label(tx.kind) })
+            // "微信 · 微信付款" says the same thing twice: keep the kind only when it adds something (手表/凭证, 免密, 账单导入…).
+            val kind = Kinds.label(tx.kind).takeUnless { titleIsKind || it == tx.channel + "付款" || it == tx.channel + "收款" }.orEmpty()
+            val sub = listOf(time, tx.channel, tx.counterpart.ifBlank { kind })
                 .filter { it.isNotBlank() }.distinct()
             Text(
                 sub.joinToString(" · "),

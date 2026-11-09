@@ -6,7 +6,7 @@ plugins {
 }
 
 // Version: bump the last number for each release (0.1.0 -> 0.1.1).
-val appVersion = "0.1.1"
+val appVersion = "0.1.2"
 val appVersionCode = appVersion.split(".").map { it.toInt() }.let { (a, b, c) -> a * 10000 + b * 100 + c }
 
 // Release key lives OUTSIDE the repository (../keys). Without it, release builds use the debug key.
@@ -90,6 +90,7 @@ dependencies {
     implementation(composeBom)
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.activity:activity-compose:1.13.0")

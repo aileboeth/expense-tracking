@@ -118,4 +118,34 @@ class ScreenshotTest {
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/5-blacklist-apps.png")
     }
+
+    @Test fun blacklistWords() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        Prefs(ctx).blacklistWords = setOf("多点科技", "余额宝")
+        Repo.log("com.eg.android.AlipayGphone", "交易提醒", "多点科技 收款 20.00", "黑名单关键词「多点科技」，不记")
+        if (Repo.recentCounterparts(1).isEmpty()) {
+            for (cp in listOf("美团", "瑞幸咖啡", "张三", "滴滴出行")) Repo.insert(
+                Tx(type = TxType.EXPENSE, amountCents = 1000, category = "其他", counterpart = cp, channel = "支付宝", time = System.currentTimeMillis()),
+            )
+        }
+        compose.setContent { AppTheme { BlacklistWordsScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/6-blacklist-words.png")
+    }
+
+    @Test fun recognitionLog() {
+        Repo.log("com.tencent.mm", "微信支付", "已支付¥30.00", "已记账 #12")
+        Repo.log("com.tencent.mm", "微信支付", "微信支付凭证", "待补金额/待确认 #13")
+        Repo.log("com.eg.android.AlipayGphone", "交易提醒", "你在某商户有一笔0.00元的免密支付", "不记：0 元免密提示")
+        Repo.log("com.tencent.mm", "微信支付", "收款到账通知", "没认出")
+        compose.setContent { AppTheme { RecognitionLogScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/7-log.png")
+    }
+
+    @Config(qualifiers = "w393dp-h1900dp-xxhdpi")
+    @Test fun settingsFull() {
+        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp), onImport = {}) } }
+        compose.onRoot().captureRoboImage("build/screens/4b-settings-full.png")
+    }
 }

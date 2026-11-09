@@ -148,6 +148,13 @@ object Repo {
             arrayOf(type.name, since.toString(), limit.toString()),
         ).use { c -> buildList { while (c.moveToNext()) add(c.getLong(0)) } }
 
+    /** Payers / merchants seen in recent entries, most frequent first. */
+    fun recentCounterparts(limit: Int): List<String> =
+        db.rawQuery(
+            "SELECT counterpart, COUNT(*) c, MAX(time) t FROM tx WHERE counterpart<>'' GROUP BY counterpart ORDER BY c DESC, t DESC LIMIT ?",
+            arrayOf(limit.toString()),
+        ).use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
+
     fun channels(): List<String> =
         db.rawQuery("SELECT DISTINCT channel FROM tx WHERE channel<>'' ORDER BY channel", null)
             .use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }

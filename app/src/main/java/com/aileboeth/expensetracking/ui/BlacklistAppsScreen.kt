@@ -326,7 +326,7 @@ private val iconCache = LruCache<String, ImageBitmap>(160)
 
 /** The app's launcher icon, loaded in the background; a coloured letter until it is ready or if it cannot be read. */
 @Composable
-private fun AppIcon(pkg: String, label: String, size: Dp) {
+fun AppIcon(pkg: String, label: String, size: Dp) {
     val ctx = LocalContext.current
     val px = with(LocalDensity.current) { size.roundToPx() }
     val key = "$pkg@$px"

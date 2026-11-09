@@ -26,6 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -92,6 +94,11 @@ fun SearchScreen(onBack: () -> Unit) {
                     leadingIcon = { Icon(Icons.Filled.Search, null) },
                     trailingIcon = { if (query.isNotEmpty()) IconButton({ query = "" }) { Icon(Icons.Filled.Clear, "清空") } },
                     singleLine = true, shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedBorderColor = Color.Transparent,
+                    ),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -110,11 +117,18 @@ fun SearchScreen(onBack: () -> Unit) {
                 FilterChip(category == null, { category = null }, label = { Text("全部分类") })
                 categories.forEach { c -> FilterChip(category == c, { category = if (category == c) null else c }, label = { Text(CategoryStyle.label(c)) }) }
             }
-            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(min, { min = it }, label = { Text("最少 ¥") }, singleLine = true,
+            Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                val soft = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedBorderColor = Color.Transparent,
+                )
+                Text("金额", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, end = 10.dp))
+                OutlinedTextField(min, { min = it }, placeholder = { Text("最少 ¥") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = soft,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
-                Text("  —  ")
-                OutlinedTextField(max, { max = it }, label = { Text("最多 ¥") }, singleLine = true,
+                Text("  —  ", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedTextField(max, { max = it }, placeholder = { Text("最多 ¥") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = soft,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
             }
             val ex = results.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
@@ -125,16 +139,19 @@ fun SearchScreen(onBack: () -> Unit) {
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
             )
-            LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
-                item {
-                    if (results.isNotEmpty()) SoftCard(padding = 10.dp) {
-                        results.forEach { tx ->
-                            val d = localDate(tx.time)
-                            Text("${d.year}-${d.monthValue}-${d.dayOfMonth}", style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp, top = 6.dp))
-                            TxRow(tx) { editing = tx }
-                        }
-                    } else Text("没有符合条件的账", Modifier.padding(8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val days = results.groupBy { localDate(it.time) }
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (results.isEmpty()) item {
+                    Text("没有符合条件的账", Modifier.padding(8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                for ((day, list) in days) item(key = "d$day") {
+                    SoftCard(padding = 12.dp) {
+                        DayHeader(day, list)
+                        list.forEach { tx -> TxRow(tx) { editing = tx } }
+                    }
                 }
             }
         }
