@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- capsule -->
+    <string name="bub_pending">Needs amount</string>
+    <string name="bub_count">%1$s · %2$d</string>
+    <string name="bub_desc">Expense Tracking: %s</string>
+    <string name="bub_note_guess">Save files it under \"%s\" because of the note</string>
+    <string name="bub_pick_amount">Pick an amount first</string>
+    <string name="bub_hint">Tap a category to save; or tap Save to file it under \"Other\"</string>
+    <string name="bub_more_left"> · %d more</string>
+    <string name="bub_more">More</string>
+    <string name="bub_flip">Switch income/expense</string>
+    <string name="bub_not_this">Not a payment</string>
+    <string name="bub_deleted">Deleted</string>
+    <string name="bub_note_hint">Note (optional)</string>
+    <string name="bub_saved">Saved: %1$s %2$s</string>
+
+    <!-- import -->
+    <string name="imp_title">Import bill</string>
+    <string name="imp_title_of">Import %s bill</string>
+    <string name="imp_empty">The bill has no income or expenses to import</string>
+    <string name="imp_read_failed">Could not read it: %s</string>
+    <string name="imp_done">Imported %1$d, filled in %2$d amounts</string>
+    <string name="imp_failed">Could not import</string>
+    <string name="imp_howto">WeChat: Me → Services → Wallet → Bills → ⋯ → Download bills → for personal reconciliation (Excel).\nAlipay: Mine → Bills → ⋯ → Issue transaction statement → for personal reconciliation.\nUnzip the file from the email first (the password is in a WeChat/Alipay message), then import the .xlsx / .csv inside.</string>
+    <string name="imp_result">Reconciliation</string>
+    <string name="imp_summary">%1$d in the bill: %2$d already recorded, %3$d missing, %4$d can fill in an amount, %5$d imported before.</string>
+    <string name="imp_skipped">Not imported: </string>
+    <string name="imp_missing">Missing (checked ones are added)</string>
+    <string name="imp_fill">Can fill in the amount (watch payments, transfers without amount)</string>
+    <string name="imp_matched">Already recorded</string>
+    <string name="imp_nothing">Nothing to import</string>
+    <string name="imp_no_desc">(no description)</string>
+    <string name="imp_more">…%d more</string>
+
+    <!-- self-test notification, export -->
+    <string name="selftest_channel">Self-test</string>
+    <string name="selftest_channel_desc">One test notification during the self-test; disappears after a few seconds</string>
+    <string name="selftest_title">Expense Tracking self-test</string>
+    <string name="selftest_text">This is a test notification and will disappear shortly</string>
+    <string name="csv_header">Time,Type,Amount,Category,Note,Channel,Payee,Status,Source,Receipts</string>
+    <string name="csv_pending_amount">Waiting for amount</string>
+    <string name="csv_pending_confirm">Waiting for confirmation</string>
+    <string name="csv_receipts">%d (in the app)</string>
+</resources>

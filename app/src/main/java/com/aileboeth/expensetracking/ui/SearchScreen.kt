@@ -1,5 +1,8 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import com.aileboeth.expensetracking.R
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +54,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 
-private enum class Period(val label: String) { MONTH("本月"), THREE("近 3 个月"), YEAR("今年"), ALL("全部") }
+private enum class Period(val label: Int) { MONTH(R.string.period_month), THREE(R.string.period_3m), YEAR(R.string.period_year), ALL(R.string.period_all) }
 
 @Composable
 fun SearchScreen(onBack: () -> Unit) {
@@ -88,12 +91,12 @@ fun SearchScreen(onBack: () -> Unit) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Row(Modifier.padding(start = 4.dp, end = 12.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+                IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
                 OutlinedTextField(
                     value = query, onValueChange = { query = it },
-                    placeholder = { Text("搜备注、对方、分类…") },
+                    placeholder = { Text(stringResource(R.string.search_hint)) },
                     leadingIcon = { Icon(Icons.Filled.Search, null) },
-                    trailingIcon = { if (query.isNotEmpty()) IconButton({ query = "" }) { Icon(Icons.Filled.Clear, "清空") } },
+                    trailingIcon = { if (query.isNotEmpty()) IconButton({ query = "" }) { Icon(Icons.Filled.Clear, stringResource(R.string.clear)) } },
                     singleLine = true, shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -104,19 +107,19 @@ fun SearchScreen(onBack: () -> Unit) {
                 )
             }
             ChipRow {
-                FilterChip(type == null, { type = null; category = null }, label = { Text("全部") })
-                FilterChip(type == TxType.EXPENSE, { type = TxType.EXPENSE; category = null }, label = { Text("支出") })
-                FilterChip(type == TxType.INCOME, { type = TxType.INCOME; category = null }, label = { Text("收入") })
+                FilterChip(type == null, { type = null; category = null }, label = { Text(stringResource(R.string.period_all)) })
+                FilterChip(type == TxType.EXPENSE, { type = TxType.EXPENSE; category = null }, label = { Text(stringResource(R.string.expense)) })
+                FilterChip(type == TxType.INCOME, { type = TxType.INCOME; category = null }, label = { Text(stringResource(R.string.income)) })
                 Spacer(Modifier.width(8.dp))
-                Period.entries.forEach { p -> FilterChip(period == p, { period = p }, label = { Text(p.label) }) }
+                Period.entries.forEach { p -> FilterChip(period == p, { period = p }, label = { Text(stringResource(p.label)) }) }
             }
             ChipRow {
-                FilterChip(channel == null, { channel = null }, label = { Text("全部渠道") })
-                channels.forEach { c -> FilterChip(channel == c, { channel = if (channel == c) null else c }, label = { Text(c) }) }
+                FilterChip(channel == null, { channel = null }, label = { Text(stringResource(R.string.search_all_channels)) })
+                channels.forEach { c -> FilterChip(channel == c, { channel = if (channel == c) null else c }, label = { Text(channelName(c)) }) }
             }
             ChipRow {
-                FilterChip(category == null, { category = null }, label = { Text("全部分类") })
-                categories.forEach { c -> FilterChip(category == c, { category = if (category == c) null else c }, label = { Text(CategoryStyle.label(c)) }) }
+                FilterChip(category == null, { category = null }, label = { Text(stringResource(R.string.search_all_categories)) })
+                categories.forEach { c -> FilterChip(category == c, { category = if (category == c) null else c }, label = { Text(catLabel(c)) }) }
             }
             Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 val soft = OutlinedTextFieldDefaults.colors(
@@ -124,18 +127,18 @@ fun SearchScreen(onBack: () -> Unit) {
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedBorderColor = Color.Transparent,
                 )
-                Text("金额", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Text(stringResource(R.string.amount_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp, end = 10.dp))
-                OutlinedTextField(min, { min = it }, placeholder = { Text("最少 ¥") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = soft,
+                OutlinedTextField(min, { min = it }, placeholder = { Text(stringResource(R.string.min_amount, Money.sym)) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = soft,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
                 Text("  —  ", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                OutlinedTextField(max, { max = it }, placeholder = { Text("最多 ¥") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = soft,
+                OutlinedTextField(max, { max = it }, placeholder = { Text(stringResource(R.string.max_amount, Money.sym)) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = soft,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
             }
             val ex = results.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
             val inc = results.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
             Text(
-                "共 ${results.size} 笔 · 支出 ¥${Money.format(ex)} · 收入 ¥${Money.format(inc)}" + if (results.size >= 500) "（只显示最近 500 笔）" else "",
+                stringResource(R.string.search_summary, results.size, Money.money(ex), Money.money(inc)) + if (results.size >= 500) stringResource(R.string.search_capped) else "",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
@@ -146,7 +149,7 @@ fun SearchScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (results.isEmpty()) item {
-                    Text("没有符合条件的账", Modifier.padding(8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.search_empty), Modifier.padding(8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 for ((day, list) in days) item(key = "d$day") {
                     SoftCard(padding = 12.dp) {

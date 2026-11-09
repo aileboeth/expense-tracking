@@ -46,13 +46,53 @@ data class Attachment(
 
 data class LogEntry(val id: Long, val time: Long, val pkg: String, val title: String, val text: String, val result: String)
 
+/**
+ * Amounts are stored as 1/100 of the ledger currency. The currency only changes how they are shown
+ * (symbol and decimals, e.g. JPY has none); nothing is ever converted.
+ */
 object Money {
-    /** 3000 -> "30.00" */
-    fun format(cents: Long): String = BigDecimal.valueOf(cents, 2).toPlainString()
+    @Volatile var currency: java.util.Currency = java.util.Currency.getInstance("CNY")
+        private set
+
+    fun setCurrency(code: String) {
+        currency = runCatching { java.util.Currency.getInstance(code) }.getOrDefault(java.util.Currency.getInstance("CNY"))
+    }
+
+    /** The phone region's currency (CNY in mainland China, USD in the US …). */
+    fun defaultCurrencyCode(): String =
+        runCatching { java.util.Currency.getInstance(java.util.Locale.getDefault()).currencyCode }.getOrNull() ?: "CNY"
+
+    /** "¥", "$", "€", "HK$" … for the ledger currency. */
+    val sym: String get() = symbolFor(currency.currencyCode)
+
+    fun symbolFor(code: String): String = when (code) {
+        "CNY", "JPY" -> "¥"
+        "USD" -> "$"
+        "HKD" -> "HK$"
+        "TWD" -> "NT$"
+        "MOP" -> "MOP$"
+        "SGD" -> "S$"
+        "AUD" -> "A$"
+        "CAD" -> "C$"
+        "KRW" -> "₩"
+        "INR" -> "₹"
+        else -> runCatching { java.util.Currency.getInstance(code).getSymbol(java.util.Locale.getDefault()) }.getOrDefault(code)
+    }
+
+    /** Chinese UI counts big numbers in 万 (10 000), others in k. */
+    val chineseUnits: Boolean get() = java.util.Locale.getDefault().language == "zh"
+
+    private val digits: Int get() = currency.defaultFractionDigits.coerceIn(0, 2)
+
+    /** 3000 -> "30.00" (CNY) / "30" (JPY). */
+    fun format(cents: Long): String = BigDecimal.valueOf(cents, 2).setScale(digits, java.math.RoundingMode.HALF_UP).toPlainString()
+
+    /** 3000 -> "¥30.00", -3000 -> "-¥30.00". */
+    fun money(cents: Long): String = (if (cents < 0) "-" else "") + sym + format(kotlin.math.abs(cents))
 
     /** "30" / "30.5" / "30.50" -> cents; null when not a positive amount. */
     fun parse(input: String): Long? {
-        val s = input.trim().replace(",", "").removePrefix("¥").removePrefix("￥")
+        val s = input.trim().replace(",", "").removePrefix(sym).removePrefix("¥").removePrefix("￥").removePrefix("$").trim()
         if (s.isEmpty()) return null
         return try {
             val v = BigDecimal(s)

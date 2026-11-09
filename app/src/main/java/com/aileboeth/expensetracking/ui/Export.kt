@@ -4,7 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.os.Environment
 import android.provider.MediaStore
-import com.aileboeth.expensetracking.data.Kinds
+import com.aileboeth.expensetracking.R
 import com.aileboeth.expensetracking.data.Money
 import com.aileboeth.expensetracking.data.Repo
 import com.aileboeth.expensetracking.parse.TxType
@@ -18,17 +18,17 @@ object Export {
 
     fun csv(ctx: Context): String {
         val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA)
-        val sb = StringBuilder("﻿时间,类型,金额,分类,备注,渠道,对方,状态,来源说明,凭证\n")
+        val sb = StringBuilder("\uFEFF" + ctx.getString(R.string.csv_header) + "\n")
         val counts = Repo.attachmentCounts()
         for (t in Repo.all()) {
             val cols = listOf(
                 fmt.format(Date(t.time)),
-                if (t.type == TxType.EXPENSE) "支出" else "收入",
+                ctx.getString(if (t.type == TxType.EXPENSE) R.string.expense else R.string.income),
                 t.amountCents?.let { Money.format(it) } ?: "",
-                t.category, t.note, t.channel, t.counterpart,
-                if (t.amountCents == null) "待补金额" else if (t.status.name == "PENDING") "待确认" else "",
-                if (t.source == "auto") Kinds.label(t.kind) else "手动",
-                counts[t.id]?.let { "$it 个（在 App 里查看）" } ?: "",
+                Labels.category(ctx, t.category), t.note, Labels.channel(ctx, t.channel), t.counterpart,
+                if (t.amountCents == null) ctx.getString(R.string.csv_pending_amount) else if (t.status.name == "PENDING") ctx.getString(R.string.csv_pending_confirm) else "",
+                if (t.source == "auto") Labels.kind(ctx, t.kind) else ctx.getString(R.string.ch_manual),
+                counts[t.id]?.let { ctx.getString(R.string.csv_receipts, it) } ?: "",
             )
             sb.append(cols.joinToString(",") { quote(it) }).append('\n')
         }

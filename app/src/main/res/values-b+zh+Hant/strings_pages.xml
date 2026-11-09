@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- blocked apps -->
+    <string name="bl_search">搜 App 名稱或包名</string>
+    <string name="bl_loading">正在讀取已安裝的 App…</string>
+    <string name="bl_recent">最近發過金額通知</string>
+    <string name="bl_recent_hint">不想記的就拉黑</string>
+    <string name="bl_all">全部 App</string>
+    <string name="bl_results">搜尋結果</string>
+    <string name="bl_not_found">沒有找到「%s」</string>
+    <string name="bl_confirm_title">拉黑%s？</string>
+    <string name="bl_confirm_body">%s的付款、收款就都不會自動記帳了。只是不想記某個商戶或付款方的話，用「黑名單關鍵詞」更合適。</string>
+    <string name="bl_confirm_yes">仍然拉黑</string>
+    <string name="bl_count_label">個 App 已拉黑</string>
+    <string name="bl_header_body">它們的通知一律不記帳，開關一動就生效。</string>
+    <string name="bl_header_empty">還沒有。在下面開啟 App 右邊的開關就行。</string>
+    <string name="bl_unblock">移出黑名單</string>
+    <string name="bl_info">現在只讀微信、支付寶和你開了的支付 App，其他 App 本來就不會記。開啟「也識別其他 App」後，黑名單才對它們起作用。</string>
+    <string name="bl_info_enable">開啟</string>
+    <string name="bl_known_blocked">付款來源 · 已拉黑，不會自動記帳</string>
+    <string name="bl_known">付款來源 · 自動記帳靠它</string>
+
+    <!-- blocked keywords -->
+    <string name="bw_count_label">個關鍵詞</string>
+    <string name="bw_blocked_n">已攔下 %d 筆</string>
+    <string name="bw_header_body">付款方、商戶或通知內容裡含有這些詞，就不記帳。適合擋掉自己帳戶之間轉來轉去這類不算收支的錢。</string>
+    <string name="bw_input_hint">輸入關鍵詞，如：多點科技</string>
+    <string name="bw_added">已新增</string>
+    <string name="bw_empty">還沒有。在上面輸入，或者從下面最近的付款方里點一個。</string>
+    <string name="bw_word_blocked">%1$s · 攔下 %2$d</string>
+    <string name="bw_recent">最近的付款方 / 商戶</string>
+    <string name="bw_recent_hint">點一下就加進黑名單</string>
+
+    <!-- recognition log -->
+    <string name="log_recorded">記了</string>
+    <string name="log_skipped">沒記</string>
+    <string name="log_tag_recorded">已記帳</string>
+    <string name="log_tag_pending">待補</string>
+    <string name="log_tag_blocked">黑名單</string>
+    <string name="log_tag_skipped">不記</string>
+    <string name="log_tag_unknown">沒認出</string>
+    <string name="log_tag_error">出錯</string>
+    <string name="log_pending_detail">記下了，等你補金額或確認%s</string>
+    <string name="log_blocked_app">這個 App 在黑名單裡%s</string>
+    <string name="log_blocked_word">黑名單關鍵詞「%s」</string>
+    <string name="log_unknown_detail">像是付款通知，但格式沒見過%s</string>
+    <string name="log_empty">還沒有記錄</string>
+    <string name="log_empty_body">收到付款通知後，這裡會寫它記了沒有、為什麼。</string>
+    <string name="log_blank">（空通知）</string>
+    <string name="reason_wechat_other">微信支付的其他訊息</string>
+    <string name="reason_zero_autopay">0 元的免密/自動扣款提示</string>
+    <string name="reason_zero">0 元提示</string>
+    <string name="reason_unknown_alipay">沒認出的交易提醒</string>
+
+    <!-- categories -->
+    <string name="cat_exists">已經有「%s」了</string>
+    <string name="cat_too_long">名字短一點</string>
+    <string name="cat_new">新建分類</string>
+    <string name="cat_new_hint_expense">如：寵物、健身</string>
+    <string name="cat_new_hint_income">如：理財、獎學金</string>
+    <string name="cat_expense_list">支出分類</string>
+    <string name="cat_income_list">收入分類</string>
+    <string name="cat_footer">點分類可以刪除，已記的帳保留原來的分類。「其他」是沒選分類時的預設項，不能刪。</string>
+    <string name="cat_delete_title">刪除分類「%s」？</string>
+    <string name="cat_delete_unused">這個分類還沒有用過。</string>
+    <string name="cat_default">預設</string>
+    <string name="cat_unused">未使用</string>
+
+    <!-- usual amounts -->
+    <string name="ua_preview">膠囊卡片上會顯示</string>
+    <string name="ua_auto">按記錄自動給出</string>
+    <string name="ua_yours">你設的</string>
+    <string name="ua_list">你設的金額</string>
+    <string name="ua_empty">還沒設。現在用的是你最近最常付的金額，想固定幾個就在下面加。</string>
+    <string name="ua_reset">清空，改回自動</string>
+    <string name="ua_input">輸入金額</string>
+    <string name="ua_bad">金額不對</string>
+    <string name="ua_frequent">你常付的金額</string>
+    <string name="ua_90d">近 90 天</string>
+    <string name="ua_tap_add">點一下加進上面的列表</string>
+    <string name="ua_no_history">還沒有記錄可以參考，卡片上會直接彈出鍵盤讓你輸入。</string>
+    <string name="card_how_much">這筆多少錢？</string>
+    <string name="card_other_amount">其他金額</string>
+    <string name="card_edit">✎ 改</string>
+
+    <!-- rules -->
+    <string name="rules_title">按備註自動分類</string>
+    <string name="rules_body">寫了備註、沒選分類時，App 依次看：你的規則 → 你以前給這個備註選的分類 → 內建的常用詞。都對不上才記到「其他」。</string>
+    <string name="rules_new">新建規則</string>
+    <string name="rules_keyword_hint">備註或付款方里出現的詞，如：瑞幸</string>
+    <string name="rules_goes_to">歸到</string>
+    <string name="rules_add_preview">新增：「%1$s」→ %2$s</string>
+    <string name="rules_yours">你的規則</string>
+    <string name="rules_empty">還沒有。大多數時候不用設：給某個備註選過一次分類，App 下次就記住了。</string>
+    <string name="rules_learned">已經學會的</string>
+    <string name="rules_learned_hint">按你以前的選擇</string>
+    <string name="n_times">%d 次</string>
+    <string name="rules_learned_footer">想改的話，在帳單裡把這個備註的帳改成別的分類，用得多的那個會勝出；或者在上面加一條規則（規則最優先）。</string>
+    <string name="rules_builtin">內建的常用詞</string>
+
+    <!-- stability -->
+    <string name="st_phone">%s 手機</string>
+    <string name="st_ok">基本設定都好了。下面的背景設定也做一下，長時間熄屏也不容易漏記。</string>
+    <string name="st_missing">還有標紅的項沒好，付款可能記不上。</string>
+    <string name="st_status">現在的狀態</string>
+    <string name="st_connected">通知監聽已連線</string>
+    <string name="st_connected_yes">系統正在把通知交給記帳</string>
+    <string name="st_connected_no">許可權開著但沒連上：點一下重新連線</string>
+    <string name="st_pill_connected">已連線</string>
+    <string name="st_pill_connect">去連線</string>
+    <string name="st_last_payment">最近一條付款通知</string>
+    <string name="st_never">還沒收到過</string>
+    <string name="st_selftest">自檢</string>
+    <string name="st_selftest_body">發一條測試通知，看記帳能不能馬上收到。幾秒後通知會自己消失，不會記帳。</string>
+    <string name="st_start">開始自檢</string>
+    <string name="st_result_ok">收到了（用了 %s 秒）。自動記帳在這臺手機上能正常工作。</string>
+    <string name="st_result_no_listener">通知使用權沒開。點上面的「通知使用權」去開啟。</string>
+    <string name="st_result_cannot_post">記帳沒有發通知的許可權，測不了。在系統設定裡允許記帳發通知後再試（只用來自檢）。</string>
+    <string name="st_result_not_seen">6 秒內沒收到。點「通知監聽已連線」重連一下再試；還不行就按下面的背景設定做一遍，或者把通知使用權關掉再開啟。</string>
+    <string name="st_guide">%s 的背景設定</string>
+    <string name="st_guide_once">做一次就行</string>
+    <string name="st_cannot_open">打不開，請按上面的路徑手動找</string>
+    <string name="st_guide_footer">不同系統版本的選單名字可能略有不同；「去設定」打不開對應頁面時，會開啟記帳的應用詳情頁。</string>
+    <string name="st_still_missing">還是漏記？</string>
+    <string name="st_diag">匯出診斷資訊</string>
+    <string name="st_diag_sub">手機型號、系統、許可權狀態和最近的識別記錄，發給開發者看</string>
+    <string name="st_diag_body">包含：手機型號、系統版本、各項許可權、最近 80 條識別記錄（記了沒有、為什麼）。不包含你的帳單金額和備註。</string>
+    <string name="st_diag_text">附帶通知原文</string>
+    <string name="st_diag_text_sub">沒認出的格式要靠原文才能修；原文裡可能有付款方名字</string>
+    <string name="st_diag_send">傳送…</string>
+    <string name="st_diag_save">儲存到手機</string>
+    <string name="st_diag_saved">已儲存到 %s</string>
+    <string name="st_diag_save_failed">儲存失敗：%s</string>
+    <string name="ago_now">剛剛</string>
+    <string name="ago_min">%d 分鐘前</string>
+    <string name="ago_hour">%d 小時前</string>
+
+    <!-- brands -->
+    <string name="brand_xiaomi">小米 / Redmi</string>
+    <string name="brand_huawei">華為</string>
+    <string name="brand_honor">榮耀</string>
+    <string name="brand_oneplus">一加</string>
+    <string name="brand_oppo">OPPO / realme</string>
+    <string name="brand_vivo">vivo / iQOO</string>
+    <string name="brand_samsung">三星</string>
+    <string name="brand_meizu">魅族</string>
+    <string name="brand_other">這臺手機</string>
+    <string name="step_lock">在最近任務裡鎖住「記帳」</string>
+    <string name="step_lock_where">開啟最近任務（多工）介面，找到記帳的卡片，下拉或長按後點「鎖定」。一鍵清理時就不會把它清掉。</string>
+    <string name="step_autostart">允許自啟動</string>
+    <string name="step_xiaomi_autostart">安全中心 → 應用管理 → 許可權 → 自啟動管理，開啟「記帳」。</string>
+    <string name="step_xiaomi_battery">省電策略選「無限制」</string>
+    <string name="step_xiaomi_battery_where">設定 → 應用設定 → 應用管理 → 記帳 → 省電策略 → 無限制。</string>
+    <string name="step_launch_manual">應用啟動管理改成手動</string>
+    <string name="step_huawei_where">設定 → 應用和服務 → 應用啟動管理 → 記帳：關掉「自動管理」，在彈出的視窗裡開啟「允許自啟動」「允許關聯啟動」「允許背景活動」。</string>
+    <string name="step_honor_where">設定 → 應用 → 應用啟動管理 → 記帳：關掉「自動管理」，開啟「允許自啟動」「允許關聯啟動」「允許背景活動」。</string>
+    <string name="step_oppo_autostart">設定 → 應用 → 自啟動管理（或 手機管家 → 許可權隱私 → 自啟動管理），開啟「記帳」。</string>
+    <string name="step_background">允許背景執行</string>
+    <string name="step_oppo_background">設定 → 電池 → 更多設定 / 應用耗電管理 → 記帳：開啟「允許背景執行」，關掉「智慧限制」類選項。</string>
+    <string name="step_vivo_power">允許背景高耗電</string>
+    <string name="step_vivo_power_where">設定 → 電池 → 背景耗電管理 → 記帳 → 允許背景高耗電。</string>
+    <string name="step_vivo_autostart">i管家 → 應用管理 → 許可權管理 → 自啟動（或 設定 → 應用與許可權 → 許可權管理 → 自啟動），開啟「記帳」。</string>
+    <string name="step_vivo_update">App 更新後開啟一次</string>
+    <string name="step_vivo_update_where">vivo 在 App 更新後不會自動重新連線通知監聽。更新完開啟一次記帳就好，App 會自己重連。</string>
+    <string name="step_samsung_battery">電池改成「不受限制」</string>
+    <string name="step_samsung_battery_where">設定 → 應用程式 → 記帳 → 電池 → 不受限制。</string>
+    <string name="step_samsung_sleep">不要放進「深度休眠應用」</string>
+    <string name="step_samsung_sleep_where">設定 → 電池 → 背景使用限制：確認記帳不在「休眠應用程式」「深度休眠應用程式」裡。</string>
+    <string name="step_meizu_background">手機管家 → 許可權管理 → 背景管理 → 記帳 → 允許背景執行。</string>
+    <string name="step_battery_opt">關閉電池最佳化</string>
+    <string name="step_battery_opt_where">設定 → 應用 → 記帳 → 電池：選「不最佳化」或「不受限制」。</string>
+    <string name="step_generic_bg">允許自啟動 / 背景執行</string>
+    <string name="step_generic_bg_where">如果系統有「自啟動」「背景執行」之類的開關，給記帳開啟。</string>
+</resources>

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- blocked apps -->
+    <string name="bl_search">搜 App 名称或包名</string>
+    <string name="bl_loading">正在读取已安装的 App…</string>
+    <string name="bl_recent">最近发过金额通知</string>
+    <string name="bl_recent_hint">不想记的就拉黑</string>
+    <string name="bl_all">全部 App</string>
+    <string name="bl_results">搜索结果</string>
+    <string name="bl_not_found">没有找到「%s」</string>
+    <string name="bl_confirm_title">拉黑%s？</string>
+    <string name="bl_confirm_body">%s的付款、收款就都不会自动记账了。只是不想记某个商户或付款方的话，用「黑名单关键词」更合适。</string>
+    <string name="bl_confirm_yes">仍然拉黑</string>
+    <string name="bl_count_label">个 App 已拉黑</string>
+    <string name="bl_header_body">它们的通知一律不记账，开关一动就生效。</string>
+    <string name="bl_header_empty">还没有。在下面打开 App 右边的开关就行。</string>
+    <string name="bl_unblock">移出黑名单</string>
+    <string name="bl_info">现在只读微信、支付宝和你开了的支付 App，其他 App 本来就不会记。打开「也识别其他 App」后，黑名单才对它们起作用。</string>
+    <string name="bl_info_enable">打开</string>
+    <string name="bl_known_blocked">付款来源 · 已拉黑，不会自动记账</string>
+    <string name="bl_known">付款来源 · 自动记账靠它</string>
+
+    <!-- blocked keywords -->
+    <string name="bw_count_label">个关键词</string>
+    <string name="bw_blocked_n">已拦下 %d 笔</string>
+    <string name="bw_header_body">付款方、商户或通知内容里含有这些词，就不记账。适合挡掉自己账户之间转来转去这类不算收支的钱。</string>
+    <string name="bw_input_hint">输入关键词，如：多点科技</string>
+    <string name="bw_added">已添加</string>
+    <string name="bw_empty">还没有。在上面输入，或者从下面最近的付款方里点一个。</string>
+    <string name="bw_word_blocked">%1$s · 拦下 %2$d</string>
+    <string name="bw_recent">最近的付款方 / 商户</string>
+    <string name="bw_recent_hint">点一下就加进黑名单</string>
+
+    <!-- recognition log -->
+    <string name="log_recorded">记了</string>
+    <string name="log_skipped">没记</string>
+    <string name="log_tag_recorded">已记账</string>
+    <string name="log_tag_pending">待补</string>
+    <string name="log_tag_blocked">黑名单</string>
+    <string name="log_tag_skipped">不记</string>
+    <string name="log_tag_unknown">没认出</string>
+    <string name="log_tag_error">出错</string>
+    <string name="log_pending_detail">记下了，等你补金额或确认%s</string>
+    <string name="log_blocked_app">这个 App 在黑名单里%s</string>
+    <string name="log_blocked_word">黑名单关键词「%s」</string>
+    <string name="log_unknown_detail">像是付款通知，但格式没见过%s</string>
+    <string name="log_empty">还没有记录</string>
+    <string name="log_empty_body">收到付款通知后，这里会写它记了没有、为什么。</string>
+    <string name="log_blank">（空通知）</string>
+    <string name="reason_wechat_other">微信支付的其他消息</string>
+    <string name="reason_zero_autopay">0 元的免密/自动扣款提示</string>
+    <string name="reason_zero">0 元提示</string>
+    <string name="reason_unknown_alipay">没认出的交易提醒</string>
+
+    <!-- categories -->
+    <string name="cat_exists">已经有「%s」了</string>
+    <string name="cat_too_long">名字短一点</string>
+    <string name="cat_new">新建分类</string>
+    <string name="cat_new_hint_expense">如：宠物、健身</string>
+    <string name="cat_new_hint_income">如：理财、奖学金</string>
+    <string name="cat_expense_list">支出分类</string>
+    <string name="cat_income_list">收入分类</string>
+    <string name="cat_footer">点分类可以删除，已记的账保留原来的分类。「其他」是没选分类时的默认项，不能删。</string>
+    <string name="cat_delete_title">删除分类「%s」？</string>
+    <string name="cat_delete_unused">这个分类还没有用过。</string>
+    <string name="cat_default">默认</string>
+    <string name="cat_unused">未使用</string>
+
+    <!-- usual amounts -->
+    <string name="ua_preview">胶囊卡片上会显示</string>
+    <string name="ua_auto">按记录自动给出</string>
+    <string name="ua_yours">你设的</string>
+    <string name="ua_list">你设的金额</string>
+    <string name="ua_empty">还没设。现在用的是你最近最常付的金额，想固定几个就在下面加。</string>
+    <string name="ua_reset">清空，改回自动</string>
+    <string name="ua_input">输入金额</string>
+    <string name="ua_bad">金额不对</string>
+    <string name="ua_frequent">你常付的金额</string>
+    <string name="ua_90d">近 90 天</string>
+    <string name="ua_tap_add">点一下加进上面的列表</string>
+    <string name="ua_no_history">还没有记录可以参考，卡片上会直接弹出键盘让你输入。</string>
+    <string name="card_how_much">这笔多少钱？</string>
+    <string name="card_other_amount">其他金额</string>
+    <string name="card_edit">✎ 改</string>
+
+    <!-- rules -->
+    <string name="rules_title">按备注自动分类</string>
+    <string name="rules_body">写了备注、没选分类时，App 依次看：你的规则 → 你以前给这个备注选的分类 → 内置的常用词。都对不上才记到「其他」。</string>
+    <string name="rules_new">新建规则</string>
+    <string name="rules_keyword_hint">备注或付款方里出现的词，如：瑞幸</string>
+    <string name="rules_goes_to">归到</string>
+    <string name="rules_add_preview">添加：「%1$s」→ %2$s</string>
+    <string name="rules_yours">你的规则</string>
+    <string name="rules_empty">还没有。大多数时候不用设：给某个备注选过一次分类，App 下次就记住了。</string>
+    <string name="rules_learned">已经学会的</string>
+    <string name="rules_learned_hint">按你以前的选择</string>
+    <string name="n_times">%d 次</string>
+    <string name="rules_learned_footer">想改的话，在账单里把这个备注的账改成别的分类，用得多的那个会胜出；或者在上面加一条规则（规则最优先）。</string>
+    <string name="rules_builtin">内置的常用词</string>
+
+    <!-- stability -->
+    <string name="st_phone">%s 手机</string>
+    <string name="st_ok">基本设置都好了。下面的后台设置也做一下，长时间熄屏也不容易漏记。</string>
+    <string name="st_missing">还有标红的项没好，付款可能记不上。</string>
+    <string name="st_status">现在的状态</string>
+    <string name="st_connected">通知监听已连接</string>
+    <string name="st_connected_yes">系统正在把通知交给记账</string>
+    <string name="st_connected_no">权限开着但没连上：点一下重新连接</string>
+    <string name="st_pill_connected">已连接</string>
+    <string name="st_pill_connect">去连接</string>
+    <string name="st_last_payment">最近一条付款通知</string>
+    <string name="st_never">还没收到过</string>
+    <string name="st_selftest">自检</string>
+    <string name="st_selftest_body">发一条测试通知，看记账能不能马上收到。几秒后通知会自己消失，不会记账。</string>
+    <string name="st_start">开始自检</string>
+    <string name="st_result_ok">收到了（用了 %s 秒）。自动记账在这台手机上能正常工作。</string>
+    <string name="st_result_no_listener">通知使用权没开。点上面的「通知使用权」去打开。</string>
+    <string name="st_result_cannot_post">记账没有发通知的权限，测不了。在系统设置里允许记账发通知后再试（只用来自检）。</string>
+    <string name="st_result_not_seen">6 秒内没收到。点「通知监听已连接」重连一下再试；还不行就按下面的后台设置做一遍，或者把通知使用权关掉再打开。</string>
+    <string name="st_guide">%s 的后台设置</string>
+    <string name="st_guide_once">做一次就行</string>
+    <string name="st_cannot_open">打不开，请按上面的路径手动找</string>
+    <string name="st_guide_footer">不同系统版本的菜单名字可能略有不同；「去设置」打不开对应页面时，会打开记账的应用详情页。</string>
+    <string name="st_still_missing">还是漏记？</string>
+    <string name="st_diag">导出诊断信息</string>
+    <string name="st_diag_sub">手机型号、系统、权限状态和最近的识别记录，发给开发者看</string>
+    <string name="st_diag_body">包含：手机型号、系统版本、各项权限、最近 80 条识别记录（记了没有、为什么）。不包含你的账单金额和备注。</string>
+    <string name="st_diag_text">附带通知原文</string>
+    <string name="st_diag_text_sub">没认出的格式要靠原文才能修；原文里可能有付款方名字</string>
+    <string name="st_diag_send">发送…</string>
+    <string name="st_diag_save">保存到手机</string>
+    <string name="st_diag_saved">已保存到 %s</string>
+    <string name="st_diag_save_failed">保存失败：%s</string>
+    <string name="ago_now">刚刚</string>
+    <string name="ago_min">%d 分钟前</string>
+    <string name="ago_hour">%d 小时前</string>
+
+    <!-- brands -->
+    <string name="brand_xiaomi">小米 / Redmi</string>
+    <string name="brand_huawei">华为</string>
+    <string name="brand_honor">荣耀</string>
+    <string name="brand_oneplus">一加</string>
+    <string name="brand_oppo">OPPO / realme</string>
+    <string name="brand_vivo">vivo / iQOO</string>
+    <string name="brand_samsung">三星</string>
+    <string name="brand_meizu">魅族</string>
+    <string name="brand_other">这台手机</string>
+    <string name="step_lock">在最近任务里锁住「记账」</string>
+    <string name="step_lock_where">打开最近任务（多任务）界面，找到记账的卡片，下拉或长按后点「锁定」。一键清理时就不会把它清掉。</string>
+    <string name="step_autostart">允许自启动</string>
+    <string name="step_xiaomi_autostart">安全中心 → 应用管理 → 权限 → 自启动管理，打开「记账」。</string>
+    <string name="step_xiaomi_battery">省电策略选「无限制」</string>
+    <string name="step_xiaomi_battery_where">设置 → 应用设置 → 应用管理 → 记账 → 省电策略 → 无限制。</string>
+    <string name="step_launch_manual">应用启动管理改成手动</string>
+    <string name="step_huawei_where">设置 → 应用和服务 → 应用启动管理 → 记账：关掉「自动管理」，在弹出的窗口里打开「允许自启动」「允许关联启动」「允许后台活动」。</string>
+    <string name="step_honor_where">设置 → 应用 → 应用启动管理 → 记账：关掉「自动管理」，打开「允许自启动」「允许关联启动」「允许后台活动」。</string>
+    <string name="step_oppo_autostart">设置 → 应用 → 自启动管理（或 手机管家 → 权限隐私 → 自启动管理），打开「记账」。</string>
+    <string name="step_background">允许后台运行</string>
+    <string name="step_oppo_background">设置 → 电池 → 更多设置 / 应用耗电管理 → 记账：打开「允许后台运行」，关掉「智能限制」类选项。</string>
+    <string name="step_vivo_power">允许后台高耗电</string>
+    <string name="step_vivo_power_where">设置 → 电池 → 后台耗电管理 → 记账 → 允许后台高耗电。</string>
+    <string name="step_vivo_autostart">i管家 → 应用管理 → 权限管理 → 自启动（或 设置 → 应用与权限 → 权限管理 → 自启动），打开「记账」。</string>
+    <string name="step_vivo_update">App 更新后打开一次</string>
+    <string name="step_vivo_update_where">vivo 在 App 更新后不会自动重新连接通知监听。更新完打开一次记账就好，App 会自己重连。</string>
+    <string name="step_samsung_battery">电池改成「不受限制」</string>
+    <string name="step_samsung_battery_where">设置 → 应用程序 → 记账 → 电池 → 不受限制。</string>
+    <string name="step_samsung_sleep">不要放进「深度休眠应用」</string>
+    <string name="step_samsung_sleep_where">设置 → 电池 → 后台使用限制：确认记账不在「休眠应用程序」「深度休眠应用程序」里。</string>
+    <string name="step_meizu_background">手机管家 → 权限管理 → 后台管理 → 记账 → 允许后台运行。</string>
+    <string name="step_battery_opt">关闭电池优化</string>
+    <string name="step_battery_opt_where">设置 → 应用 → 记账 → 电池：选「不优化」或「不受限制」。</string>
+    <string name="step_generic_bg">允许自启动 / 后台运行</string>
+    <string name="step_generic_bg_where">如果系统有「自启动」「后台运行」之类的开关，给记账打开。</string>
+</resources>

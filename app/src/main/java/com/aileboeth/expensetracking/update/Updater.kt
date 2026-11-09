@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.core.content.FileProvider
+import com.aileboeth.expensetracking.R
 import com.aileboeth.expensetracking.data.Prefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,6 +69,7 @@ object Updater {
 
     fun check(ctx: Context, manual: Boolean) {
         val app = ctx.applicationContext
+        res = app
         if (_state.value is State.Checking || _state.value is State.Downloading) return
         this.manual = manual
         _state.value = State.Checking
@@ -86,13 +88,14 @@ object Updater {
                 val (name, code) = currentVersion(app)
                 _state.value = if (info.versionCode > code) State.Available(info, name) else State.UpToDate(name)
             } catch (e: Exception) {
-                _state.value = State.Failed("检查更新失败：${e.message ?: e.javaClass.simpleName}")
+                _state.value = State.Failed(app.getString(R.string.update_err_check, e.message ?: e.javaClass.simpleName))
             }
         }
     }
 
     fun download(ctx: Context, info: Info) {
         val app = ctx.applicationContext
+        res = app
         manual = true
         _state.value = State.Downloading(info, 0, 0)
         scope.launch {
@@ -107,7 +110,7 @@ object Updater {
                     val actual = sha256(part)
                     if (actual != info.sha256) {
                         part.delete()
-                        throw IllegalStateException("文件校验不对（下载不完整或被改动），请重试")
+                        throw IllegalStateException(app.getString(R.string.update_err_hash))
                     }
                 }
                 val apk = File(dir, info.apk)
@@ -115,7 +118,7 @@ object Updater {
                 _state.value = State.Ready(info, apk)
                 install(app, apk)
             } catch (e: Exception) {
-                _state.value = State.Failed("下载失败：${e.message ?: e.javaClass.simpleName}")
+                _state.value = State.Failed(app.getString(R.string.update_err_download, e.message ?: e.javaClass.simpleName))
             }
         }
     }
@@ -137,6 +140,9 @@ object Updater {
         )
     }
 
+    /** For error texts in the user's language. */
+    @Volatile private var res: Context? = null
+
     private fun open(url: String): HttpURLConnection {
         var current = url
         repeat(6) {
@@ -148,18 +154,18 @@ object Updater {
             }
             val code = c.responseCode
             if (code in 300..399) {
-                val loc = c.getHeaderField("Location") ?: throw IllegalStateException("跳转没有地址")
+                val loc = c.getHeaderField("Location") ?: throw IllegalStateException("redirect without Location")
                 c.disconnect()
                 current = URL(URL(current), loc).toString()
                 return@repeat
             }
             if (code != 200) {
                 c.disconnect()
-                throw IllegalStateException(if (code == 404) "还没有发布版本（404）" else "服务器返回 $code")
+                throw IllegalStateException(res?.let { r -> if (code == 404) r.getString(R.string.update_err_404) else r.getString(R.string.update_err_code, code) } ?: "HTTP $code")
             }
             return c
         }
-        throw IllegalStateException("跳转次数太多")
+        throw IllegalStateException(res?.getString(R.string.update_err_redirect) ?: "too many redirects")
     }
 
     private fun get(url: String): ByteArray = open(url).let { c -> try { c.inputStream.readBytes() } finally { c.disconnect() } }

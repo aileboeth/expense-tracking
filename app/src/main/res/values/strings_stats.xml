@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stat_new">new</string>
+    <string name="stat_daily">Daily trend</string>
+    <string name="stat_not_started">This month hasn\'t started yet</string>
+    <string name="stat_no_prev">No records for the same days last month</string>
+    <string name="stat_more_spent">%1$s more than the same days last month (%2$s)</string>
+    <string name="stat_less_spent">%1$s less than the same days last month (%2$s)</string>
+    <string name="stat_more_earned">%1$s more income than the same days last month (%2$s)</string>
+    <string name="stat_less_earned">%1$s less income than the same days last month (%2$s)</string>
+    <string name="stat_daily_avg">%s a day</string>
+    <string name="stat_this_month">This month</string>
+    <string name="stat_last_month">Last month (dashed)</string>
+    <string name="stat_tap_day">Tap or swipe to see a day</string>
+    <string name="stat_cal_expense">Spending calendar</string>
+    <string name="stat_cal_income">Income calendar</string>
+    <string name="stat_day_empty">Nothing on this day</string>
+    <string name="stat_categories">Categories</string>
+    <string name="stat_tap_category">Tap a category for notes</string>
+    <string name="stat_no_records">No records</string>
+    <string name="stat_total_expense">Total spent</string>
+    <string name="stat_total_income">Total income</string>
+    <string name="stat_vs_last">vs last month %s</string>
+    <string name="stat_last_n_months">Last %d months</string>
+    <string name="stat_n_months">%d months</string>
+    <string name="stat_trend_summary">Monthly average: spent %1$s · income %2$s\nMost spent: %3$s %4$s</string>
+    <string name="stat_no_note">No note</string>
+    <string name="stat_more_notes">%d more notes</string>
+    <string name="stat_note_tip">Write a note when recording (lunch, coffee…) to see them separately here.</string>
+    <string name="ins_title_now">This month at a glance</string>
+    <string name="ins_title_month">%s at a glance</string>
+    <string name="ins_more">%s more than the same days last month</string>
+    <string name="ins_less">%s less than the same days last month</string>
+    <string name="ins_prev">The first %1$d days of last month: %2$s (%3$s)</string>
+    <string name="ins_days_so_far">Over the %1$d days so far, %2$s in total</string>
+    <string name="ins_days_month">Over all %1$d days, %2$s in total</string>
+    <string name="ins_growth">Grew most: %s</string>
+    <string name="ins_growth_new">%s spent, nothing the same days last month</string>
+    <string name="ins_growth_more">%1$s more (same days last month: %2$s)</string>
+    <string name="ins_biggest">Biggest expense %s</string>
+    <string name="ins_top_note">Most written note: %s</string>
+    <string name="ins_top_note_sub">%1$d times, %2$s in total</string>
+</resources>

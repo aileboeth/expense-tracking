@@ -6,8 +6,11 @@ import com.aileboeth.expensetracking.data.Repo
 import com.aileboeth.expensetracking.widget.Widgets
 
 class App : Application() {
+    override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(com.aileboeth.expensetracking.ui.AppLocale.wrap(base))
+
     override fun onCreate() {
         super.onCreate()
+        com.aileboeth.expensetracking.data.Money.setCurrency(com.aileboeth.expensetracking.data.Prefs(this).currency)
         Repo.init(this)
         Repo.onChanged = { Widgets.scheduleUpdate(this) }
         ListenerKeeper.ensure(this)

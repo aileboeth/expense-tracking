@@ -60,6 +60,12 @@ class InsightsTest {
         assertEquals("通讯", Categorizer.builtIn(TxType.EXPENSE, "话费充值"))
         assertEquals("生活缴费", Categorizer.builtIn(TxType.EXPENSE, "宿舍电费"))
         assertEquals("兼职", Categorizer.builtIn(TxType.INCOME, "家教"))
+        assertEquals("零食饮料", Categorizer.builtIn(TxType.EXPENSE, "Starbucks coffee"))
+        assertEquals("餐饮", Categorizer.builtIn(TxType.EXPENSE, "Steak dinner"))
+        assertEquals("交通", Categorizer.builtIn(TxType.EXPENSE, "Uber to work"))
+        assertEquals("娱乐", Categorizer.builtIn(TxType.EXPENSE, "Steam game"))
+        assertEquals("工资", Categorizer.builtIn(TxType.INCOME, "Payroll October"))
+        assertEquals(listOf("零食饮料"), Categorizer.examples(TxType.EXPENSE, chinese = false).map { it.first }.take(1))
         assertEquals("", Categorizer.builtIn(TxType.EXPENSE, "随便写的"))
     }
 

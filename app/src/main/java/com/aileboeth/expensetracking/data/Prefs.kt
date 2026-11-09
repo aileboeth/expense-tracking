@@ -27,6 +27,28 @@ class Prefs(ctx: Context) {
         get() = p.getStringSet("blacklistApps", emptySet())!!.toSet()
         set(v) = p.edit().putStringSet("blacklistApps", v).apply()
 
+    /** Payment apps (other than WeChat / Alipay) whose notifications are read. Unset = the region's defaults. */
+    fun payApps(): Set<String> {
+        if (p.contains("payApps")) return p.getStringSet("payApps", emptySet())!!.toSet()
+        val loc = java.util.Locale.getDefault()
+        val country = com.aileboeth.expensetracking.parse.PaymentApps.country(loc.language, loc.country)
+        return com.aileboeth.expensetracking.parse.PaymentApps.ALL
+            .filter { it.pkg !in com.aileboeth.expensetracking.parse.Parser.KNOWN_APPS && com.aileboeth.expensetracking.parse.PaymentApps.defaultOn(it, country) }
+            .map { it.pkg }.toSet()
+    }
+
+    fun setPayApps(v: Set<String>) = p.edit().putStringSet("payApps", v).apply()
+
+    /** Ledger currency (ISO 4217). Unset = the phone region's currency. Only changes how amounts are shown. */
+    var currency: String
+        get() = p.getString("currency", null) ?: Money.defaultCurrencyCode()
+        set(v) = p.edit().putString("currency", v).apply()
+
+    /** App language: "" = follow the phone, or "zh-Hans" / "zh-Hant" / "en". */
+    var language: String
+        get() = p.getString("language", "") ?: ""
+        set(v) = p.edit().putString("language", v).commit().let { }
+
     /** Words: a notification whose text or payer/merchant contains one of them is not recorded. */
     var blacklistWords: Set<String>
         get() = p.getStringSet("blacklistWords", emptySet())!!.toSet()

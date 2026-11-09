@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="n_entries">
+        <item quantity="one">%d entry</item>
+        <item quantity="other">%d entries</item>
+    </plurals>
+    <plurals name="bl_blocked_n">
+        <item quantity="one">%d notification skipped</item>
+        <item quantity="other">%d notifications skipped</item>
+    </plurals>
+    <plurals name="cat_delete_used">
+        <item quantity="one">Its past entry stays as it is; you just can\'t pick this category any more.</item>
+        <item quantity="other">Its %d past entries stay as they are; you just can\'t pick this category any more.</item>
+    </plurals>
+    <plurals name="set_status_missing">
+        <item quantity="one">%d setting missing</item>
+        <item quantity="other">%d settings missing</item>
+    </plurals>
+    <plurals name="ago_day">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <plurals name="editor_delete_with_receipts">
+        <item quantity="one">Its receipt will be deleted too.</item>
+        <item quantity="other">Its %d receipts will be deleted too.</item>
+    </plurals>
+    <plurals name="imp_selected">
+        <item quantity="one">Import %d selected entry</item>
+        <item quantity="other">Import %d selected entries</item>
+    </plurals>
+</resources>

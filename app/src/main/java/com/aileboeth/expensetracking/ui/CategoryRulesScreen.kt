@@ -1,5 +1,8 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import com.aileboeth.expensetracking.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -66,14 +69,14 @@ fun CategoryRulesScreen(onBack: () -> Unit) {
         keyword = ""
     }
 
-    SubPage("分类规则", onBack) {
+    SubPage(stringResource(R.string.set_rules), onBack) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp)) {
             item {
                 Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(HeaderBrush).padding(horizontal = 20.dp, vertical = 18.dp)) {
                     Column {
-                        Text("按备注自动分类", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.rules_title), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "写了备注、没选分类时，App 依次看：你的规则 → 你以前给这个备注选的分类 → 内置的常用词。都对不上才记到「其他」。",
+                            stringResource(R.string.rules_body),
                             color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = 4.dp),
                         )
@@ -83,10 +86,10 @@ fun CategoryRulesScreen(onBack: () -> Unit) {
             item { TypeToggle(type, Modifier.padding(top = 16.dp)) { type = it } }
 
             item {
-                GroupLabel("新建规则")
+                GroupLabel(stringResource(R.string.rules_new))
                 SoftCard(padding = 14.dp) {
                     OutlinedTextField(
-                        keyword, { keyword = it }, placeholder = { Text("备注或付款方里出现的词，如：瑞幸") },
+                        keyword, { keyword = it }, placeholder = { Text(stringResource(R.string.rules_keyword_hint)) },
                         singleLine = true, shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -95,22 +98,22 @@ fun CategoryRulesScreen(onBack: () -> Unit) {
                         ),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Text("归到", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Text(stringResource(R.string.rules_goes_to), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 4.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        for (c in cats.filter { it != "其他" }) FilterChip(target == c, { target = if (target == c) "" else c }, label = { Text(com.aileboeth.expensetracking.data.CategoryStyle.label(c)) })
+                        for (c in cats.filter { it != "其他" }) FilterChip(target == c, { target = if (target == c) "" else c }, label = { Text(catLabel(c)) })
                     }
                     FilledTonalButton(::add, enabled = keyword.isNotBlank() && target.isNotEmpty(), modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-                        Text(if (keyword.isNotBlank() && target.isNotEmpty()) "添加：「${keyword.trim()}」→ $target" else "添加")
+                        Text(if (keyword.isNotBlank() && target.isNotEmpty()) stringResource(R.string.rules_add_preview, keyword.trim(), catName(target)) else stringResource(R.string.add))
                     }
                 }
             }
 
             item {
-                GroupLabel("你的规则", if (rules.isEmpty()) "" else "${rules.size} 条")
+                GroupLabel(stringResource(R.string.rules_yours), if (rules.isEmpty()) "" else stringResource(R.string.n_items, rules.size))
                 SoftCard(padding = 0.dp) {
                     if (rules.isEmpty()) Text(
-                        "还没有。大多数时候不用设：给某个备注选过一次分类，App 下次就记住了。",
+                        stringResource(R.string.rules_empty),
                         style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp),
                     )
@@ -122,27 +125,27 @@ fun CategoryRulesScreen(onBack: () -> Unit) {
             }
 
             if (learned.isNotEmpty()) item {
-                GroupLabel("已经学会的", "按你以前的选择")
+                GroupLabel(stringResource(R.string.rules_learned), stringResource(R.string.rules_learned_hint))
                 SoftCard(padding = 0.dp) {
                     learned.forEachIndexed { i, (note, cat, n) ->
-                        MappingRow(note, cat, "$n 次", null)
+                        MappingRow(note, cat, stringResource(R.string.n_times, n), null)
                         if (i != learned.lastIndex) RowDivider()
                     }
                 }
                 Text(
-                    "想改的话，在账单里把这个备注的账改成别的分类，用得多的那个会胜出；或者在上面加一条规则（规则最优先）。",
+                    stringResource(R.string.rules_learned_footer),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 )
             }
 
             item {
-                GroupLabel("内置的常用词")
+                GroupLabel(stringResource(R.string.rules_builtin))
                 SoftCard(padding = 14.dp) {
-                    Categorizer.examples(type).filter { it.first in cats }.forEach { (cat, words) ->
+                    Categorizer.examples(type, AppLocale.locale(androidx.compose.ui.platform.LocalContext.current).language == "zh").filter { it.first in cats }.forEach { (cat, words) ->
                         Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             CategoryBadge(cat, 26)
-                            Text("  $cat", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                            Text("  " + catName(cat), fontWeight = FontWeight.Medium, fontSize = 14.sp)
                             Text("  $words…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -163,8 +166,8 @@ private fun MappingRow(word: String, category: String, trailing: String?, onDele
         }
         Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 10.dp).size(16.dp))
         CategoryBadge(category, 28)
-        Text("  $category", modifier = Modifier.weight(1f))
+        Text("  " + catName(category), modifier = Modifier.weight(1f))
         if (trailing != null) Text(trailing, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 10.dp))
-        if (onDelete != null) IconButton(onDelete) { Icon(Icons.Filled.Close, "删掉", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) }
+        if (onDelete != null) IconButton(onDelete) { Icon(Icons.Filled.Close, stringResource(R.string.delete), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)) }
     }
 }

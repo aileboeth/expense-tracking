@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- blocked apps -->
+    <string name="bl_search">Search app name or package</string>
+    <string name="bl_loading">Reading installed apps…</string>
+    <string name="bl_recent">Recently posted amounts</string>
+    <string name="bl_recent_hint">block the ones you don\'t want</string>
+    <string name="bl_all">All apps</string>
+    <string name="bl_results">Results</string>
+    <string name="bl_not_found">Nothing found for \"%s\"</string>
+    <string name="bl_confirm_title">Block %s?</string>
+    <string name="bl_confirm_body">Payments and income from %s won\'t be recorded automatically any more. To skip one shop or payee only, use blocked keywords instead.</string>
+    <string name="bl_confirm_yes">Block anyway</string>
+    <string name="bl_count_label">apps blocked</string>
+    <string name="bl_header_body">Their notifications are never recorded. Switches apply at once.</string>
+    <string name="bl_header_empty">None yet. Turn on the switch next to an app below.</string>
+    <string name="bl_unblock">Unblock</string>
+    <string name="bl_info">Only WeChat, Alipay and the payment apps you turned on are read, so other apps aren\'t recorded anyway. After turning on \"Also read other apps\", blocking matters for them.</string>
+    <string name="bl_info_enable">Turn on</string>
+    <string name="bl_known_blocked">Payment source · blocked, not recorded</string>
+    <string name="bl_known">Payment source · automatic recording uses it</string>
+
+    <!-- blocked keywords -->
+    <string name="bw_count_label">keywords</string>
+    <string name="bw_blocked_n">%d skipped</string>
+    <string name="bw_header_body">If the payee, shop or notification text contains one of these words, it isn\'t recorded. Good for money moved between your own accounts.</string>
+    <string name="bw_input_hint">Enter a keyword</string>
+    <string name="bw_added">Added</string>
+    <string name="bw_empty">None yet. Type one above, or tap a recent payee below.</string>
+    <string name="bw_word_blocked">%1$s · %2$d skipped</string>
+    <string name="bw_recent">Recent payees / shops</string>
+    <string name="bw_recent_hint">Tap to add to the block list</string>
+
+    <!-- recognition log -->
+    <string name="log_recorded">Recorded</string>
+    <string name="log_skipped">Skipped</string>
+    <string name="log_tag_recorded">Recorded</string>
+    <string name="log_tag_pending">Waiting</string>
+    <string name="log_tag_blocked">Blocked</string>
+    <string name="log_tag_skipped">Skipped</string>
+    <string name="log_tag_unknown">Not recognised</string>
+    <string name="log_tag_error">Error</string>
+    <string name="log_pending_detail">Recorded, waiting for an amount or confirmation%s</string>
+    <string name="log_blocked_app">This app is blocked%s</string>
+    <string name="log_blocked_word">Blocked keyword \"%s\"</string>
+    <string name="log_unknown_detail">Looks like a payment, but the format is new%s</string>
+    <string name="log_empty">Nothing yet</string>
+    <string name="log_empty_body">When a payment notification arrives, this shows whether it was recorded and why.</string>
+    <string name="log_blank">(empty notification)</string>
+    <string name="reason_wechat_other">Other WeChat Pay message</string>
+    <string name="reason_zero_autopay">0.00 auto-debit notice</string>
+    <string name="reason_zero">0.00 notice</string>
+    <string name="reason_unknown_alipay">Unrecognised transaction notice</string>
+
+    <!-- categories -->
+    <string name="cat_exists">\"%s\" already exists</string>
+    <string name="cat_too_long">Please use a shorter name</string>
+    <string name="cat_new">New category</string>
+    <string name="cat_new_hint_expense">e.g. pets, gym</string>
+    <string name="cat_new_hint_income">e.g. investments, scholarship</string>
+    <string name="cat_expense_list">Expense categories</string>
+    <string name="cat_income_list">Income categories</string>
+    <string name="cat_footer">Tap a category to delete it; past entries keep it. \"Other\" is used when no category is chosen and can\'t be deleted.</string>
+    <string name="cat_delete_title">Delete \"%s\"?</string>
+    <string name="cat_delete_unused">This category hasn\'t been used.</string>
+    <string name="cat_default">default</string>
+    <string name="cat_unused">unused</string>
+
+    <!-- usual amounts -->
+    <string name="ua_preview">The capsule card will show</string>
+    <string name="ua_auto">from your history</string>
+    <string name="ua_yours">your list</string>
+    <string name="ua_list">Your amounts</string>
+    <string name="ua_empty">Not set. Your most frequent recent amounts are used; add some below to fix them.</string>
+    <string name="ua_reset">Clear, back to automatic</string>
+    <string name="ua_input">Amount</string>
+    <string name="ua_bad">Not a valid amount</string>
+    <string name="ua_frequent">Amounts you often pay</string>
+    <string name="ua_90d">last 90 days</string>
+    <string name="ua_tap_add">Tap to add to the list above</string>
+    <string name="ua_no_history">No history yet: the card opens the keyboard right away.</string>
+    <string name="card_how_much">How much was it?</string>
+    <string name="card_other_amount">Other amount</string>
+    <string name="card_edit">✎ Edit</string>
+
+    <!-- rules -->
+    <string name="rules_title">Categories from notes</string>
+    <string name="rules_body">With a note but no category, the app checks: your rules → the category you picked before for this note → common built-in words. Only if nothing fits does it use \"Other\".</string>
+    <string name="rules_new">New rule</string>
+    <string name="rules_keyword_hint">A word in the note or payee, e.g. Starbucks</string>
+    <string name="rules_goes_to">Goes to</string>
+    <string name="rules_add_preview">Add: \"%1$s\" → %2$s</string>
+    <string name="rules_yours">Your rules</string>
+    <string name="rules_empty">None. Usually you don\'t need any: pick a category for a note once and the app remembers it.</string>
+    <string name="rules_learned">Learned</string>
+    <string name="rules_learned_hint">from your choices</string>
+    <string name="n_times">%d×</string>
+    <string name="rules_learned_footer">To change one, re-categorise entries with that note (the more frequent choice wins), or add a rule above (rules win).</string>
+    <string name="rules_builtin">Built-in words</string>
+
+    <!-- stability -->
+    <string name="st_phone">%s phone</string>
+    <string name="st_ok">The basics are set. Do the background settings below too, so nothing is missed with the screen off for long.</string>
+    <string name="st_missing">Items marked red aren\'t done yet; payments may be missed.</string>
+    <string name="st_status">Current status</string>
+    <string name="st_connected">Notification listener connected</string>
+    <string name="st_connected_yes">The system is passing notifications to the app</string>
+    <string name="st_connected_no">Access is on but it isn\'t connected: tap to reconnect</string>
+    <string name="st_pill_connected">Connected</string>
+    <string name="st_pill_connect">Connect</string>
+    <string name="st_last_payment">Latest payment notification</string>
+    <string name="st_never">None received yet</string>
+    <string name="st_selftest">Self-test</string>
+    <string name="st_selftest_body">Sends a test notification and checks the app receives it right away. It disappears after a few seconds and isn\'t recorded.</string>
+    <string name="st_start">Run self-test</string>
+    <string name="st_result_ok">Received (%s s). Automatic recording works on this phone.</string>
+    <string name="st_result_no_listener">Notification access is off. Tap \"Notification access\" above.</string>
+    <string name="st_result_cannot_post">The app may not post notifications, so it can\'t test. Allow notifications for it in system settings and try again (only used for this test).</string>
+    <string name="st_result_not_seen">Nothing within 6 seconds. Tap \"Notification listener connected\" to reconnect and try again; if it still fails, do the background settings below, or turn notification access off and on.</string>
+    <string name="st_guide">Background settings on %s</string>
+    <string name="st_guide_once">once is enough</string>
+    <string name="st_cannot_open">Can\'t open it; please follow the path above</string>
+    <string name="st_guide_footer">Menu names differ a little between system versions. If \"Open settings\" can\'t find the page, it opens the app\'s info page instead.</string>
+    <string name="st_still_missing">Still missing payments?</string>
+    <string name="st_diag">Export diagnostics</string>
+    <string name="st_diag_sub">Phone model, system, permissions and the recent recognition log, for the developer</string>
+    <string name="st_diag_body">Contains: phone model, system version, permissions, the last 80 log entries (recorded or not, and why). No amounts or notes from your ledger.</string>
+    <string name="st_diag_text">Include notification text</string>
+    <string name="st_diag_text_sub">Needed to fix unrecognised formats; may contain payee names</string>
+    <string name="st_diag_send">Send…</string>
+    <string name="st_diag_save">Save to phone</string>
+    <string name="st_diag_saved">Saved to %s</string>
+    <string name="st_diag_save_failed">Could not save: %s</string>
+    <string name="ago_now">just now</string>
+    <string name="ago_min">%d min ago</string>
+    <string name="ago_hour">%d h ago</string>
+
+    <!-- brands -->
+    <string name="brand_xiaomi">Xiaomi / Redmi</string>
+    <string name="brand_huawei">Huawei</string>
+    <string name="brand_honor">Honor</string>
+    <string name="brand_oneplus">OnePlus</string>
+    <string name="brand_oppo">OPPO / realme</string>
+    <string name="brand_vivo">vivo / iQOO</string>
+    <string name="brand_samsung">Samsung</string>
+    <string name="brand_meizu">Meizu</string>
+    <string name="brand_other">This phone</string>
+    <string name="step_lock">Lock the app in Recents</string>
+    <string name="step_lock_where">Open Recents (the multitasking view), find this app\'s card, pull it down or long-press it and tap Lock. \"Clear all\" then leaves it running.</string>
+    <string name="step_autostart">Allow autostart</string>
+    <string name="step_xiaomi_autostart">Security → Manage apps → Permissions → Autostart, turn it on for this app.</string>
+    <string name="step_xiaomi_battery">Battery saver: \"No restrictions\"</string>
+    <string name="step_xiaomi_battery_where">Settings → Apps → Manage apps → this app → Battery saver → No restrictions.</string>
+    <string name="step_launch_manual">Manage app launch manually</string>
+    <string name="step_huawei_where">Settings → Apps &amp; services → App launch → this app: turn off \"Manage automatically\", then allow auto-launch, secondary launch and running in background.</string>
+    <string name="step_honor_where">Settings → Apps → App launch → this app: turn off \"Manage automatically\", then allow auto-launch, secondary launch and running in background.</string>
+    <string name="step_oppo_autostart">Settings → Apps → Auto launch (or Phone Manager → Privacy permissions → Startup manager), turn it on for this app.</string>
+    <string name="step_background">Allow background running</string>
+    <string name="step_oppo_background">Settings → Battery → More settings / App battery management → this app: allow background activity, turn off \"smart\" restrictions.</string>
+    <string name="step_vivo_power">Allow high background power use</string>
+    <string name="step_vivo_power_where">Settings → Battery → Background power consumption management → this app → Allow high background power consumption.</string>
+    <string name="step_vivo_autostart">i Manager → App manager → Permission manager → Autostart (or Settings → Apps &amp; permissions → Permission management → Autostart), turn it on for this app.</string>
+    <string name="step_vivo_update">Open the app once after each update</string>
+    <string name="step_vivo_update_where">vivo doesn\'t reconnect the notification listener after an app update. Opening the app once is enough; it reconnects by itself.</string>
+    <string name="step_samsung_battery">Battery: \"Unrestricted\"</string>
+    <string name="step_samsung_battery_where">Settings → Apps → this app → Battery → Unrestricted.</string>
+    <string name="step_samsung_sleep">Keep it out of \"Deep sleeping apps\"</string>
+    <string name="step_samsung_sleep_where">Settings → Battery → Background usage limits: make sure the app isn\'t in \"Sleeping apps\" or \"Deep sleeping apps\".</string>
+    <string name="step_meizu_background">Phone Manager → Permissions → Background management → this app → Allow background running.</string>
+    <string name="step_battery_opt">Turn off battery optimization</string>
+    <string name="step_battery_opt_where">Settings → Apps → this app → Battery: \"Not optimized\" or \"Unrestricted\".</string>
+    <string name="step_generic_bg">Allow autostart / background running</string>
+    <string name="step_generic_bg_where">If the system has switches like \"Autostart\" or \"Background running\", turn them on for this app.</string>
+</resources>

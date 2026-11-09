@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- capsule -->
+    <string name="bub_pending">待補金額</string>
+    <string name="bub_count">%1$s · %2$d筆</string>
+    <string name="bub_desc">記帳：%s</string>
+    <string name="bub_note_guess">點儲存按備註記到「%s」</string>
+    <string name="bub_pick_amount">先選一個金額</string>
+    <string name="bub_hint">點分類直接記好；不選分類點儲存，記到「其他」</string>
+    <string name="bub_more_left"> · 還有 %d 筆</string>
+    <string name="bub_more">更多</string>
+    <string name="bub_flip">改成收入/支出</string>
+    <string name="bub_not_this">不是這筆</string>
+    <string name="bub_deleted">已刪除</string>
+    <string name="bub_note_hint">備註（可不填）</string>
+    <string name="bub_saved">已記好：%1$s %2$s</string>
+
+    <!-- import -->
+    <string name="imp_title">匯入帳單</string>
+    <string name="imp_title_of">匯入%s帳單</string>
+    <string name="imp_empty">帳單裡沒有可匯入的收支</string>
+    <string name="imp_read_failed">讀取失敗：%s</string>
+    <string name="imp_done">匯入了 %1$d 筆，補上金額 %2$d 筆</string>
+    <string name="imp_failed">沒能匯入</string>
+    <string name="imp_howto">微信：我 → 服務 → 錢包 → 帳單 → 右上角 ⋯ → 下載帳單 → 用於個人對帳（選 Excel）。\n支付寶：我的 → 帳單 → 右上角 ⋯ → 開具交易流水證明 → 用於個人對帳。\n收到郵件後先解壓（密碼在微信/支付寶的訊息裡），再匯入裡面的 .xlsx / .csv。</string>
+    <string name="imp_result">對帳結果</string>
+    <string name="imp_summary">帳單裡 %1$d 筆：已經記過 %2$d 筆，漏記 %3$d 筆，能補上金額 %4$d 筆，以前匯入過 %5$d 筆。</string>
+    <string name="imp_skipped">沒匯入：</string>
+    <string name="imp_missing">漏記的（勾選的會加進帳本）</string>
+    <string name="imp_fill">能補上金額的（手錶付款、沒寫金額的到帳）</string>
+    <string name="imp_matched">已經記過的</string>
+    <string name="imp_nothing">沒有要匯入的</string>
+    <string name="imp_no_desc">（無說明）</string>
+    <string name="imp_more">……還有 %d 筆</string>
+
+    <!-- self-test notification, export -->
+    <string name="selftest_channel">自檢</string>
+    <string name="selftest_channel_desc">「自檢」時發一條測試通知，幾秒後自動消失</string>
+    <string name="selftest_title">記帳自檢</string>
+    <string name="selftest_text">這是一條測試通知，馬上會自動消失</string>
+    <string name="csv_header">時間,型別,金額,分類,備註,渠道,對方,狀態,來源說明,憑證</string>
+    <string name="csv_pending_amount">待補金額</string>
+    <string name="csv_pending_confirm">待確認</string>
+    <string name="csv_receipts">%d 個（在 App 裡檢視）</string>
+</resources>

@@ -38,7 +38,7 @@ object Diagnostics {
         line("App 版本", "$ver ($code)")
         line("手机", "${Build.MANUFACTURER} / ${Build.BRAND} / ${Build.MODEL} (${Build.DEVICE})")
         line("系统", "Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT}) · ${Build.DISPLAY}")
-        line("识别为", "${guide.brand} · ${guide.system}")
+        line("识别为", "${guide.brandName(ctx)} · ${guide.system}")
         sb.append('\n')
         line("通知使用权", if (ListenerKeeper.granted(ctx)) "已开启" else "未开启")
         line("监听已连接", if (CaptureService.connected) "是" else "否")

@@ -145,6 +145,69 @@ class ParserTest {
         assertTrue(t.needsConfirm)
     }
 
+    // ---- other currencies / payment apps (formats from public examples, no device samples yet) ----
+
+    private fun other(pkg: String, title: String, text: String) = NoticeInput(pkg, 0, "k", title, text)
+    private val wallet = PaymentApps.find("com.google.android.apps.walletnfcrel")!!
+    private val paypal = PaymentApps.find("com.paypal.android.p2pmobile")!!
+
+    @Test fun walletAmountAloneIsSpendingAtTheTitleShop() {
+        val t = tx(Parser.generic(other(wallet.pkg, "Starbucks", "$5.25 with Visa •••• 1234"), wallet))
+        assertEquals(TxType.EXPENSE, t.type)
+        assertEquals(525L, t.amountCents)
+        assertEquals("Google Wallet", t.channel)
+        assertEquals("Starbucks", t.counterpart)
+        assertTrue(t.needsConfirm)
+    }
+
+    @Test fun paypalSentAndReceived() {
+        val sent = tx(Parser.generic(other(paypal.pkg, "PayPal", "You sent $12.00 USD to Alex"), paypal))
+        assertEquals(TxType.EXPENSE, sent.type)
+        assertEquals(1200L, sent.amountCents)
+        val got = tx(Parser.generic(other(paypal.pkg, "PayPal", "Alex sent you €20,00"), paypal))
+        assertEquals(TxType.INCOME, got.type)
+        assertEquals(2000L, got.amountCents)
+    }
+
+    @Test fun nonWalletNeedsADirectionWord() {
+        assertEquals(ParseResult.NotPayment, Parser.generic(other(paypal.pkg, "PayPal", "Your balance is $40.00"), paypal))
+    }
+
+    @Test fun manyCurrencyStyles() {
+        fun amount(text: String) = tx(Parser.generic(other("x", "Bank", text))).amountCents
+        assertEquals(450L, amount("Card payment €4,50 at Lidl"))
+        assertEquals(450L, amount("Kartenzahlung 4,50 € bei Lidl"))
+        assertEquals(123456L, amount("Purchase of 1.234,56 EUR approved"))
+        assertEquals(123456L, amount("Purchase of $1,234.56 approved"))
+        assertEquals(3990L, amount("Paid HK$39.90 to 7-Eleven"))
+        assertEquals(50000L, amount("Payment of ₹500 debited"))
+        assertEquals(1200000L, amount("12,000원 결제"))
+        assertEquals(2500L, amount("Spent £25 at Tesco"))
+        assertEquals(1999L, amount("You paid 19.99 USD"))
+    }
+
+    @Test fun datesAndCardNumbersAreNotAmounts() {
+        assertEquals(ParseResult.NotPayment, Parser.generic(other("x", "Bank", "Payment due on 12.05 for card 1234")))
+    }
+
+    @Test fun regionsRankTheirOwnAppsFirst() {
+        assertEquals(Parser.WECHAT, PaymentApps.ranked("CN").first().pkg)
+        assertEquals("com.venmo", PaymentApps.ranked("US").first { "US" in it.regions }.pkg)
+        assertTrue(PaymentApps.defaultOn(wallet, "US"))
+        assertTrue(!PaymentApps.defaultOn(wallet, "CN"))
+        assertTrue(PaymentApps.defaultOn(PaymentApps.find("com.phonepe.app")!!, "IN"))
+        assertEquals("CN", PaymentApps.country("zh", ""))
+    }
+
+    @Test fun centsAny() {
+        assertEquals(450L, Parser.centsAny("4,50"))
+        assertEquals(123400L, Parser.centsAny("1,234"))
+        assertEquals(123400L, Parser.centsAny("1.234"))
+        assertEquals(123456L, Parser.centsAny("1.234,56"))
+        assertEquals(100000000L, Parser.centsAny("1 000 000"))
+        assertEquals(5L, Parser.centsAny("0.05"))
+    }
+
     @Test fun cents() {
         assertEquals(1L, Parser.cents("0.01"))
         assertEquals(400L, Parser.cents("4"))

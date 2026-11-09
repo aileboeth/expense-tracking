@@ -1,5 +1,8 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import com.aileboeth.expensetracking.R
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,16 +27,16 @@ fun BudgetDialog(prefs: Prefs, onDone: () -> Unit) {
     var error by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDone,
-        title = { Text("每月预算") },
+        title = { Text(stringResource(R.string.budget_title)) },
         text = {
             Column {
                 Text(
-                    "首页会显示还剩多少、每天还能花多少；用到 80% 时悬浮球描黄边，超出描红边。",
+                    stringResource(R.string.budget_body),
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedTextField(
                     value = text, onValueChange = { text = it; error = false },
-                    label = { Text("预算（元）") }, singleLine = true, isError = error,
+                    label = { Text(stringResource(R.string.budget_label, Money.sym)) }, singleLine = true, isError = error,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -43,10 +46,10 @@ fun BudgetDialog(prefs: Prefs, onDone: () -> Unit) {
             TextButton({
                 val c = Money.parse(text)
                 if (c == null) error = true else { prefs.budgetCents = c; onDone() }
-            }) { Text("保存") }
+            }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {
-            TextButton({ prefs.budgetCents = 0; onDone() }) { Text("不设预算") }
+            TextButton({ prefs.budgetCents = 0; onDone() }) { Text(stringResource(R.string.budget_none)) }
         },
     )
 }

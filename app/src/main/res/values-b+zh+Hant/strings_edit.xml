@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- search -->
+    <string name="period_month">本月</string>
+    <string name="period_3m">近 3 個月</string>
+    <string name="period_year">今年</string>
+    <string name="period_all">全部</string>
+    <string name="search_hint">搜備註、對方、分類…</string>
+    <string name="search_all_channels">全部渠道</string>
+    <string name="search_all_categories">全部分類</string>
+    <string name="search_summary">共 %1$d 筆 · 支出 %2$s · 收入 %3$s</string>
+    <string name="search_capped">（只顯示最近 500 筆）</string>
+    <string name="search_empty">沒有符合條件的帳</string>
+
+    <!-- budget -->
+    <string name="budget_title">每月預算</string>
+    <string name="budget_body">首頁會顯示還剩多少、每天還能花多少；用到 80% 時懸浮膠囊描黃邊，超出描紅邊。</string>
+    <string name="budget_label">預算（%s）</string>
+    <string name="budget_none">不設預算</string>
+
+    <!-- editor -->
+    <string name="editor_fill">補上金額</string>
+    <string name="editor_edit">修改</string>
+    <string name="editor_amount_error">請填金額，例如 12.5</string>
+    <string name="editor_optional">可不選</string>
+    <string name="editor_note">備註</string>
+    <string name="editor_note_hint">這筆錢花在哪了，如：奶茶、午飯</string>
+    <string name="editor_note_guess">不選分類的話，按備註記到「%s」</string>
+    <string name="editor_time">時間</string>
+    <string name="editor_change_time">改時間</string>
+    <string name="editor_receipts">憑證</string>
+    <string name="editor_receipts_hint">收據照片、發票，可不加</string>
+    <string name="editor_camera">拍照</string>
+    <string name="editor_gallery">相簿</string>
+    <string name="editor_file">檔案</string>
+    <string name="editor_no_camera">沒找到相機</string>
+    <string name="editor_delete_title">刪除這筆帳？</string>
+    <string name="editor_delete_body">刪掉就找不回來了。</string>
+
+    <!-- attachments -->
+    <string name="att_default_name">附件</string>
+    <string name="att_photo_name">拍照 %s</string>
+    <string name="att_no_viewer">手機上沒有能開啟這種檔案的 App</string>
+    <string name="att_read_failed">沒能讀取這個檔案</string>
+</resources>

@@ -194,7 +194,7 @@ class ScreenshotTest {
         compose.setContent { AppTheme { StatsScreen(PaddingValues(0.dp)) } }
         compose.waitForIdle()
         // Expand 餐饮 in the ranking to show the per-note breakdown.
-        compose.onAllNodes(androidx.compose.ui.test.hasText("餐饮", substring = false))[0].performClick()
+        compose.onAllNodes(androidx.compose.ui.test.hasText("Food", substring = false))[0].performClick()
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/2c-stats-insights.png")
     }
@@ -206,6 +206,28 @@ class ScreenshotTest {
         compose.setContent { AppTheme { StabilityScreen {} } }
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/12-stability.png")
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h873dp-xxhdpi")
+    @Test fun homeZh() {
+        java.util.Locale.setDefault(java.util.Locale.SIMPLIFIED_CHINESE)
+        compose.setContent { AppTheme { HomeScreen(PaddingValues(0.dp), {}, {}, false, {}) } }
+        compose.onRoot().captureRoboImage("build/screens/20-home-zh.png")
+    }
+
+    @Config(qualifiers = "b+zh+Hant+TW-w393dp-h1900dp-xxhdpi")
+    @Test fun settingsHant() {
+        java.util.Locale.setDefault(java.util.Locale.TRADITIONAL_CHINESE)
+        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp), onImport = {}) } }
+        compose.onRoot().captureRoboImage("build/screens/21-settings-hant.png")
+    }
+
+    @Config(qualifiers = "w393dp-h1500dp-xxhdpi")
+    @Test fun payApps() {
+        java.util.Locale.setDefault(java.util.Locale.US)
+        compose.setContent { AppTheme { PaymentAppsScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/13-pay-apps.png")
     }
 
     @Config(qualifiers = "w393dp-h1900dp-xxhdpi")

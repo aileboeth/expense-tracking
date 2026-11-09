@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="n_entries"><item quantity="other">%d 笔</item></plurals>
+    <plurals name="bl_blocked_n"><item quantity="other">已拦下 %d 条通知</item></plurals>
+    <plurals name="cat_delete_used"><item quantity="other">已记的 %d 笔账不会变，只是以后选不到这个分类了。</item></plurals>
+    <plurals name="set_status_missing"><item quantity="other">还差 %d 项设置</item></plurals>
+    <plurals name="ago_day"><item quantity="other">%d 天前</item></plurals>
+    <plurals name="editor_delete_with_receipts"><item quantity="other">它的 %d 个凭证也会一起删掉。</item></plurals>
+    <plurals name="imp_selected"><item quantity="other">导入选中的 %d 笔</item></plurals>
+</resources>

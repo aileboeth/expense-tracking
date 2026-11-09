@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
+import com.aileboeth.expensetracking.R
 import com.aileboeth.expensetracking.data.Attachment
 import com.aileboeth.expensetracking.data.Repo
 import java.io.File
@@ -38,7 +39,7 @@ object Attachments {
         val cr = ctx.contentResolver
         val name = runCatching {
             cr.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
-        }.getOrNull() ?: uri.lastPathSegment ?: "附件"
+        }.getOrNull() ?: uri.lastPathSegment ?: ctx.getString(R.string.att_default_name)
         val mime = cr.getType(uri)
             ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(name.substringAfterLast('.', "").lowercase())
             ?: "application/octet-stream"
@@ -61,7 +62,7 @@ object Attachments {
     /** After the camera returned: shrink the photo into the attachment folder. */
     fun importCamera(ctx: Context, photo: File): Attachment? {
         if (!photo.exists() || photo.length() == 0L) return null
-        val a = import(ctx, Uri.fromFile(photo))?.copy(name = "拍照 " + java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.CHINA).format(java.util.Date()))
+        val a = import(ctx, Uri.fromFile(photo))?.copy(name = ctx.getString(R.string.att_photo_name, java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.US).format(java.util.Date())))
         photo.delete()
         return a
     }
@@ -77,7 +78,7 @@ object Attachments {
         try {
             ctx.startActivity(i)
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(ctx, "手机上没有能打开这种文件的 App", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, ctx.getString(R.string.att_no_viewer), Toast.LENGTH_SHORT).show()
         }
     }
 

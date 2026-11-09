@@ -1,5 +1,8 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import com.aileboeth.expensetracking.R
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -86,7 +89,7 @@ fun SettingSwitch(icon: ImageVector, tint: Color, title: String, sub: String?, c
 
 /** Small rounded label: green "已开启" or red "去开启". */
 @Composable
-fun StatusPill(ok: Boolean, okText: String = "已开启", badText: String = "去开启") {
+fun StatusPill(ok: Boolean, okText: String = stringResource(R.string.enabled_pill), badText: String = stringResource(R.string.disabled_pill)) {
     val c = if (ok) IncomeGreen else ExpenseRed
     Text(
         if (ok) okText else badText, color = c, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold,
@@ -118,7 +121,7 @@ fun TypeToggle(type: com.aileboeth.expensetracking.parse.TxType, modifier: Modif
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.surface).padding(4.dp),
     ) {
-        for ((t, label) in listOf(com.aileboeth.expensetracking.parse.TxType.EXPENSE to "支出", com.aileboeth.expensetracking.parse.TxType.INCOME to "收入")) {
+        for ((t, label) in listOf(com.aileboeth.expensetracking.parse.TxType.EXPENSE to stringResource(R.string.expense), com.aileboeth.expensetracking.parse.TxType.INCOME to stringResource(R.string.income))) {
             val on = t == type
             Box(
                 Modifier.weight(1f).clip(RoundedCornerShape(50)).background(if (on) Brand else Color.Transparent)
@@ -150,7 +153,7 @@ fun SubPage(title: String, onBack: () -> Unit, content: @Composable ColumnScope.
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
             Row(Modifier.padding(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+                IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
                 Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
             content()

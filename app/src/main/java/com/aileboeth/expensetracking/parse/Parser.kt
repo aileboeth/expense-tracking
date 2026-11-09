@@ -67,8 +67,41 @@ object Parser {
     private val ALI_TRANSFER = Regex("""^(.+?)给你转了(?:\d+|一)笔钱""")
 
     private val GENERIC_AMOUNT = Regex("""$YUAN$AMT|${AMT}\s*元""")
-    private val GENERIC_INCOME = Regex("收入|到账|收款|退款|入账|转入|存入")
-    private val GENERIC_EXPENSE = Regex("支付|付款|消费|支出|扣款|转出|扣费")
+
+    // ---- other apps, any currency -------------------------------------------------------------
+    // A number only counts as an amount next to a currency mark, so dates, times and card numbers are skipped.
+    private const val CODES = "USD|EUR|GBP|JPY|CNY|RMB|HKD|TWD|MOP|SGD|AUD|NZD|CAD|CHF|INR|KRW|PHP|THB|MYR|IDR|VND|BRL|MXN|ARS|CLP|COP|" +
+        "RUB|TRY|PLN|SEK|NOK|DKK|CZK|HUF|RON|ZAR|AED|SAR|ILS"
+    private const val NUM = """\d{1,3}(?:[,.\u00A0 ]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?"""
+    private val PRE = """(?:US\$|HK\$|NT\$|S\$|A\$|C\$|NZ\$|R\$|MOP\$?|MX\$|RM|Rp\.?|CHF|zł|[$€£¥￥₹₩₱₫฿₺₽₪]|\b(?:$CODES)\b)"""
+    private val POST = """(?:€|zł|kr|Kč|Ft|lei|₫|₽|元|円|원|\b(?:$CODES)\b)"""
+    private val ANY_AMOUNT = Regex("""$PRE\s?($NUM)|($NUM)\s?$POST""")
+    private val GENERIC_INCOME = Regex(
+        "收入|到账|收款|退款|入账|转入|存入|已收到|" +
+            "(?i:\\breceived\\b|\\bsent you\\b|\\bpaid you\\b|\\brefund|\\bdeposit|\\bcredited\\b|\\bcashback\\b|\\bincoming\\b|" +
+            "reembolso|recibiste|erstattung|gutschrift|remboursement|rimborso|入金|返金|입금|환불)"
+    )
+    private val GENERIC_EXPENSE = Regex(
+        "支付|付款|消费|支出|扣款|转出|扣费|" +
+            "(?i:\\bpaid\\b|\\bpayment\\b|\\bpurchase|\\bspent\\b|\\bdebited\\b|\\bcharged\\b|\\byou sent\\b|\\bwithdraw|" +
+            "\\bcompra\\b|\\bpago\\b|zahlung|\\bachat\\b|paiement|acquisto|支払|決済|결제|출금)"
+    )
+
+    /** "1.234,56" / "1,234.56" / "4,50" / "1 234" -> cents. A lone separator before exactly 3 digits groups thousands. */
+    fun centsAny(raw: String): Long {
+        val s = raw.replace('\u00A0', ' ').replace(" ", "")
+        val lastDot = s.lastIndexOf('.')
+        val lastComma = s.lastIndexOf(',')
+        val decimalSep = when {
+            lastDot >= 0 && lastComma >= 0 -> if (lastDot > lastComma) '.' else ','
+            lastDot >= 0 -> if (s.length - lastDot - 1 == 3 || s.count { it == '.' } > 1) null else '.'
+            lastComma >= 0 -> if (s.length - lastComma - 1 == 3 || s.count { it == ',' } > 1) null else ','
+            else -> null
+        }
+        val normalized = if (decimalSep == null) s.replace(",", "").replace(".", "")
+        else s.substring(0, s.lastIndexOf(decimalSep)).replace(",", "").replace(".", "") + "." + s.substring(s.lastIndexOf(decimalSep) + 1)
+        return BigDecimal(normalized).movePointRight(2).setScale(0, java.math.RoundingMode.HALF_UP).longValueExact()
+    }
 
     fun parse(n: NoticeInput): ParseResult = when (n.pkg) {
         WECHAT -> wechat(n)
@@ -76,17 +109,28 @@ object Parser {
         else -> ParseResult.NotPayment
     }
 
-    /** For apps the user turned on in settings: a rough guess that always needs confirming. */
-    fun generic(n: NoticeInput): ParseResult {
+    /**
+     * For other apps: a guess that always needs confirming. [app] = a known payment app (its name
+     * becomes the channel; for a wallet, an amount alone means money spent and the title is the
+     * merchant). Without [app] the notification must say whether money came in or went out.
+     */
+    fun generic(n: NoticeInput, app: PaymentApps.App? = null): ParseResult {
         val t = body(n)
-        val amount = GENERIC_AMOUNT.find(t) ?: return ParseResult.NotPayment
+        val all = "${n.title} $t"
+        val amount = ANY_AMOUNT.find(t) ?: ANY_AMOUNT.find(n.title) ?: return ParseResult.NotPayment
         val type = when {
-            GENERIC_INCOME.containsMatchIn(t) -> TxType.INCOME
-            GENERIC_EXPENSE.containsMatchIn(t) -> TxType.EXPENSE
+            GENERIC_INCOME.containsMatchIn(all) -> TxType.INCOME
+            GENERIC_EXPENSE.containsMatchIn(all) -> TxType.EXPENSE
+            app?.wallet == true -> TxType.EXPENSE
             else -> return ParseResult.NotPayment
         }
         val raw = amount.groupValues[1].ifEmpty { amount.groupValues[2] }
-        return ParseResult.Tx(type, cents(raw), n.title.trim().ifEmpty { n.pkg }, "", t, "generic", needsConfirm = true)
+        val cents = runCatching { centsAny(raw) }.getOrNull() ?: return ParseResult.NotPayment
+        if (cents == 0L) return ParseResult.Ignored("0 元提示", t)
+        val channel = app?.name ?: n.title.trim().ifEmpty { n.pkg }
+        // A wallet's title is usually the shop ("Starbucks"); for other apps the title is the app's own text.
+        val counterpart = if (app?.wallet == true && !ANY_AMOUNT.containsMatchIn(n.title)) n.title.trim().take(40) else ""
+        return ParseResult.Tx(type, cents, channel, counterpart, t, "generic", needsConfirm = true)
     }
 
     private fun body(n: NoticeInput): String =
@@ -155,6 +199,6 @@ object Parser {
     /** Anything in a WeChat/Alipay notification that smells of money, for the "未识别" log. */
     fun looksLikeMoney(n: NoticeInput): Boolean {
         val t = "${n.title} ${body(n)}"
-        return GENERIC_AMOUNT.containsMatchIn(t) || t.contains("支付") || t.contains("到账") || t.contains("转账")
+        return GENERIC_AMOUNT.containsMatchIn(t) || ANY_AMOUNT.containsMatchIn(t) || t.contains("支付") || t.contains("到账") || t.contains("转账")
     }
 }

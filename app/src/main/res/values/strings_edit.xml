@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- search -->
+    <string name="period_month">This month</string>
+    <string name="period_3m">Last 3 months</string>
+    <string name="period_year">This year</string>
+    <string name="period_all">All</string>
+    <string name="search_hint">Search notes, payee, category…</string>
+    <string name="search_all_channels">All channels</string>
+    <string name="search_all_categories">All categories</string>
+    <string name="search_summary">Found %1$d · spent %2$s · income %3$s</string>
+    <string name="search_capped"> (latest 500 only)</string>
+    <string name="search_empty">Nothing matches</string>
+
+    <!-- budget -->
+    <string name="budget_title">Monthly budget</string>
+    <string name="budget_body">The home page shows what\'s left and how much you can spend per day; the capsule gets an amber edge at 80% and a red one when you\'re over.</string>
+    <string name="budget_label">Budget (%s)</string>
+    <string name="budget_none">No budget</string>
+
+    <!-- editor -->
+    <string name="editor_fill">Add the amount</string>
+    <string name="editor_edit">Edit</string>
+    <string name="editor_amount_error">Enter an amount, e.g. 12.5</string>
+    <string name="editor_optional">optional</string>
+    <string name="editor_note">Note</string>
+    <string name="editor_note_hint">What was it for? e.g. coffee, lunch</string>
+    <string name="editor_note_guess">Without a category, it goes to \"%s\" because of the note</string>
+    <string name="editor_time">Time</string>
+    <string name="editor_change_time">Change</string>
+    <string name="editor_receipts">Receipts</string>
+    <string name="editor_receipts_hint">Photos or invoices, optional</string>
+    <string name="editor_camera">Camera</string>
+    <string name="editor_gallery">Photos</string>
+    <string name="editor_file">File</string>
+    <string name="editor_no_camera">No camera app found</string>
+    <string name="editor_delete_title">Delete this entry?</string>
+    <string name="editor_delete_body">It can\'t be undone.</string>
+
+    <!-- attachments -->
+    <string name="att_default_name">Attachment</string>
+    <string name="att_photo_name">Photo %s</string>
+    <string name="att_no_viewer">No app on this phone can open this file</string>
+    <string name="att_read_failed">Could not read this file</string>
+</resources>

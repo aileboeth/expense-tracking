@@ -1,5 +1,9 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.aileboeth.expensetracking.R
+
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -117,8 +121,8 @@ fun BlacklistAppsScreen(onBack: () -> Unit) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.padding(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
-                Text("黑名单 App", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
+                Text(stringResource(R.string.set_black_apps), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
 
             LazyColumn(
@@ -134,9 +138,9 @@ fun BlacklistAppsScreen(onBack: () -> Unit) {
                 item {
                     OutlinedTextField(
                         value = filter, onValueChange = { filter = it },
-                        placeholder = { Text("搜 App 名称或包名") },
+                        placeholder = { Text(stringResource(R.string.bl_search)) },
                         leadingIcon = { Icon(Icons.Filled.Search, null) },
-                        trailingIcon = { if (filter.isNotEmpty()) IconButton({ filter = "" }) { Icon(Icons.Filled.Clear, "清空") } },
+                        trailingIcon = { if (filter.isNotEmpty()) IconButton({ filter = "" }) { Icon(Icons.Filled.Clear, stringResource(R.string.clear)) } },
                         singleLine = true, shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -148,7 +152,7 @@ fun BlacklistAppsScreen(onBack: () -> Unit) {
                 }
 
                 if (data == null) {
-                    item { Text("正在读取已安装的 App…", Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    item { Text(stringResource(R.string.bl_loading), Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     return@LazyColumn
                 }
                 val q = filter.trim()
@@ -156,16 +160,16 @@ fun BlacklistAppsScreen(onBack: () -> Unit) {
 
                 val recent = if (q.isEmpty()) data.recent.mapNotNull { p -> data.apps.find { it.pkg == p } } else emptyList()
                 if (recent.isNotEmpty()) {
-                    item { GroupTitle("最近发过金额通知", "不想记的就拉黑") }
+                    item { GroupTitle(stringResource(R.string.bl_recent), stringResource(R.string.bl_recent_hint)) }
                     itemsIndexed(recent, key = { _, a -> "r:" + a.pkg }) { i, app ->
                         AppRow(app, i, recent.size, app.pkg in chosen, data.blocked[app.pkg] ?: 0) { toggle(app, it) }
                     }
                 }
 
                 val list = data.apps.filter(matches)
-                item { GroupTitle(if (q.isEmpty()) "全部 App" else "搜索结果", "${list.size} 个") }
+                item { GroupTitle(if (q.isEmpty()) stringResource(R.string.bl_all) else stringResource(R.string.bl_results), stringResource(R.string.n_items, list.size)) }
                 if (list.isEmpty()) item {
-                    Text("没有找到「$q」", Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.bl_not_found, q), Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 itemsIndexed(list, key = { _, a -> a.pkg }) { i, app ->
                     AppRow(app, i, list.size, app.pkg in chosen, data.blocked[app.pkg] ?: 0) { toggle(app, it) }
@@ -178,10 +182,10 @@ fun BlacklistAppsScreen(onBack: () -> Unit) {
     confirmKnown?.let { app ->
         AlertDialog(
             onDismissRequest = { confirmKnown = null },
-            title = { Text("拉黑${app.label}？") },
-            text = { Text("${app.label}的付款、收款就都不会自动记账了。只是不想记某个商户或付款方的话，用「黑名单关键词」更合适。") },
-            confirmButton = { TextButton({ set(app.pkg, true); confirmKnown = null }) { Text("仍然拉黑", color = ExpenseRed) } },
-            dismissButton = { TextButton({ confirmKnown = null }) { Text("取消") } },
+            title = { Text(stringResource(R.string.bl_confirm_title, app.label)) },
+            text = { Text(stringResource(R.string.bl_confirm_body, app.label)) },
+            confirmButton = { TextButton({ set(app.pkg, true); confirmKnown = null }) { Text(stringResource(R.string.bl_confirm_yes), color = ExpenseRed) } },
+            dismissButton = { TextButton({ confirmKnown = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -215,23 +219,23 @@ private fun HeaderCard(chosen: List<String>, labels: Map<String, String>, blocke
         Column {
             Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.Bottom) {
                 Text("${chosen.size}", color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Bold)
-                Text(" 个 App 已拉黑", color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 6.dp))
+                Text(" " + stringResource(R.string.bl_count_label), color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 6.dp))
                 Spacer(Modifier.weight(1f))
                 val total = chosen.sumOf { blocked[it] ?: 0 }
                 if (total > 0) Text(
-                    "已拦下 $total 条通知", color = Color.White.copy(alpha = 0.85f),
+                    pluralStringResource(R.plurals.bl_blocked_n, total, total), color = Color.White.copy(alpha = 0.85f),
                     style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
             Text(
-                "它们的通知一律不记账，开关一动就生效。",
+                stringResource(R.string.bl_header_body),
                 color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp),
             )
             Spacer(Modifier.height(14.dp))
             if (chosen.isEmpty()) {
                 Text(
-                    "还没有。在下面打开 App 右边的开关就行。",
+                    stringResource(R.string.bl_header_empty),
                     color = Color.White, style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(horizontal = 20.dp)
                         .clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = 0.16f))
@@ -252,7 +256,7 @@ private fun HeaderCard(chosen: List<String>, labels: Map<String, String>, blocke
                                     Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-5).dp).size(18.dp)
                                         .clip(CircleShape).background(Color(0xFF2A1C8F)),
                                     contentAlignment = Alignment.Center,
-                                ) { Icon(Icons.Filled.Close, "移出黑名单", tint = Color.White, modifier = Modifier.size(12.dp)) }
+                                ) { Icon(Icons.Filled.Close, stringResource(R.string.bl_unblock), tint = Color.White, modifier = Modifier.size(12.dp)) }
                             }
                             Text(
                                 labels[pkg] ?: pkg.substringAfterLast('.'), color = Color.White, fontSize = 11.sp,
@@ -275,11 +279,11 @@ private fun InfoCard(onEnable: () -> Unit) {
     ) {
         Icon(Icons.Filled.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         Text(
-            "现在只识别微信、支付宝，其他 App 本来就不会记。打开「也识别其他 App」后，黑名单才对它们起作用。",
+            stringResource(R.string.bl_info),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
         )
-        TextButton(onEnable) { Text("打开") }
+        TextButton(onEnable) { Text(stringResource(R.string.bl_info_enable)) }
     }
 }
 
@@ -309,9 +313,9 @@ private fun AppRow(app: LaunchApp, index: Int, count: Int, on: Boolean, blocked:
             Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
                 Text(app.label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 val (sub, color) = when {
-                    known && on -> "付款来源 · 已拉黑，不会自动记账" to ExpenseRed
-                    known -> "付款来源 · 自动记账靠它" to MaterialTheme.colorScheme.primary
-                    on && blocked > 0 -> "已拦下 $blocked 条通知" to MaterialTheme.colorScheme.onSurfaceVariant
+                    known && on -> stringResource(R.string.bl_known_blocked) to ExpenseRed
+                    known -> stringResource(R.string.bl_known) to MaterialTheme.colorScheme.primary
+                    on && blocked > 0 -> pluralStringResource(R.plurals.bl_blocked_n, blocked, blocked) to MaterialTheme.colorScheme.onSurfaceVariant
                     else -> app.pkg to MaterialTheme.colorScheme.onSurfaceVariant
                 }
                 Text(sub, style = MaterialTheme.typography.bodySmall, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)

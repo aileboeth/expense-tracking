@@ -6,7 +6,7 @@ plugins {
 }
 
 // Version: bump the last number for each release (0.1.0 -> 0.1.1).
-val appVersion = "0.1.4"
+val appVersion = "0.2.0"
 val appVersionCode = appVersion.split(".").map { it.toInt() }.let { (a, b, c) -> a * 10000 + b * 100 + c }
 
 // Release key lives OUTSIDE the repository (../keys). Without it, release builds use the debug key.
@@ -16,6 +16,8 @@ val keyProps = Properties().apply {
 }
 
 android {
+    // Lets Android 13+ list the app's languages under system settings → apps → language.
+    androidResources { generateLocaleConfig = true }
     namespace = "com.aileboeth.expensetracking"
     compileSdk = 37
     buildToolsVersion = "36.1.0"

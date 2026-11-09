@@ -1,5 +1,8 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import com.aileboeth.expensetracking.R
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -77,21 +80,21 @@ fun UsualAmountsScreen(onBack: () -> Unit) {
         save((list + c).distinct()); input = ""; error = false
     }
 
-    SubPage("常用金额", onBack) {
+    SubPage(stringResource(R.string.set_usual), onBack) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp)) {
             item { TypeToggle(type) { type = it; input = ""; error = false } }
 
             item {
-                GroupLabel("胶囊卡片上会显示", if (list.isEmpty()) "按记录自动给出" else "你设的")
+                GroupLabel(stringResource(R.string.ua_preview), if (list.isEmpty()) stringResource(R.string.ua_auto) else stringResource(R.string.ua_yours))
                 Preview(list.ifEmpty { auto })
             }
 
             item {
-                GroupLabel("你设的金额", if (list.isEmpty()) "" else "${list.size} 个")
+                GroupLabel(stringResource(R.string.ua_list), if (list.isEmpty()) "" else stringResource(R.string.n_items, list.size))
                 SoftCard(padding = 14.dp) {
                     if (list.isEmpty()) {
                         Text(
-                            "还没设。现在用的是你最近最常付的金额，想固定几个就在下面加。",
+                            stringResource(R.string.ua_empty),
                             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
@@ -99,8 +102,8 @@ fun UsualAmountsScreen(onBack: () -> Unit) {
                             for (c in list) InputChip(
                                 selected = true,
                                 onClick = { save(list - c) },
-                                label = { Text("¥" + Money.short(c), fontWeight = FontWeight.SemiBold) },
-                                trailingIcon = { Icon(Icons.Filled.Close, "删掉", Modifier.size(16.dp)) },
+                                label = { Text(Money.sym + Money.short(c), fontWeight = FontWeight.SemiBold) },
+                                trailingIcon = { Icon(Icons.Filled.Close, stringResource(R.string.delete), Modifier.size(16.dp)) },
                                 colors = InputChipDefaults.inputChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -108,14 +111,14 @@ fun UsualAmountsScreen(onBack: () -> Unit) {
                                 border = null,
                             )
                         }
-                        TextButton({ save(emptyList()) }, contentPadding = PaddingValues(horizontal = 4.dp)) { Text("清空，改回自动") }
+                        TextButton({ save(emptyList()) }, contentPadding = PaddingValues(horizontal = 4.dp)) { Text(stringResource(R.string.ua_reset)) }
                     }
                     Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             input, { input = it; error = false },
-                            placeholder = { Text("输入金额") }, prefix = { Text("¥ ") },
+                            placeholder = { Text(stringResource(R.string.ua_input)) }, prefix = { Text(Money.sym + " ") },
                             singleLine = true, isError = error, shape = RoundedCornerShape(14.dp),
-                            supportingText = if (error) { { Text("金额不对") } } else null,
+                            supportingText = if (error) { { Text(stringResource(R.string.ua_bad)) } } else null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { add() }),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -125,21 +128,21 @@ fun UsualAmountsScreen(onBack: () -> Unit) {
                             ),
                             modifier = Modifier.weight(1f),
                         )
-                        FilledTonalButton(::add, enabled = input.isNotBlank(), modifier = Modifier.padding(start = 8.dp)) { Text("添加") }
+                        FilledTonalButton(::add, enabled = input.isNotBlank(), modifier = Modifier.padding(start = 8.dp)) { Text(stringResource(R.string.add)) }
                     }
                 }
             }
 
             val suggest = frequent.filter { it !in list }
             if (suggest.isNotEmpty()) item {
-                GroupLabel("你常付的金额", "近 90 天")
+                GroupLabel(stringResource(R.string.ua_frequent), stringResource(R.string.ua_90d))
                 SoftCard(padding = 14.dp) {
-                    Text("点一下加进上面的列表", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Text(stringResource(R.string.ua_tap_add), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 6.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         for (c in suggest) AssistChip(
                             onClick = { save((list + c).distinct()) },
-                            label = { Text("¥" + Money.short(c)) },
+                            label = { Text(Money.sym + Money.short(c)) },
                             leadingIcon = { Icon(Icons.Filled.Add, null, Modifier.size(16.dp)) },
                             colors = AssistChipDefaults.assistChipColors(leadingIconContentColor = MaterialTheme.colorScheme.primary),
                         )
@@ -159,15 +162,15 @@ private fun Preview(amounts: List<Long>) {
         Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.surface)
             .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(22.dp)).padding(16.dp),
     ) {
-        Text("这笔多少钱？", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+        Text(stringResource(R.string.card_how_much), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
         FlowRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            for (c in amounts) PreviewChip("¥" + Money.short(c), MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurface, chip)
-            PreviewChip("其他金额", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, chip)
-            PreviewChip("✎ 改", Color.Transparent, MaterialTheme.colorScheme.onSurfaceVariant, chip.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(50)))
+            for (c in amounts) PreviewChip(Money.sym + Money.short(c), MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurface, chip)
+            PreviewChip(stringResource(R.string.card_other_amount), MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, chip)
+            PreviewChip(stringResource(R.string.card_edit), Color.Transparent, MaterialTheme.colorScheme.onSurfaceVariant, chip.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(50)))
         }
         if (amounts.isEmpty()) Text(
-            "还没有记录可以参考，卡片上会直接弹出键盘让你输入。",
+            stringResource(R.string.ua_no_history),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp),
         )

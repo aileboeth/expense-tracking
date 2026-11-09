@@ -1,5 +1,8 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import com.aileboeth.expensetracking.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,23 +69,23 @@ fun BlacklistWordsScreen(onBack: () -> Unit) {
         input = ""
     }
 
-    SubPage("黑名单关键词", onBack) {
+    SubPage(stringResource(R.string.set_black_words), onBack) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp)) {
             item {
                 Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(HeaderBrush).padding(horizontal = 20.dp, vertical = 18.dp)) {
                     Column {
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text("${words.size}", color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Bold)
-                            Text(" 个关键词", color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 6.dp))
+                            Text(" " + stringResource(R.string.bw_count_label), color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 6.dp))
                             androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
                             val total = words.sumOf { blocked[it] ?: 0 }
                             if (total > 0) Text(
-                                "已拦下 $total 笔", color = Color.White.copy(alpha = 0.85f),
+                                stringResource(R.string.bw_blocked_n, total), color = Color.White.copy(alpha = 0.85f),
                                 style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp),
                             )
                         }
                         Text(
-                            "付款方、商户或通知内容里含有这些词，就不记账。适合挡掉自己账户之间转来转去这类不算收支的钱。",
+                            stringResource(R.string.bw_header_body),
                             color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -91,7 +94,7 @@ fun BlacklistWordsScreen(onBack: () -> Unit) {
             item {
                 Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
-                        input, { input = it }, placeholder = { Text("输入关键词，如：多点科技") },
+                        input, { input = it }, placeholder = { Text(stringResource(R.string.bw_input_hint)) },
                         singleLine = true, shape = RoundedCornerShape(16.dp),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { add() }),
@@ -102,15 +105,15 @@ fun BlacklistWordsScreen(onBack: () -> Unit) {
                         ),
                         modifier = Modifier.weight(1f),
                     )
-                    FilledTonalButton(::add, enabled = input.isNotBlank(), modifier = Modifier.padding(start = 8.dp)) { Text("添加") }
+                    FilledTonalButton(::add, enabled = input.isNotBlank(), modifier = Modifier.padding(start = 8.dp)) { Text(stringResource(R.string.add)) }
                 }
             }
             item {
-                Text("已添加", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary,
+                Text(stringResource(R.string.bw_added), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 8.dp, top = 20.dp, bottom = 8.dp))
                 SoftCard(padding = 14.dp) {
                     if (words.isEmpty()) {
-                        Text("还没有。在上面输入，或者从下面最近的付款方里点一个。", style = MaterialTheme.typography.bodyMedium,
+                        Text(stringResource(R.string.bw_empty), style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -119,8 +122,8 @@ fun BlacklistWordsScreen(onBack: () -> Unit) {
                                 InputChip(
                                     selected = true,
                                     onClick = { save(words - w) },
-                                    label = { Text(if (n > 0) "$w · 拦下 $n" else w) },
-                                    trailingIcon = { Icon(Icons.Filled.Close, "删掉", Modifier.size(16.dp)) },
+                                    label = { Text(if (n > 0) stringResource(R.string.bw_word_blocked, w, n) else w) },
+                                    trailingIcon = { Icon(Icons.Filled.Close, stringResource(R.string.delete), Modifier.size(16.dp)) },
                                     colors = InputChipDefaults.inputChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -134,10 +137,10 @@ fun BlacklistWordsScreen(onBack: () -> Unit) {
             }
             val suggestions = counterparts.filter { c -> words.none { c.contains(it) } }
             if (suggestions.isNotEmpty()) item {
-                Text("最近的付款方 / 商户", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary,
+                Text(stringResource(R.string.bw_recent), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 8.dp, top = 20.dp, bottom = 8.dp))
                 SoftCard(padding = 14.dp) {
-                    Text("点一下就加进黑名单", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Text(stringResource(R.string.bw_recent_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 6.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         for (c in suggestions) AssistChip(

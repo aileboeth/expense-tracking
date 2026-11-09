@@ -42,6 +42,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
+import com.aileboeth.expensetracking.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -64,22 +68,28 @@ import java.time.YearMonth
 @Composable
 fun MonthBar(month: YearMonth, onChange: (YearMonth) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        IconButton({ onChange(month.minusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "上个月") }
-        Text("${month.year}年${month.monthValue}月", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-        IconButton({ onChange(month.plusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "下个月") }
+        IconButton({ onChange(month.minusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.prev_month)) }
+        Text(Labels.yearMonth(LocalContext.current, month), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        IconButton({ onChange(month.plusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.next_month)) }
         Spacer(Modifier.weight(1f))
-        if (month != YearMonth.now()) TextButton({ onChange(YearMonth.now()) }) { Text("回到本月") }
+        if (month != YearMonth.now()) TextButton({ onChange(YearMonth.now()) }) { Text(stringResource(R.string.this_month)) }
     }
 }
 
+private const val NEW = "new"
+
+/** "▲12%" / "▼5%" / new, shown with [changeText]. */
 private fun change(cur: Long, prev: Long): String = when {
     prev == 0L && cur == 0L -> ""
-    prev == 0L -> "新增"
+    prev == 0L -> NEW
     else -> {
         val pct = (cur - prev) * 100 / prev
         if (pct >= 0) "▲$pct%" else "▼${-pct}%"
     }
 }
+
+@Composable
+private fun changeText(cur: Long, prev: Long): String = change(cur, prev).let { if (it == NEW) stringResource(R.string.stat_new) else it }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,35 +136,34 @@ fun StatsScreen(padding: PaddingValues) {
         insights?.let { ins -> item { InsightCard(month, ins) { editing = it } } }
         item {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(type == TxType.EXPENSE, { type = TxType.EXPENSE }, SegmentedButtonDefaults.itemShape(0, 2)) { Text("支出") }
-                SegmentedButton(type == TxType.INCOME, { type = TxType.INCOME }, SegmentedButtonDefaults.itemShape(1, 2)) { Text("收入") }
+                SegmentedButton(type == TxType.EXPENSE, { type = TxType.EXPENSE }, SegmentedButtonDefaults.itemShape(0, 2)) { Text(stringResource(R.string.expense)) }
+                SegmentedButton(type == TxType.INCOME, { type = TxType.INCOME }, SegmentedButtonDefaults.itemShape(1, 2)) { Text(stringResource(R.string.income)) }
             }
         }
 
         // 1. daily line
         item {
             SoftCard {
-                SectionTitle("每日走势")
-                Text("¥" + Money.format(total), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = color)
+                SectionTitle(stringResource(R.string.stat_daily))
+                Text(Money.money(total), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = color)
                 val diff = total - prevSame
-                val word = if (type == TxType.EXPENSE) "花" else "收"
                 Text(
                     when {
-                        elapsed == 0 -> "这个月还没开始"
-                        prevSame == 0L -> "上月同期没有记录"
-                        diff >= 0 -> "比上月同期多$word ¥${Money.format(diff)}（${change(total, prevSame)}）"
-                        else -> "比上月同期少$word ¥${Money.format(-diff)}（${change(total, prevSame)}）"
-                    } + if (elapsed > 0) " · 日均 ¥${Money.format(total / elapsed)}" else "",
+                        elapsed == 0 -> stringResource(R.string.stat_not_started)
+                        prevSame == 0L -> stringResource(R.string.stat_no_prev)
+                        diff >= 0 -> stringResource(if (type == TxType.EXPENSE) R.string.stat_more_spent else R.string.stat_more_earned, Money.money(diff), changeText(total, prevSame))
+                        else -> stringResource(if (type == TxType.EXPENSE) R.string.stat_less_spent else R.string.stat_less_earned, Money.money(-diff), changeText(total, prevSame))
+                    } + if (elapsed > 0) " · " + stringResource(R.string.stat_daily_avg, Money.money(total / elapsed)) else "",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
                 DailyLineChart(cur, prev, color, selectedDay?.minus(1), { selectedDay = it + 1 })
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Legend(color, "本月")
+                    Legend(color, stringResource(R.string.stat_this_month))
                     Spacer(Modifier.width(16.dp))
-                    Legend(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), "上月（虚线）")
+                    Legend(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), stringResource(R.string.stat_last_month))
                     Spacer(Modifier.weight(1f))
-                    Text("点图或左右滑动看某一天", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.stat_tap_day), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -162,7 +171,7 @@ fun StatsScreen(padding: PaddingValues) {
         // 2. calendar
         item {
             SoftCard {
-                SectionTitle(if (type == TxType.EXPENSE) "消费日历" else "收入日历")
+                SectionTitle(stringResource(if (type == TxType.EXPENSE) R.string.stat_cal_expense else R.string.stat_cal_income))
                 Spacer(Modifier.height(8.dp))
                 CalendarHeatmap(month, heat, color, selectedDay) { selectedDay = if (selectedDay == it) null else it }
             }
@@ -177,10 +186,10 @@ fun StatsScreen(padding: PaddingValues) {
                     val ex = list.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
                     val inc = list.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
                     Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("${d.monthValue}月${d.dayOfMonth}日", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                        Text("支 ${Money.format(ex)}  收 ${Money.format(inc)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(Labels.monthDay(LocalContext.current, d), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.day_out, Money.format(ex)) + "  " + stringResource(R.string.day_in, Money.format(inc)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    if (list.isEmpty()) Text("这天没有记录", Modifier.padding(4.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (list.isEmpty()) Text(stringResource(R.string.stat_day_empty), Modifier.padding(4.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     list.forEach { TxRow(it) { editing = it } }
                 }
             }
@@ -189,23 +198,23 @@ fun StatsScreen(padding: PaddingValues) {
         // 4. categories
         item {
             SoftCard {
-                SectionTitle("分类") {
-                    if (groups.isNotEmpty()) Text("点分类看备注明细", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                SectionTitle(stringResource(R.string.stat_categories)) {
+                    if (groups.isNotEmpty()) Text(stringResource(R.string.stat_tap_category), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (groups.isEmpty()) {
-                    Text("没有记录", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
+                    Text(stringResource(R.string.stat_no_records), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
                 } else {
                     Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                         DonutChart(
                             groups.map { it.second to Color(CategoryStyle.of(it.first).color) },
-                            if (type == TxType.EXPENSE) "总支出" else "总收入",
-                            "¥" + shortYuan(total),
+                            stringResource(if (type == TxType.EXPENSE) R.string.stat_total_expense else R.string.stat_total_income),
+                            Money.sym + shortYuan(total),
                         )
                     }
                     groups.forEach { (name, cents, count) ->
                         val share = if (total > 0) cents.toFloat() / total else 0f
                         val ch = change(cents, prevGroups[name] ?: 0L)
-                        val up = ch.startsWith("▲") || ch == "新增"
+                        val up = ch.startsWith("▲") || ch == NEW
                         val chColor = when {
                             ch.isEmpty() -> Color.Unspecified
                             (type == TxType.EXPENSE) == up -> ExpenseRed
@@ -219,10 +228,10 @@ fun StatsScreen(padding: PaddingValues) {
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(name, fontWeight = FontWeight.Medium)
-                                    Text("  %.1f%% · %d 笔".format(share * 100, count), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(catName(name), fontWeight = FontWeight.Medium)
+                                    Text("  %.1f%% · ".format(share * 100) + pluralStringResource(R.plurals.n_entries, count, count), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Spacer(Modifier.weight(1f))
-                                    Text("¥${Money.format(cents)}", fontWeight = FontWeight.SemiBold)
+                                    Text(Money.money(cents), fontWeight = FontWeight.SemiBold)
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     LinearProgressIndicator(
@@ -234,7 +243,7 @@ fun StatsScreen(padding: PaddingValues) {
                                         drawStopIndicator = {},
                                         modifier = Modifier.weight(1f).height(6.dp),
                                     )
-                                    if (ch.isNotEmpty()) Text("  比上月 $ch", style = MaterialTheme.typography.labelSmall, color = chColor)
+                                    if (ch.isNotEmpty()) Text("  " + stringResource(R.string.stat_vs_last, changeText(cents, prevGroups[name] ?: 0L)), style = MaterialTheme.typography.labelSmall, color = chColor)
                                 }
                             }
                         }
@@ -250,17 +259,17 @@ fun StatsScreen(padding: PaddingValues) {
             val exp = months.map { m -> trendTxs.filter { it.type == TxType.EXPENSE && sameMonth(it, m) }.sumOf { it.amountCents ?: 0 } }
             val inc = months.map { m -> trendTxs.filter { it.type == TxType.INCOME && sameMonth(it, m) }.sumOf { it.amountCents ?: 0 } }
             SoftCard {
-                SectionTitle("近 $span 个月") {
+                SectionTitle(stringResource(R.string.stat_last_n_months, span)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FilterChip(span == 6, { span = 6 }, label = { Text("6 个月") })
-                        FilterChip(span == 12, { span = 12 }, label = { Text("12 个月") })
+                        FilterChip(span == 6, { span = 6 }, label = { Text(stringResource(R.string.stat_n_months, 6)) })
+                        FilterChip(span == 12, { span = 12 }, label = { Text(stringResource(R.string.stat_n_months, 12)) })
                     }
                 }
-                TrendChart(months.map { "${it.monthValue}月" }, exp, inc, trendSel, { trendSel = it })
+                TrendChart(months.map { Labels.monthShort(LocalContext.current, it) }, exp, inc, trendSel, { trendSel = it })
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Legend(ExpenseRed, "支出")
+                    Legend(ExpenseRed, stringResource(R.string.expense))
                     Spacer(Modifier.width(16.dp))
-                    Legend(IncomeGreen, "收入")
+                    Legend(IncomeGreen, stringResource(R.string.income))
                 }
                 Spacer(Modifier.height(8.dp))
                 val active = months.indices.filter { exp[it] > 0 || inc[it] > 0 }
@@ -269,7 +278,7 @@ fun StatsScreen(padding: PaddingValues) {
                     val avgI = active.sumOf { inc[it] } / active.size
                     val most = active.maxBy { exp[it] }
                     Text(
-                        "月均支出 ¥${Money.format(avgE)} · 月均收入 ¥${Money.format(avgI)}\n花得最多：${months[most].monthValue}月 ¥${Money.format(exp[most])}",
+                        stringResource(R.string.stat_trend_summary, Money.money(avgE), Money.money(avgI), Labels.monthShort(LocalContext.current, months[most]), Money.money(exp[most])),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -294,12 +303,12 @@ private fun NoteBreakdown(list: List<Tx>, total: Long, color: Color) {
             Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(6.dp).background(color, CircleShape))
                 Text(
-                    "  " + note.ifEmpty { "没写备注" }, style = MaterialTheme.typography.bodyMedium,
+                    "  " + note.ifEmpty { stringResource(R.string.stat_no_note) }, style = MaterialTheme.typography.bodyMedium,
                     color = if (note.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1, modifier = Modifier.weight(1f),
                 )
-                Text("$n 笔  ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("¥" + Money.format(sum), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Text(pluralStringResource(R.plurals.n_entries, n, n) + "  ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(Money.money(sum), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                 Text(
                     "  " + if (total > 0) "${sum * 100 / total}%" else "", style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(36.dp),
@@ -307,11 +316,11 @@ private fun NoteBreakdown(list: List<Tx>, total: Long, color: Color) {
             }
         }
         if (rows.size > shown.size) Text(
-            "还有 ${rows.size - shown.size} 种备注", style = MaterialTheme.typography.labelSmall,
+            stringResource(R.string.stat_more_notes, rows.size - shown.size), style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp),
         )
         if (rows.size == 1 && rows[0].first.isEmpty()) Text(
-            "记账时写个备注（如 午饭、奶茶），这里就能分开看。", style = MaterialTheme.typography.labelSmall,
+            stringResource(R.string.stat_note_tip), style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp),
         )
     }
@@ -322,7 +331,7 @@ private fun NoteBreakdown(list: List<Tx>, total: Long, color: Color) {
 private fun InsightCard(month: YearMonth, ins: Insights, onOpen: (Tx) -> Unit) {
     SoftCard(padding = 4.dp) {
         Text(
-            (if (month == YearMonth.now()) "本月" else "${month.monthValue}月") + "洞察",
+            if (month == YearMonth.now()) stringResource(R.string.ins_title_now) else stringResource(R.string.ins_title_month, Labels.monthShort(LocalContext.current, month)),
             style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(start = 14.dp, top = 12.dp, bottom = 4.dp),
         )
@@ -334,22 +343,22 @@ private fun InsightCard(month: YearMonth, ins: Insights, onOpen: (Tx) -> Unit) {
                     InsightLine(
                         if (diff >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                         if (diff >= 0) ExpenseRed else IncomeGreen,
-                        (if (diff >= 0) "比上月同期多花 ¥" else "比上月同期少花 ¥") + Money.format(kotlin.math.abs(diff)),
-                        "上月前 ${ins.days} 天花了 ¥${Money.format(ins.prevSame)}（${if (pct >= 0) "▲" else "▼"}${kotlin.math.abs(pct)}%）",
+                        stringResource(if (diff >= 0) R.string.ins_more else R.string.ins_less, Money.money(kotlin.math.abs(diff))),
+                        stringResource(R.string.ins_prev, ins.days, Money.money(ins.prevSame), (if (pct >= 0) "▲" else "▼") + kotlin.math.abs(pct) + "%"),
                     )
                 }
             }
             add {
                 InsightLine(
-                    Icons.Filled.Today, Tint.Blue, "日均 ¥" + Money.format(ins.dailyAvg),
-                    (if (month == YearMonth.now()) "按已过的 ${ins.days} 天算" else "按全月 ${ins.days} 天算") + "，共 ¥" + Money.format(ins.total),
+                    Icons.Filled.Today, Tint.Blue, stringResource(R.string.stat_daily_avg, Money.money(ins.dailyAvg)),
+                    stringResource(if (month == YearMonth.now()) R.string.ins_days_so_far else R.string.ins_days_month, ins.days, Money.money(ins.total)),
                 )
             }
             ins.topGrowth?.let { (cat, now, then) ->
                 add {
                     InsightLine(
-                        Icons.Filled.LocalFireDepartment, Tint.Orange, "涨得最多：$cat",
-                        if (then == 0L) "花了 ¥${Money.format(now)}，上月同期没花" else "多花 ¥${Money.format(now - then)}（上月同期 ¥${Money.format(then)}）",
+                        Icons.Filled.LocalFireDepartment, Tint.Orange, stringResource(R.string.ins_growth, catName(cat)),
+                        if (then == 0L) stringResource(R.string.ins_growth_new, Money.money(now)) else stringResource(R.string.ins_growth_more, Money.money(now - then), Money.money(then)),
                     )
                 }
             }
@@ -357,13 +366,13 @@ private fun InsightCard(month: YearMonth, ins: Insights, onOpen: (Tx) -> Unit) {
                 val d = localDate(t.time)
                 add {
                     InsightLine(
-                        Icons.Filled.Payments, Tint.Purple, "最大一笔 ¥" + Money.format(t.amountCents ?: 0),
-                        listOf(t.category, t.note, "${d.monthValue}月${d.dayOfMonth}日").filter { it.isNotBlank() }.joinToString(" · "),
+                        Icons.Filled.Payments, Tint.Purple, stringResource(R.string.ins_biggest, Money.money(t.amountCents ?: 0)),
+                        listOf(catName(t.category), t.note, Labels.monthDay(LocalContext.current, d)).filter { it.isNotBlank() }.joinToString(" · "),
                     ) { onOpen(t) }
                 }
             }
             ins.topNote?.let { (note, n, sum) ->
-                add { InsightLine(Icons.Filled.EditNote, Tint.Teal, "最常写的备注：$note", "$n 次，共 ¥${Money.format(sum)}") }
+                add { InsightLine(Icons.Filled.EditNote, Tint.Teal, stringResource(R.string.ins_top_note, note), stringResource(R.string.ins_top_note_sub, n, Money.money(sum))) }
             }
         }
         lines.forEachIndexed { i, line ->

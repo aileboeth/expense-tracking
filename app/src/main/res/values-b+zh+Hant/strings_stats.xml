@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stat_new">新增</string>
+    <string name="stat_daily">每日走勢</string>
+    <string name="stat_not_started">這個月還沒開始</string>
+    <string name="stat_no_prev">上月同期沒有記錄</string>
+    <string name="stat_more_spent">比上月同期多花 %1$s（%2$s）</string>
+    <string name="stat_less_spent">比上月同期少花 %1$s（%2$s）</string>
+    <string name="stat_more_earned">比上月同期多收 %1$s（%2$s）</string>
+    <string name="stat_less_earned">比上月同期少收 %1$s（%2$s）</string>
+    <string name="stat_daily_avg">日均 %s</string>
+    <string name="stat_this_month">本月</string>
+    <string name="stat_last_month">上月（虛線）</string>
+    <string name="stat_tap_day">點圖或左右滑動看某一天</string>
+    <string name="stat_cal_expense">消費日曆</string>
+    <string name="stat_cal_income">收入日曆</string>
+    <string name="stat_day_empty">這天沒有記錄</string>
+    <string name="stat_categories">分類</string>
+    <string name="stat_tap_category">點分類看備註明細</string>
+    <string name="stat_no_records">沒有記錄</string>
+    <string name="stat_total_expense">總支出</string>
+    <string name="stat_total_income">總收入</string>
+    <string name="stat_vs_last">比上月 %s</string>
+    <string name="stat_last_n_months">近 %d 個月</string>
+    <string name="stat_n_months">%d 個月</string>
+    <string name="stat_trend_summary">月均支出 %1$s · 月均收入 %2$s\n花得最多：%3$s %4$s</string>
+    <string name="stat_no_note">沒寫備註</string>
+    <string name="stat_more_notes">還有 %d 種備註</string>
+    <string name="stat_note_tip">記帳時寫個備註（如 午飯、奶茶），這裡就能分開看。</string>
+    <string name="ins_title_now">本月洞察</string>
+    <string name="ins_title_month">%s洞察</string>
+    <string name="ins_more">比上月同期多花 %s</string>
+    <string name="ins_less">比上月同期少花 %s</string>
+    <string name="ins_prev">上月前 %1$d 天花了 %2$s（%3$s）</string>
+    <string name="ins_days_so_far">按已過的 %1$d 天算，共 %2$s</string>
+    <string name="ins_days_month">按全月 %1$d 天算，共 %2$s</string>
+    <string name="ins_growth">漲得最多：%s</string>
+    <string name="ins_growth_new">花了 %s，上月同期沒花</string>
+    <string name="ins_growth_more">多花 %1$s（上月同期 %2$s）</string>
+    <string name="ins_biggest">最大一筆 %s</string>
+    <string name="ins_top_note">最常寫的備註：%s</string>
+    <string name="ins_top_note_sub">%1$d 次，共 %2$s</string>
+</resources>

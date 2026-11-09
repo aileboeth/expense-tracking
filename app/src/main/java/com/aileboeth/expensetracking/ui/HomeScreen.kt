@@ -47,6 +47,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.aileboeth.expensetracking.R
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.aileboeth.expensetracking.data.CategoryStyle
@@ -62,7 +65,8 @@ import java.time.YearMonth
 import java.util.Date
 import java.util.Locale
 
-private val WEEK = arrayOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
+/** Kinds that only repeat the channel ("微信 · 微信付款"); others (手表/凭证, 免密, 账单导入) add information. */
+private val PLAIN_KINDS = setOf("", "wechat_paid", "wechat_income", "wechat_income_no_amount", "alipay_expense", "alipay_income", "alipay_received", "alipay_received_no_amount")
 
 @Composable
 fun HomeScreen(
@@ -103,15 +107,15 @@ fun HomeScreen(
                 HeaderCard(month, { month = it }, expense, income, budget, daily, openSearch) { budgetDialog = true }
             }
             if (setupMissing) item {
-                NoticeCard("自动记账还没设置好", "需要打开通知使用权和悬浮窗权限", "去设置", onClick = openSettings)
+                NoticeCard(stringResource(R.string.home_setup_title), stringResource(R.string.home_setup_body), stringResource(R.string.go_set), onClick = openSettings)
             }
             if (pending.isNotEmpty()) item {
                 SoftCard(padding = 12.dp) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
                         Box(Modifier.size(8.dp).background(PendingAmber, CircleShape))
                         Spacer(Modifier.width(8.dp))
-                        Text("待补金额 / 待确认", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                        Text("${pending.size} 笔", color = PendingAmber, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.home_pending), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        Text(pluralStringResource(R.plurals.n_entries, pending.size, pending.size), color = PendingAmber, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(Modifier.height(4.dp))
                     pending.forEach { TxRow(it) { editing = it } }
@@ -119,9 +123,9 @@ fun HomeScreen(
             }
             if (txs.isEmpty()) item {
                 SoftCard {
-                    Text("这个月还没有账", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.home_empty_title), fontWeight = FontWeight.SemiBold)
                     Text(
-                        "付款后会自动记上，也可以点右下角「记一笔」手动记。",
+                        stringResource(R.string.home_empty_body),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -138,7 +142,7 @@ fun HomeScreen(
         ExtendedFloatingActionButton(
             onClick = { adding = true },
             icon = { Icon(Icons.Filled.Add, null) },
-            text = { Text("记一笔") },
+            text = { Text(stringResource(R.string.home_add)) },
             containerColor = Brand,
             contentColor = Color.White,
             modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
@@ -166,21 +170,21 @@ private fun HeaderCard(
     Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(HeaderBrush)) {
         Column(Modifier.padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton({ onMonth(month.minusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "上个月", tint = white) }
-                Text("${month.year}年${month.monthValue}月", color = white, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                IconButton({ onMonth(month.plusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "下个月", tint = white) }
-                if (month != YearMonth.now()) TextButton({ onMonth(YearMonth.now()) }) { Text("回到本月", color = white) }
+                IconButton({ onMonth(month.minusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.prev_month), tint = white) }
+                Text(Labels.yearMonth(LocalContext.current, month), color = white, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                IconButton({ onMonth(month.plusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.next_month), tint = white) }
+                if (month != YearMonth.now()) TextButton({ onMonth(YearMonth.now()) }) { Text(stringResource(R.string.this_month), color = white) }
                 Spacer(Modifier.weight(1f))
-                IconButton(openSearch) { Icon(Icons.Filled.Search, "搜索", tint = white) }
+                IconButton(openSearch) { Icon(Icons.Filled.Search, stringResource(R.string.search), tint = white) }
             }
             Column(Modifier.padding(horizontal = 12.dp)) {
-                Text("本月支出", color = soft, style = MaterialTheme.typography.labelLarge)
-                Text("¥" + Money.format(expense), color = white, fontSize = 34.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(stringResource(R.string.home_month_spent), color = soft, style = MaterialTheme.typography.labelLarge)
+                Text(Money.money(expense), color = white, fontSize = 34.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 Row(Modifier.padding(top = 2.dp)) {
-                    Text("收入 ¥${Money.format(income)}", color = soft, style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.home_income, Money.money(income)), color = soft, style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.width(16.dp))
                     val bal = income - expense
-                    Text("结余 " + (if (bal < 0) "-¥" + Money.format(-bal) else "¥" + Money.format(bal)), color = soft, style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.home_balance, Money.money(bal)), color = soft, style = MaterialTheme.typography.bodyMedium)
                 }
                 Spacer(Modifier.height(10.dp))
                 if (budget > 0) {
@@ -195,10 +199,10 @@ private fun HeaderCard(
                         modifier = Modifier.fillMaxWidth().height(6.dp).clickable(onClick = openBudget),
                     )
                     Spacer(Modifier.height(6.dp))
-                    Text(budgetLine(month, expense, budget), color = soft, style = MaterialTheme.typography.bodySmall,
+                    Text(budgetLine(LocalContext.current, month, expense, budget), color = soft, style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.clickable(onClick = openBudget))
                 } else {
-                    Text("设置月预算 ›", color = white, style = MaterialTheme.typography.bodyMedium,
+                    Text(stringResource(R.string.home_set_budget), color = white, style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.clickable(onClick = openBudget).padding(vertical = 2.dp))
                 }
                 Spacer(Modifier.height(8.dp))
@@ -208,15 +212,15 @@ private fun HeaderCard(
     }
 }
 
-fun budgetLine(month: YearMonth, expense: Long, budget: Long): String {
+fun budgetLine(ctx: android.content.Context, month: YearMonth, expense: Long, budget: Long): String {
     val left = budget - expense
-    if (left < 0) return "预算 ¥${Money.format(budget)} · 已超出 ¥${Money.format(-left)}"
+    if (left < 0) return ctx.getString(R.string.budget_over, Money.money(budget), Money.money(-left))
     val now = YearMonth.now()
     return if (month == now) {
         val daysLeft = month.lengthOfMonth() - LocalDate.now().dayOfMonth + 1
-        "预算 ¥${Money.format(budget)} · 还剩 ¥${Money.format(left)} · 每天可花 ¥${Money.format(left / daysLeft)}"
+        ctx.getString(R.string.budget_left, Money.money(budget), Money.money(left), Money.money(left / daysLeft))
     } else {
-        "预算 ¥${Money.format(budget)} · 用了 ${(expense * 100 / budget)}%"
+        ctx.getString(R.string.budget_used, Money.money(budget), (expense * 100 / budget).toInt())
     }
 }
 
@@ -239,19 +243,15 @@ fun NoticeCard(title: String, body: String, action: String, onClick: () -> Unit)
 fun DayHeader(day: LocalDate, list: List<Tx>) {
     val ex = list.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
     val inc = list.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
-    val label = when {
-        day == LocalDate.now() -> "今天"
-        day == LocalDate.now().minusDays(1) -> "昨天"
-        day.year != LocalDate.now().year -> "${day.year}年${day.monthValue}月${day.dayOfMonth}日"
-        else -> "${day.monthValue}月${day.dayOfMonth}日"
-    }
+    val ctx = LocalContext.current
+    val label = Labels.day(ctx, day)
     Column(Modifier.padding(horizontal = 4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(label, fontWeight = FontWeight.SemiBold)
-            Text("  ${WEEK[day.dayOfWeek.value - 1]}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+            Text("  " + Labels.weekday(ctx, day), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
             val parts = buildList {
-                if (ex > 0) add("支 ${Money.format(ex)}")
-                if (inc > 0) add("收 ${Money.format(inc)}")
+                if (ex > 0) add(ctx.getString(R.string.day_out, Money.format(ex)))
+                if (inc > 0) add(ctx.getString(R.string.day_in, Money.format(inc)))
             }
             Text(parts.joinToString("  "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -273,6 +273,7 @@ val LocalAttachCounts = androidx.compose.runtime.compositionLocalOf { emptyMap<L
 
 @Composable
 fun TxRow(tx: Tx, onClick: () -> Unit) {
+    val ctx = LocalContext.current
     val attached = (LocalAttachCounts.current[tx.id] ?: 0) > 0
     val time = SimpleDateFormat("HH:mm", Locale.CHINA).format(Date(tx.time))
     val color = when {
@@ -289,20 +290,20 @@ fun TxRow(tx: Tx, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    tx.category.ifEmpty { if (tx.kind.isNotEmpty()) Kinds.label(tx.kind) else "未分类" } + if (tx.note.isNotBlank()) " · ${tx.note}" else "",
+                    (if (tx.category.isEmpty() && tx.kind.isNotEmpty()) Labels.kind(ctx, tx.kind) else Labels.category(ctx, tx.category)) + if (tx.note.isNotBlank()) " · ${tx.note}" else "",
                     maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 if (attached) Icon(
-                    androidx.compose.material.icons.Icons.Filled.AttachFile, "有凭证",
+                    androidx.compose.material.icons.Icons.Filled.AttachFile, stringResource(R.string.has_receipt),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp).size(15.dp),
                 )
             }
             val titleIsKind = tx.category.isEmpty() && tx.kind.isNotEmpty()
             // "微信 · 微信付款" says the same thing twice: keep the kind only when it adds something (手表/凭证, 免密, 账单导入…).
-            val kind = Kinds.label(tx.kind).takeUnless { titleIsKind || it == tx.channel + "付款" || it == tx.channel + "收款" }.orEmpty()
-            val sub = listOf(time, tx.channel, tx.counterpart.ifBlank { kind })
+            val kind = if (titleIsKind || tx.kind in PLAIN_KINDS) "" else Labels.kind(ctx, tx.kind)
+            val sub = listOf(time, Labels.channel(ctx, tx.channel), tx.counterpart.ifBlank { kind })
                 .filter { it.isNotBlank() }.distinct()
             Text(
                 sub.joinToString(" · "),
@@ -311,7 +312,7 @@ fun TxRow(tx: Tx, onClick: () -> Unit) {
             )
         }
         Text(
-            if (tx.amountCents == null) "补金额" else Money.signed(tx),
+            if (tx.amountCents == null) stringResource(R.string.fill_amount) else Money.signed(tx),
             color = color, fontWeight = FontWeight.SemiBold, fontSize = 16.sp,
         )
     }

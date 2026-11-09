@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="n_entries"><item quantity="other">%d 筆</item></plurals>
+    <plurals name="bl_blocked_n"><item quantity="other">已攔下 %d 條通知</item></plurals>
+    <plurals name="cat_delete_used"><item quantity="other">已記的 %d 筆帳不會變，只是以後選不到這個分類了。</item></plurals>
+    <plurals name="set_status_missing"><item quantity="other">還差 %d 項設定</item></plurals>
+    <plurals name="ago_day"><item quantity="other">%d 天前</item></plurals>
+    <plurals name="editor_delete_with_receipts"><item quantity="other">它的 %d 個憑證也會一起刪掉。</item></plurals>
+    <plurals name="imp_selected"><item quantity="other">匯入選中的 %d 筆</item></plurals>
+</resources>

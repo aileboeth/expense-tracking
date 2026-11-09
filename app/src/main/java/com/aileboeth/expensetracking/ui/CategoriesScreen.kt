@@ -1,5 +1,9 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.aileboeth.expensetracking.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -53,6 +57,7 @@ private const val COLUMNS = 4
 
 @Composable
 fun CategoriesScreen(onBack: () -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var type by remember { mutableStateOf(TxType.EXPENSE) }
     var input by remember { mutableStateOf("") }
@@ -65,24 +70,24 @@ fun CategoriesScreen(onBack: () -> Unit) {
         val n = input.trim()
         when {
             n.isEmpty() -> return
-            n in cats -> { error = "已经有「$n」了"; return }
-            n.length > 6 -> { error = "名字短一点，最多 6 个字"; return }
+            n in cats -> { error = ctx.getString(R.string.cat_exists, n); return }
+            n.length > 12 -> { error = ctx.getString(R.string.cat_too_long); return }
         }
         scope.launch(Dispatchers.IO) { Repo.addCategory(type, n) }
         input = ""; error = ""
     }
 
-    SubPage("管理分类", onBack) {
+    SubPage(stringResource(R.string.set_categories), onBack) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp)) {
             item { TypeToggle(type) { type = it; error = "" } }
             item {
-                GroupLabel("新建分类")
+                GroupLabel(stringResource(R.string.cat_new))
                 SoftCard(padding = 12.dp) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         CategoryBadge(input.trim().ifEmpty { "未分类" }, 44)
                         OutlinedTextField(
                             input, { input = it; error = "" },
-                            placeholder = { Text(if (type == TxType.EXPENSE) "如：宠物、健身" else "如：理财、奖学金") },
+                            placeholder = { Text(if (type == TxType.EXPENSE) stringResource(R.string.cat_new_hint_expense) else stringResource(R.string.cat_new_hint_income)) },
                             singleLine = true, shape = RoundedCornerShape(14.dp), isError = error.isNotEmpty(),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { add() }),
@@ -93,14 +98,14 @@ fun CategoriesScreen(onBack: () -> Unit) {
                             ),
                             modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
                         )
-                        FilledTonalButton(::add, enabled = input.isNotBlank()) { Text("添加") }
+                        FilledTonalButton(::add, enabled = input.isNotBlank()) { Text(stringResource(R.string.add)) }
                     }
                     if (error.isNotEmpty()) Text(error, color = ExpenseRed, style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(start = 56.dp, top = 4.dp))
                 }
             }
             item {
-                GroupLabel(if (type == TxType.EXPENSE) "支出分类" else "收入分类", "${cats.size} 个")
+                GroupLabel(if (type == TxType.EXPENSE) stringResource(R.string.cat_expense_list) else stringResource(R.string.cat_income_list), stringResource(R.string.n_items, cats.size))
                 SoftCard(padding = 12.dp) {
                     cats.chunked(COLUMNS).forEach { row ->
                         Row(Modifier.fillMaxWidth()) {
@@ -112,7 +117,7 @@ fun CategoriesScreen(onBack: () -> Unit) {
                     }
                 }
                 Text(
-                    "点分类可以删除，已记的账保留原来的分类。「其他」是没选分类时的默认项，不能删。",
+                    stringResource(R.string.cat_footer),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                 )
@@ -125,15 +130,15 @@ fun CategoriesScreen(onBack: () -> Unit) {
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
             icon = { CategoryBadge(name, 48) },
-            title = { Text("删除分类「$name」？") },
-            text = { Text(if (n > 0) "已记的 $n 笔账不会变，只是以后选不到这个分类了。" else "这个分类还没有用过。") },
+            title = { Text(stringResource(R.string.cat_delete_title, catName(name))) },
+            text = { Text(if (n > 0) pluralStringResource(R.plurals.cat_delete_used, n, n) else stringResource(R.string.cat_delete_unused)) },
             confirmButton = {
                 TextButton({
                     scope.launch(Dispatchers.IO) { Repo.deleteCategory(type, name) }
                     confirmDelete = null
-                }) { Text("删除", color = ExpenseRed) }
+                }) { Text(stringResource(R.string.delete), color = ExpenseRed) }
             },
-            dismissButton = { TextButton({ confirmDelete = null }) { Text("取消") } },
+            dismissButton = { TextButton({ confirmDelete = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -150,12 +155,12 @@ private fun CategoryTile(name: String, count: Int, deletable: Boolean, modifier:
                 Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp).size(18.dp).clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.Close, "删除", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp)) }
+            ) { Icon(Icons.Filled.Close, stringResource(R.string.delete), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp)) }
         }
-        Text(name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1,
+        Text(catName(name), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1,
             overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
         Text(
-            if (!deletable) "默认" else if (count > 0) "$count 笔" else "未使用",
+            if (!deletable) stringResource(R.string.cat_default) else if (count > 0) pluralStringResource(R.plurals.n_entries, count, count) else stringResource(R.string.cat_unused),
             fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

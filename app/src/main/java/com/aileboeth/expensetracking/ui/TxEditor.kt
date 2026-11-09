@@ -1,5 +1,9 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.aileboeth.expensetracking.R
+
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.Toast
@@ -132,7 +136,7 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
     fun addFrom(load: () -> Attachment?) {
         scope.launch {
             val a = withContext(Dispatchers.IO) { load() }
-            if (a != null) atts = atts + a else Toast.makeText(ctx, "没能读取这个文件", Toast.LENGTH_SHORT).show()
+            if (a != null) atts = atts + a else Toast.makeText(ctx, ctx.getString(R.string.att_read_failed), Toast.LENGTH_SHORT).show()
         }
     }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -155,7 +159,7 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
 
     fun save() {
         val cents = Money.parse(amount)
-        if (cents == null) { error = "请填金额，例如 12.5"; return }
+        if (cents == null) { error = ctx.getString(R.string.editor_amount_error); return }
         val cat = category.ifBlank { noteGuess ?: initial?.category?.takeUnless { it.isBlank() } ?: "其他" }
         val tx = (initial ?: Tx(type = type, amountCents = cents, time = time, channel = "手动")).copy(
             type = type, amountCents = cents, category = cat, note = note.trim(), time = time, status = Status.OK,
@@ -191,22 +195,22 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
                 Row(Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(::close) { Icon(Icons.Filled.Close, "关闭") }
+                    IconButton(::close) { Icon(Icons.Filled.Close, stringResource(R.string.close)) }
                     Text(
                         when {
-                            initial == null -> "记一笔"
-                            initial.amountCents == null -> "补上金额"
-                            else -> "修改"
+                            initial == null -> stringResource(R.string.home_add)
+                            initial.amountCents == null -> stringResource(R.string.editor_fill)
+                            else -> stringResource(R.string.editor_edit)
                         },
                         style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
                     )
-                    if (initial != null) IconButton({ confirmDelete = true }) { Icon(Icons.Filled.DeleteOutline, "删除", tint = ExpenseRed) }
+                    if (initial != null) IconButton({ confirmDelete = true }) { Icon(Icons.Filled.DeleteOutline, stringResource(R.string.delete), tint = ExpenseRed) }
                 }
 
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
                     if (initial != null && initial.source != "manual") {
                         Text(
-                            listOf(initial.channel, Kinds.label(initial.kind), initial.counterpart, initial.raw)
+                            listOf(Labels.channel(ctx, initial.channel), Labels.kind(ctx, initial.kind), initial.counterpart, initial.raw)
                                 .filter { it.isNotBlank() }.distinct().joinToString(" · "),
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
@@ -220,7 +224,7 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                         OutlinedTextField(
                             value = amount, onValueChange = { amount = it; error = null },
                             placeholder = { Text("0.00", style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold)) },
-                            prefix = { Text("¥ ", style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold)) },
+                            prefix = { Text(Money.sym + " ", style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold)) },
                             textStyle = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold, color = if (type == TxType.INCOME) IncomeGreen else MaterialTheme.colorScheme.onSurface),
                             singleLine = true, isError = error != null,
                             supportingText = error?.let { { Text(it) } },
@@ -231,23 +235,23 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                     }
 
                     // category
-                    GroupLabel("分类", if (category.isEmpty()) "可不选" else "")
+                    GroupLabel(stringResource(R.string.stat_categories), if (category.isEmpty()) stringResource(R.string.editor_optional) else "")
                     SoftCard(padding = 12.dp) {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             for (c in categories) FilterChip(
                                 selected = c == category,
                                 onClick = { category = if (category == c) "" else c },
-                                label = { Text(CategoryStyle.label(c)) },
+                                label = { Text(catLabel(c)) },
                             )
                         }
                     }
 
                     // note
-                    GroupLabel("备注")
+                    GroupLabel(stringResource(R.string.editor_note))
                     SoftCard(padding = 12.dp) {
                         OutlinedTextField(
                             value = note, onValueChange = { note = it },
-                            placeholder = { Text("这笔钱花在哪了，如：奶茶、午饭") },
+                            placeholder = { Text(stringResource(R.string.editor_note_hint)) },
                             singleLine = true, shape = RoundedCornerShape(14.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -268,19 +272,19 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                             )
                         }
                         if (category.isEmpty() && noteGuess != null) Text(
-                            "不选分类的话，按备注记到「$noteGuess」",
+                            stringResource(R.string.editor_note_guess, catName(noteGuess!!)),
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 4.dp, top = 8.dp),
                         )
                     }
 
                     // time
-                    GroupLabel("时间")
+                    GroupLabel(stringResource(R.string.editor_time))
                     SoftCard(padding = 0.dp) {
                         SettingRow(
                             Icons.Filled.Schedule, Tint.Blue,
-                            SimpleDateFormat("yyyy年M月d日 HH:mm", Locale.CHINA).format(Date(time)),
-                            trailing = { Text("改时间", color = MaterialTheme.colorScheme.primary) },
+                            java.time.format.DateTimeFormatter.ofPattern(stringResource(R.string.fmt_full_time), AppLocale.locale(ctx)).format(java.time.Instant.ofEpochMilli(time).atZone(java.time.ZoneId.systemDefault())),
+                            trailing = { Text(stringResource(R.string.editor_change_time), color = MaterialTheme.colorScheme.primary) },
                         ) {
                             val cal = Calendar.getInstance().apply { timeInMillis = time }
                             DatePickerDialog(ctx, { _, y, m, d ->
@@ -293,7 +297,7 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                     }
 
                     // receipts
-                    GroupLabel("凭证", "收据照片、发票，可不加")
+                    GroupLabel(stringResource(R.string.editor_receipts), stringResource(R.string.editor_receipts_hint))
                     SoftCard(padding = 12.dp) {
                         if (atts.isNotEmpty()) {
                             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -304,15 +308,15 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                             }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            AddButton(Icons.Filled.PhotoCamera, "拍照", Modifier.weight(1f)) {
+                            AddButton(Icons.Filled.PhotoCamera, stringResource(R.string.editor_camera), Modifier.weight(1f)) {
                                 val (f, uri) = Attachments.cameraTarget(ctx)
                                 cameraFile = f
-                                runCatching { takePhoto.launch(uri) }.onFailure { Toast.makeText(ctx, "没找到相机", Toast.LENGTH_SHORT).show() }
+                                runCatching { takePhoto.launch(uri) }.onFailure { Toast.makeText(ctx, ctx.getString(R.string.editor_no_camera), Toast.LENGTH_SHORT).show() }
                             }
-                            AddButton(Icons.Filled.PhotoLibrary, "相册", Modifier.weight(1f)) {
+                            AddButton(Icons.Filled.PhotoLibrary, stringResource(R.string.editor_gallery), Modifier.weight(1f)) {
                                 pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                             }
-                            AddButton(Icons.Filled.UploadFile, "文件", Modifier.weight(1f)) {
+                            AddButton(Icons.Filled.UploadFile, stringResource(R.string.editor_file), Modifier.weight(1f)) {
                                 pickFile.launch(arrayOf("application/pdf", "image/*"))
                             }
                         }
@@ -325,14 +329,14 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                     colors = ButtonDefaults.buttonColors(containerColor = Brand),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp).height(52.dp),
-                ) { Text("保存", fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+                ) { Text(stringResource(R.string.save), fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
             }
         }
 
         if (confirmDelete && initial != null) AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("删除这笔账？") },
-            text = { Text(if (atts.isNotEmpty()) "它的 ${atts.size} 个凭证也会一起删掉。" else "删掉就找不回来了。") },
+            title = { Text(stringResource(R.string.editor_delete_title)) },
+            text = { Text(if (atts.isNotEmpty()) pluralStringResource(R.plurals.editor_delete_with_receipts, atts.size, atts.size) else stringResource(R.string.editor_delete_body)) },
             confirmButton = {
                 TextButton({
                     confirmDelete = false
@@ -342,9 +346,9 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                         Bubble.refresh()
                         onDone()
                     }
-                }) { Text("删除", color = ExpenseRed) }
+                }) { Text(stringResource(R.string.delete), color = ExpenseRed) }
             },
-            dismissButton = { TextButton({ confirmDelete = false }) { Text("取消") } },
+            dismissButton = { TextButton({ confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -383,6 +387,6 @@ private fun AttachmentTile(a: Attachment, onOpen: () -> Unit, onRemove: () -> Un
             Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-6).dp).size(22.dp).clip(CircleShape)
                 .background(Color(0xCC1C1A24)).clickable(onClick = onRemove),
             contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Filled.Close, "移除", tint = Color.White, modifier = Modifier.size(14.dp)) }
+        ) { Icon(Icons.Filled.Close, stringResource(R.string.remove), tint = Color.White, modifier = Modifier.size(14.dp)) }
     }
 }

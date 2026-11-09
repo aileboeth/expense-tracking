@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">本月收支</string>
+
+    <!-- common -->
+    <string name="save">儲存</string>
+    <string name="cancel">取消</string>
+    <string name="done">完成</string>
+    <string name="delete">刪除</string>
+    <string name="add">新增</string>
+    <string name="back">返回</string>
+    <string name="close">關閉</string>
+    <string name="ok">好</string>
+    <string name="remove">移除</string>
+    <string name="search">搜尋</string>
+    <string name="clear">清空</string>
+    <string name="expense">支出</string>
+    <string name="income">收入</string>
+    <string name="today">今天</string>
+    <string name="yesterday">昨天</string>
+    <string name="not_set">未設定</string>
+    <string name="n_items">%d 個</string>
+    <string name="go_set">去設定</string>
+    <string name="enabled_pill">已開啟</string>
+    <string name="disabled_pill">去開啟</string>
+    <string name="lang_system">跟隨手機</string>
+    <string name="amount_hint">金額</string>
+    <string name="min_amount">最少 %s</string>
+    <string name="max_amount">最多 %s</string>
+
+    <!-- dates -->
+    <string name="fmt_year_month">yyyy年M月</string>
+    <string name="fmt_month_day">M月d日</string>
+    <string name="fmt_year_month_day">yyyy年M月d日</string>
+    <string name="fmt_month_short">M月</string>
+    <string name="fmt_full_time">yyyy年M月d日 HH:mm</string>
+    <string name="day_n">%d日</string>
+
+    <!-- default categories -->
+    <string name="cat_food">餐飲</string>
+    <string name="cat_snacks">零食飲料</string>
+    <string name="cat_transport">交通</string>
+    <string name="cat_shopping">購物</string>
+    <string name="cat_daily">日用</string>
+    <string name="cat_fun">娛樂</string>
+    <string name="cat_bills">生活繳費</string>
+    <string name="cat_phone">通訊</string>
+    <string name="cat_study">學習</string>
+    <string name="cat_medical">醫療</string>
+    <string name="cat_gifts">人情</string>
+    <string name="cat_other">其他</string>
+    <string name="cat_salary">工資</string>
+    <string name="cat_sidejob">兼職</string>
+    <string name="cat_transfer">轉帳</string>
+    <string name="cat_redpacket">紅包</string>
+    <string name="cat_refund">退款</string>
+    <string name="cat_none">未分類</string>
+
+    <!-- channels and kinds -->
+    <string name="ch_wechat">微信</string>
+    <string name="ch_alipay">支付寶</string>
+    <string name="ch_manual">手動</string>
+    <string name="kind_wechat_voucher">手錶/憑證付款</string>
+    <string name="kind_wechat_paid">微信付款</string>
+    <string name="kind_wechat_income">微信收款</string>
+    <string name="kind_alipay_expense">支付寶付款</string>
+    <string name="kind_alipay_autopay">支付寶免密支付</string>
+    <string name="kind_alipay_transfer">支付寶轉帳到帳</string>
+    <string name="kind_alipay_income">支付寶收款</string>
+    <string name="kind_generic">其他 App</string>
+    <string name="kind_wechat_bill">微信帳單匯入</string>
+    <string name="kind_alipay_bill">支付寶帳單匯入</string>
+
+    <!-- main / navigation -->
+    <string name="nav_bills">帳單</string>
+    <string name="nav_stats">統計</string>
+    <string name="nav_settings">設定</string>
+    <string name="update_available">有新版本 %s</string>
+    <string name="update_current">當前 %s</string>
+    <string name="update_download">下載並安裝</string>
+    <string name="update_later">以後</string>
+    <string name="update_downloading">正在下載 %s</string>
+    <string name="update_ready">下載好了</string>
+    <string name="update_ready_body">如果沒彈出安裝介面：先允許「安裝未知應用」，再點安裝。</string>
+    <string name="update_install">安裝</string>
+    <string name="update_uptodate">已是最新版</string>
+    <string name="update_version">當前版本 %s</string>
+    <string name="update_failed">更新沒成功</string>
+    <string name="update_failed_hint">連不上 GitHub 時，可以在設定裡填「下載加速字首」。</string>
+    <string name="update_err_check">檢查更新失敗：%s</string>
+    <string name="update_err_hash">檔案校驗不對（下載不完整或被改動），請重試</string>
+    <string name="update_err_download">下載失敗：%s</string>
+    <string name="update_err_404">還沒有釋出版本（404）</string>
+    <string name="update_err_code">伺服器返回 %d</string>
+    <string name="update_err_redirect">跳轉次數太多</string>
+
+    <!-- widget -->
+    <string name="widget_month_spent">%s支出</string>
+    <string name="widget_today">今天 %s</string>
+    <string name="widget_budget_left"> · 預算剩 %s</string>
+    <string name="widget_over_budget"> · 超預算 %s</string>
+    <string name="widget_pending">\n%d 筆待補金額</string>
+    <string name="widget_add">+ 記一筆</string>
+</resources>

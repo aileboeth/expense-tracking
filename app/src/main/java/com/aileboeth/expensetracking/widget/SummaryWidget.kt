@@ -59,13 +59,14 @@ object Widgets {
         val budget = Prefs(ctx).budgetCents
         val pending = runCatching { Repo.pending().size }.getOrDefault(0)
 
+        val res = ctx.applicationContext
         val detail = buildString {
-            append("今天 ¥").append(Money.format(todaySpent))
+            append(res.getString(R.string.widget_today, Money.money(todaySpent)))
             if (budget > 0) {
                 val left = budget - monthSpent
-                append(if (left >= 0) " · 预算剩 ¥${Money.format(left)}" else " · 超预算 ¥${Money.format(-left)}")
+                append(if (left >= 0) res.getString(R.string.widget_budget_left, Money.money(left)) else res.getString(R.string.widget_over_budget, Money.money(-left)))
             }
-            if (pending > 0) append("\n$pending 笔待补金额")
+            if (pending > 0) append(res.getString(R.string.widget_pending, pending))
         }
 
         val open = PendingIntent.getActivity(
@@ -77,8 +78,9 @@ object Widgets {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val views = RemoteViews(ctx.packageName, R.layout.widget_summary).apply {
-            setTextViewText(R.id.widget_title, "${month.monthValue}月支出")
-            setTextViewText(R.id.widget_month, "¥" + Money.format(monthSpent))
+            setTextViewText(R.id.widget_title, res.getString(R.string.widget_month_spent, com.aileboeth.expensetracking.ui.Labels.monthShort(res, month)))
+            setTextViewText(R.id.widget_month, Money.money(monthSpent))
+            setTextViewText(R.id.widget_add, res.getString(R.string.widget_add))
             setTextViewText(R.id.widget_detail, detail)
             setOnClickPendingIntent(R.id.widget_root, open)
             setOnClickPendingIntent(R.id.widget_add, add)

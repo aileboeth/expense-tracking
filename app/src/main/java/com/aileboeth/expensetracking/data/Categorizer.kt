@@ -15,25 +15,30 @@ import com.aileboeth.expensetracking.parse.TxType
 object Categorizer {
     /** Built-in words for notes and merchants. More specific groups first (奶茶 before 饭). */
     private val EXPENSE_WORDS = listOf(
-        "零食饮料" to listOf("奶茶", "咖啡", "饮料", "零食", "水果", "雪糕", "冰淇淋", "瑞幸", "星巴克", "蜜雪", "喜茶", "霸王茶姬", "茶百道", "古茗", "库迪"),
-        "生活缴费" to listOf("慧生活", "水费", "电费", "燃气", "物业", "房租", "宿舍", "校园卡", "热水", "洗衣", "网费"),
-        "通讯" to listOf("话费", "流量", "宽带", "移动", "联通", "电信"),
-        "交通" to listOf("打车", "滴滴", "地铁", "公交", "车票", "高铁", "火车", "机票", "12306", "铁路", "高德打车", "哈啰", "单车", "加油", "停车", "过路费"),
-        "餐饮" to listOf("早饭", "早餐", "午饭", "午餐", "晚饭", "晚餐", "夜宵", "宵夜", "外卖", "食堂", "饭卡", "餐厅", "饭", "聚餐", "火锅", "烧烤", "美团", "饿了么", "麦当劳", "肯德基", "汉堡"),
-        "医疗" to listOf("药", "医院", "挂号", "体检", "看病", "牙科", "看牙"),
-        "学习" to listOf("教材", "书", "课程", "学费", "打印", "复印", "文具", "考试", "报名费"),
-        "娱乐" to listOf("电影", "游戏", "KTV", "会员", "充值", "Steam", "网易", "腾讯游戏", "爱奇艺", "哔哩哔哩", "优酷", "演唱会", "门票"),
-        "人情" to listOf("红包", "礼物", "份子", "请客", "生日"),
-        "日用" to listOf("日用", "纸巾", "洗发", "沐浴", "牙膏", "洗衣液", "超市", "便利店"),
-        "购物" to listOf("淘宝", "天猫", "京东", "拼多多", "抖音商城", "衣服", "鞋", "网购"),
+        "零食饮料" to listOf("奶茶", "咖啡", "饮料", "零食", "水果", "雪糕", "冰淇淋", "瑞幸", "星巴克", "蜜雪", "喜茶", "霸王茶姬", "茶百道", "古茗", "库迪",
+            "coffee", "starbucks", "milk tea", "bubble tea", "boba", "snack", "juice", "drink", "dessert", "ice cream"),
+        "生活缴费" to listOf("慧生活", "水费", "电费", "燃气", "物业", "房租", "宿舍", "校园卡", "热水", "洗衣", "网费",
+            "rent", "electricity", "electric bill", "water bill", "utilities", "utility"),
+        "通讯" to listOf("话费", "流量", "宽带", "移动", "联通", "电信", "phone bill", "mobile plan", "data plan", "internet", "broadband"),
+        "交通" to listOf("打车", "滴滴", "地铁", "公交", "车票", "高铁", "火车", "机票", "12306", "铁路", "高德打车", "哈啰", "单车", "加油", "停车", "过路费",
+            "uber", "lyft", "taxi", "cab", "bus", "metro", "subway", "train", "flight", "airline", "petrol", "gas station", "parking", "toll"),
+        "餐饮" to listOf("早饭", "早餐", "午饭", "午餐", "晚饭", "晚餐", "夜宵", "宵夜", "外卖", "食堂", "饭卡", "餐厅", "饭", "聚餐", "火锅", "烧烤", "美团", "饿了么", "麦当劳", "肯德基", "汉堡",
+            "breakfast", "lunch", "dinner", "restaurant", "mcdonald", "kfc", "burger", "pizza", "meal", "takeout", "doordash", "uber eats", "deliveroo"),
+        "医疗" to listOf("药", "医院", "挂号", "体检", "看病", "牙科", "看牙", "pharmacy", "doctor", "hospital", "medicine", "dental", "clinic"),
+        "学习" to listOf("教材", "书", "课程", "学费", "打印", "复印", "文具", "考试", "报名费", "textbook", "book", "tuition", "course", "printing", "stationery", "exam fee"),
+        "娱乐" to listOf("电影", "游戏", "KTV", "会员", "充值", "Steam", "网易", "腾讯游戏", "爱奇艺", "哔哩哔哩", "优酷", "演唱会", "门票",
+            "movie", "cinema", "netflix", "spotify", "game", "concert", "ticket"),
+        "人情" to listOf("红包", "礼物", "份子", "请客", "生日", "gift", "birthday", "donation"),
+        "日用" to listOf("日用", "纸巾", "洗发", "沐浴", "牙膏", "洗衣液", "超市", "便利店", "grocery", "groceries", "supermarket", "toiletries", "laundry", "walmart", "costco", "tesco", "7-eleven"),
+        "购物" to listOf("淘宝", "天猫", "京东", "拼多多", "抖音商城", "衣服", "鞋", "网购", "amazon", "shopping", "clothes", "shoes", "ikea"),
     )
 
     private val INCOME_WORDS = listOf(
-        "工资" to listOf("工资", "薪"),
-        "兼职" to listOf("兼职", "家教", "稿费", "跑腿"),
-        "退款" to listOf("退款", "退货", "退费"),
+        "工资" to listOf("工资", "薪", "salary", "payroll", "wage"),
+        "兼职" to listOf("兼职", "家教", "稿费", "跑腿", "freelance", "tutoring", "side job"),
+        "退款" to listOf("退款", "退货", "退费", "refund"),
         "红包" to listOf("红包"),
-        "转账" to listOf("转账", "还钱", "还款", "生活费"),
+        "转账" to listOf("转账", "还钱", "还款", "生活费", "transfer", "pay back"),
     )
 
     /**
@@ -92,7 +97,10 @@ object Categorizer {
         return guess(type, counterpart, kind)
     }
 
-    /** A few of the built-in words, for the rules page. */
-    fun examples(type: TxType): List<Pair<String, String>> =
-        (if (type == TxType.EXPENSE) EXPENSE_WORDS else INCOME_WORDS).map { (cat, words) -> cat to words.take(4).joinToString("、") }
+    /** A few of the built-in words in the UI language (Chinese or Latin script), for the rules page. */
+    fun examples(type: TxType, chinese: Boolean): List<Pair<String, String>> =
+        (if (type == TxType.EXPENSE) EXPENSE_WORDS else INCOME_WORDS).mapNotNull { (cat, words) ->
+            words.filter { w -> w.any { it.code > 0x2E80 } == chinese }.take(4).takeIf { it.isNotEmpty() }
+                ?.let { cat to it.joinToString(if (chinese) "、" else ", ") }
+        }
 }

@@ -41,6 +41,7 @@ import com.aileboeth.expensetracking.data.Status
 import com.aileboeth.expensetracking.data.Tx
 import com.aileboeth.expensetracking.parse.TxType
 import com.aileboeth.expensetracking.ui.MainActivity
+import com.aileboeth.expensetracking.ui.Labels
 import java.text.SimpleDateFormat
 import java.time.YearMonth
 import java.time.ZoneId
@@ -217,10 +218,10 @@ object Bubble {
             shape = GradientDrawable.OVAL
             setColor(if (pending) BRAND else 0x38FFFFFF)
         }
-        val label = if (pending) "待补金额" else Money.signed(t).let { s -> if (s.endsWith(".00")) s.dropLast(3) else s }
-        text.text = if (all.size > 1) "$label · ${all.size}笔" else label
+        val label = if (pending) s(R.string.bub_pending) else Money.signed(t).let { x -> if (x.endsWith(".00")) x.dropLast(3) else x }
+        text.text = if (all.size > 1) s(R.string.bub_count, label, all.size) else label
         text.setTextColor(if (pending) BRAND_DEEP else Color.WHITE)
-        v.contentDescription = "记账：$label"
+        v.contentDescription = s(R.string.bub_desc, label)
 
         p.gravity = Gravity.TOP or (if (onLeft) Gravity.START else Gravity.END)
         p.x = 0
@@ -400,7 +401,7 @@ object Bubble {
         val hint = TextView(ctx).apply { textSize = 11f; setTextColor(MUTED) }
         fun paint() {
             val g = guess()
-            hint.text = if (g != null) "点保存按备注记到「$g」" else defaultHint.orEmpty()
+            hint.text = if (g != null) s(R.string.bub_note_guess, Labels.category(ctx, g)) else defaultHint.orEmpty()
             hint.setTextColor(if (g != null) BRAND else MUTED)
             hint.visibility = if (hint.text.isNullOrEmpty()) View.GONE else View.VISIBLE
         }
@@ -420,7 +421,7 @@ object Bubble {
             Repo.frequentAmounts(t.type, System.currentTimeMillis() - 60L * 24 * 3600 * 1000, if (t.type == TxType.EXPENSE) 4 else 3)
         }
         val amount = EditText(ctx).apply {
-            hint = "这笔多少钱？"
+            hint = s(R.string.card_how_much)
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
             textSize = 24f; typeface = Typeface.DEFAULT_BOLD
             setTextColor(INK); setHintTextColor(0xFFB9B4CC.toInt())
@@ -431,7 +432,7 @@ object Bubble {
         val save = saveButton(ctx) {}
         val chips = FlowLayout(ctx, dp(6f))
         val more = moreRow(ctx, t, canFlip = false) {}
-        val yuan = TextView(ctx).apply { text = "¥"; textSize = 24f; typeface = Typeface.DEFAULT_BOLD; setTextColor(INK); visibility = View.GONE }
+        val yuan = TextView(ctx).apply { text = Money.sym; textSize = 24f; typeface = Typeface.DEFAULT_BOLD; setTextColor(INK); visibility = View.GONE }
         val amountBox = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -447,20 +448,20 @@ object Bubble {
             chips.removeAllViews()
             val current = amountCents()
             for (c in usual) {
-                chips.addView(chip(ctx, "¥" + Money.short(c), selected = current == c && !amount.hasFocus()) {
+                chips.addView(chip(ctx, Money.sym + Money.short(c), selected = current == c && !amount.hasFocus()) {
                     amount.setText(Money.short(c))
                     amount.clearFocus()
                     hideKeyboard(amount)
                     paintChips()
                 })
             }
-            chips.addView(chip(ctx, "其他金额", selected = amount.hasFocus(), accent = true) {
+            chips.addView(chip(ctx, s(R.string.card_other_amount), selected = amount.hasFocus(), accent = true) {
                 if (current != null && current in usual) amount.setText("")
                 amount.requestFocus()
                 showKeyboard(amount)
                 paintChips()
             })
-            chips.addView(chip(ctx, "✎ 改", dashed = true) {
+            chips.addView(chip(ctx, s(R.string.card_edit), dashed = true) {
                 val i = Intent(appCtx, MainActivity::class.java).setAction(ACTION_USUAL_AMOUNTS)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 collapse()
@@ -482,11 +483,11 @@ object Bubble {
         val note = noteField(ctx, t.note)
         fun commit(cat: String) {
             val cents = amountCents()
-            if (cents == null) { toast("先选一个金额"); return }
+            if (cents == null) { toast(s(R.string.bub_pick_amount)); return }
             save(t.copy(amountCents = cents), cat, note.text.toString())
         }
         sheet.addView(categoryRow(ctx, t.type) { cat -> commit(cat) }, spaced())
-        noteHelpers(ctx, sheet, note, { t.type }, t.counterpart, defaultHint = "点分类直接记好；不选分类点保存，记到「其他」") { guess ->
+        noteHelpers(ctx, sheet, note, { t.type }, t.counterpart, defaultHint = s(R.string.bub_hint)) { guess ->
             save.setOnClickListener { commit(guess() ?: t.category.takeUnless { it.isBlank() || it == OTHER } ?: OTHER) }
             save.isEnabled = false; save.alpha = 0.4f
             sheet.addView(noteRow(ctx, note, save), spaced(8f))
@@ -501,8 +502,8 @@ object Bubble {
     private fun meta(t: Tx): String {
         val time = SimpleDateFormat("HH:mm", Locale.CHINA).format(Date(t.time))
         val left = queue.size - 1
-        return listOf(t.channel, if (t.amountCents == null) Kinds.label(t.kind).removePrefix(t.channel) else "", time).filter { it.isNotBlank() }.joinToString(" · ") +
-            if (left > 0) " · 还有 $left 笔" else ""
+        return listOf(Labels.channel(appCtx!!, t.channel), if (t.amountCents == null) Labels.kind(appCtx!!, t.kind) else "", time).filter { it.isNotBlank() }.joinToString(" · ") +
+            if (left > 0) s(R.string.bub_more_left, left) else ""
     }
 
     private fun headRow(ctx: Context, amount: View, meta: String, onMore: () -> Unit) = LinearLayout(ctx).apply {
@@ -520,7 +521,7 @@ object Bubble {
             text = "⋯"; textSize = 16f; setTextColor(INK); gravity = Gravity.CENTER
             background = round(CHIP, 12f)
             setOnClickListener { onMore() }
-            contentDescription = "更多"
+            contentDescription = s(R.string.bub_more)
         }, LinearLayout.LayoutParams(dp(36f), dp(30f)))
     }
 
@@ -529,12 +530,12 @@ object Bubble {
         orientation = LinearLayout.HORIZONTAL
         visibility = View.GONE
         setPadding(0, dp(10f), 0, 0)
-        if (canFlip) addView(chip(ctx, "改成收入/支出") { onFlip() })
+        if (canFlip) addView(chip(ctx, s(R.string.bub_flip)) { onFlip() })
         addView(View(ctx), LinearLayout.LayoutParams(dp(6f), 1))
-        addView(chip(ctx, "不是这笔", danger = true) {
+        addView(chip(ctx, s(R.string.bub_not_this), danger = true) {
             Thread { Repo.delete(t.id) }.start()
             queue.remove(t.id)
-            toast("已删除")
+            toast(s(R.string.bub_deleted))
             next()
         })
     }
@@ -552,7 +553,7 @@ object Bubble {
                     background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(CHIP) }
                 }, LinearLayout.LayoutParams(dp(42f), dp(42f)))
                 addView(TextView(ctx).apply {
-                    text = name; textSize = 10.5f; setTextColor(MUTED); gravity = Gravity.CENTER; maxLines = 1
+                    text = Labels.category(ctx, name); textSize = 10.5f; setTextColor(MUTED); gravity = Gravity.CENTER; maxLines = 1
                 })
                 setOnClickListener { onPick(name) }
                 contentDescription = name
@@ -565,7 +566,7 @@ object Bubble {
     }
 
     private fun noteField(ctx: Context, initial: String) = EditText(ctx).apply {
-        hint = "备注（可不填）"
+        hint = s(R.string.bub_note_hint)
         setText(initial)
         textSize = 14f
         isSingleLine = true
@@ -583,7 +584,7 @@ object Bubble {
     }
 
     private fun saveButton(ctx: Context, onClick: () -> Unit) = TextView(ctx).apply {
-        text = "保存"
+        text = s(R.string.save)
         textSize = 14f
         typeface = Typeface.DEFAULT_BOLD
         setTextColor(Color.WHITE)
@@ -599,7 +600,7 @@ object Bubble {
     ) = TextView(ctx).apply {
         text = label
         textSize = 13.5f
-        typeface = if (label.startsWith("¥")) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+        typeface = if (label.startsWith(Money.sym)) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         setTextColor(when { danger -> EXPENSE; selected || accent -> BRAND; dashed -> MUTED; else -> INK })
         gravity = Gravity.CENTER
         setPadding(dp(12f), dp(7f), dp(12f), dp(7f))
@@ -631,6 +632,8 @@ object Bubble {
         appCtx!!.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(v.windowToken, 0)
     }
 
+    private fun s(id: Int, vararg args: Any): String = appCtx!!.getString(id, *args)
+
     private fun toast(msg: String) = Toast.makeText(appCtx, msg, Toast.LENGTH_SHORT).show()
 
     // ---- actions ------------------------------------------------------------------------
@@ -639,7 +642,7 @@ object Bubble {
         val updated = t.copy(category = category.ifBlank { OTHER }, note = note.trim(), status = Status.OK)
         Thread { Repo.update(updated) }.start()
         queue.remove(t.id)
-        toast("已记好：${updated.category} ${Money.signed(updated)}")
+        toast(s(R.string.bub_saved, Labels.category(appCtx!!, updated.category), Money.signed(updated)))
         next()
     }
 

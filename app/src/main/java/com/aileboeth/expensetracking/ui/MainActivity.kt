@@ -38,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.aileboeth.expensetracking.R
 import com.aileboeth.expensetracking.capture.ListenerKeeper
 import com.aileboeth.expensetracking.update.Updater
 import com.aileboeth.expensetracking.widget.Widgets
@@ -47,6 +49,8 @@ class MainActivity : ComponentActivity() {
     private val addRequest = mutableStateOf(false)
     /** Set when the bubble's ✎ 改 asks to edit the usual amounts. */
     private val usualRequest = mutableStateOf(false)
+
+    override fun attachBaseContext(newBase: android.content.Context) = super.attachBaseContext(AppLocale.wrap(newBase))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +95,7 @@ private sealed interface Overlay {
     data object UsualAmounts : Overlay
     data object Rules : Overlay
     data object Stability : Overlay
+    data object PayApps : Overlay
     data class Import(val uri: Uri) : Overlay
 }
 
@@ -117,14 +122,15 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
         Overlay.UsualAmounts -> UsualAmountsScreen(onBack = { overlay = null })
         Overlay.Rules -> CategoryRulesScreen(onBack = { overlay = null })
         Overlay.Stability -> StabilityScreen(onBack = { overlay = null })
+        Overlay.PayApps -> PaymentAppsScreen(onBack = { overlay = null })
         is Overlay.Import -> ImportScreen(o.uri, onBack = { overlay = null })
         null -> Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    NavigationBarItem(tab == 0, { tab = 0 }, icon = { Icon(Icons.Filled.Home, null) }, label = { Text("账单") })
-                    NavigationBarItem(tab == 1, { tab = 1 }, icon = { Icon(Icons.Filled.DateRange, null) }, label = { Text("统计") })
-                    NavigationBarItem(tab == 2, { tab = 2 }, icon = { Icon(Icons.Filled.Settings, null) }, label = { Text("设置") })
+                    NavigationBarItem(tab == 0, { tab = 0 }, icon = { Icon(Icons.Filled.Home, null) }, label = { Text(stringResource(R.string.nav_bills)) })
+                    NavigationBarItem(tab == 1, { tab = 1 }, icon = { Icon(Icons.Filled.DateRange, null) }, label = { Text(stringResource(R.string.nav_stats)) })
+                    NavigationBarItem(tab == 2, { tab = 2 }, icon = { Icon(Icons.Filled.Settings, null) }, label = { Text(stringResource(R.string.nav_settings)) })
                 }
             },
         ) { padding ->
@@ -146,6 +152,7 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
                     openCategories = { overlay = Overlay.Categories },
                     openRules = { overlay = Overlay.Rules },
                     openStability = { overlay = Overlay.Stability },
+                    openPayApps = { overlay = Overlay.PayApps },
                     openUsual = { overlay = Overlay.UsualAmounts },
                     listState = settingsList,
                 )
@@ -162,22 +169,22 @@ fun UpdateDialog() {
     when (val s = state) {
         is Updater.State.Available -> AlertDialog(
             onDismissRequest = { Updater.dismiss() },
-            title = { Text("有新版本 ${s.info.version}") },
+            title = { Text(stringResource(R.string.update_available, s.info.version)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text("当前 ${s.current}")
+                    Text(stringResource(R.string.update_current, s.current))
                     if (s.info.notes.isNotBlank()) {
                         Spacer(Modifier.height(8.dp))
                         Text(s.info.notes, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             },
-            confirmButton = { TextButton({ Updater.download(ctx, s.info) }) { Text("下载并安装") } },
-            dismissButton = { TextButton({ Updater.dismiss() }) { Text("以后") } },
+            confirmButton = { TextButton({ Updater.download(ctx, s.info) }) { Text(stringResource(R.string.update_download)) } },
+            dismissButton = { TextButton({ Updater.dismiss() }) { Text(stringResource(R.string.update_later)) } },
         )
         is Updater.State.Downloading -> AlertDialog(
             onDismissRequest = {},
-            title = { Text("正在下载 ${s.info.version}") },
+            title = { Text(stringResource(R.string.update_downloading, s.info.version)) },
             text = {
                 Column {
                     if (s.total > 0) {
@@ -193,22 +200,22 @@ fun UpdateDialog() {
         )
         is Updater.State.Ready -> AlertDialog(
             onDismissRequest = { Updater.dismiss() },
-            title = { Text("下载好了") },
-            text = { Text("如果没弹出安装界面：先允许「安装未知应用」，再点安装。") },
-            confirmButton = { TextButton({ Updater.install(ctx, s.file) }) { Text("安装") } },
-            dismissButton = { TextButton({ Updater.dismiss() }) { Text("关闭") } },
+            title = { Text(stringResource(R.string.update_ready)) },
+            text = { Text(stringResource(R.string.update_ready_body)) },
+            confirmButton = { TextButton({ Updater.install(ctx, s.file) }) { Text(stringResource(R.string.update_install)) } },
+            dismissButton = { TextButton({ Updater.dismiss() }) { Text(stringResource(R.string.close)) } },
         )
         is Updater.State.UpToDate -> if (Updater.manual) AlertDialog(
             onDismissRequest = { Updater.dismiss() },
-            title = { Text("已是最新版") },
-            text = { Text("当前版本 ${s.current}") },
-            confirmButton = { TextButton({ Updater.dismiss() }) { Text("好") } },
+            title = { Text(stringResource(R.string.update_uptodate)) },
+            text = { Text(stringResource(R.string.update_version, s.current)) },
+            confirmButton = { TextButton({ Updater.dismiss() }) { Text(stringResource(R.string.ok)) } },
         )
         is Updater.State.Failed -> if (Updater.manual) AlertDialog(
             onDismissRequest = { Updater.dismiss() },
-            title = { Text("更新没成功") },
-            text = { Text(s.message + "\n\n连不上 GitHub 时，可以在设置里填「下载加速前缀」。") },
-            confirmButton = { TextButton({ Updater.dismiss() }) { Text("好") } },
+            title = { Text(stringResource(R.string.update_failed)) },
+            text = { Text(s.message + "\n\n" + stringResource(R.string.update_failed_hint)) },
+            confirmButton = { TextButton({ Updater.dismiss() }) { Text(stringResource(R.string.ok)) } },
         )
         else -> {}
     }

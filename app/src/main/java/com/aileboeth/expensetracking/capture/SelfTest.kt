@@ -35,8 +35,8 @@ object SelfTest {
         if (!ListenerKeeper.granted(app)) return Result.NoListenerPermission
         val nm = app.getSystemService(NotificationManager::class.java)
         if (!nm.areNotificationsEnabled()) return Result.CannotPost
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, "自检", NotificationManager.IMPORTANCE_LOW).apply {
-            description = "「自检」时发一条测试通知，几秒后自动消失"
+        nm.createNotificationChannel(NotificationChannel(CHANNEL, app.getString(R.string.selftest_channel), NotificationManager.IMPORTANCE_LOW).apply {
+            description = app.getString(R.string.selftest_channel_desc)
         })
         // Not connected (e.g. after an update on vivo): try to bring it back first.
         if (!CaptureService.connected) {
@@ -46,8 +46,8 @@ object SelfTest {
         val start = System.currentTimeMillis()
         val n = Notification.Builder(app, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_feather)
-            .setContentTitle("记账自检")
-            .setContentText("这是一条测试通知，马上会自动消失")
+            .setContentTitle(app.getString(R.string.selftest_title))
+            .setContentText(app.getString(R.string.selftest_text))
             .setTimeoutAfter(15_000)
             .addExtras(Bundle().apply { putBoolean(EXTRA, true) })
             .build()

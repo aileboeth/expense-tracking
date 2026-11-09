@@ -16,6 +16,7 @@ import com.aileboeth.expensetracking.data.Tx
 import com.aileboeth.expensetracking.parse.NoticeInput
 import com.aileboeth.expensetracking.parse.ParseResult
 import com.aileboeth.expensetracking.parse.Parser
+import com.aileboeth.expensetracking.parse.PaymentApps
 import java.util.concurrent.Executors
 
 class CaptureService : NotificationListenerService() {
@@ -96,7 +97,9 @@ object Ingest {
         Repo.init(ctx)
         val prefs = Prefs(ctx)
         val known = n.pkg in Parser.KNOWN_APPS
-        if (!known && !prefs.otherApps) return
+        // A payment app turned on for this region (Google Wallet, PayPal, PayPay, …): read with the generic parser.
+        val payApp = if (known) null else PaymentApps.find(n.pkg)?.takeIf { it.pkg in prefs.payApps() }
+        if (!known && payApp == null && !prefs.otherApps) return
         val text = n.bigText.ifBlank { n.text }
 
         if (n.pkg in prefs.blacklistApps) {
@@ -104,10 +107,11 @@ object Ingest {
             return
         }
 
-        val result = if (known) Parser.parse(n) else Parser.generic(n)
+        val result = if (known) Parser.parse(n) else Parser.generic(n, payApp)
         when (result) {
             ParseResult.NotPayment -> {
-                if (known && Parser.looksLikeMoney(n) && isServiceTitle(n)) Repo.log(n.pkg, n.title, text, "没认出")
+                // Payment apps without real samples yet: log what looked like money so the format can be added.
+                if ((known && isServiceTitle(n) || payApp != null) && Parser.looksLikeMoney(n) && Repo.markSeen(n.signature)) Repo.log(n.pkg, n.title, text, "没认出")
                 return
             }
             is ParseResult.Ignored -> {

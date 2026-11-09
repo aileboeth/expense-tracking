@@ -1,5 +1,9 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.aileboeth.expensetracking.R
+
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
@@ -81,9 +85,9 @@ fun ImportScreen(uri: Uri, onBack: () -> Unit) {
                 val name = ctx.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
                     if (c.moveToFirst()) c.getString(0) else null
                 } ?: ""
-                val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: throw BillException("读不到这个文件")
+                val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: throw BillException(ctx.getString(R.string.att_read_failed))
                 val bill = BillImporter.parse(name, bytes)
-                if (bill.rows.isEmpty()) throw BillException("账单里没有可导入的收支")
+                if (bill.rows.isEmpty()) throw BillException(ctx.getString(R.string.imp_empty))
                 val from = bill.rows.minOf { it.time } - 24 * 3600_000L
                 val to = bill.rows.maxOf { it.time } + 24 * 3600_000L
                 val existing = Repo.listAll(from, to).map { BillImporter.Existing(it.id, it.type, it.amountCents, it.channel, it.time, it.ref) }
@@ -95,7 +99,7 @@ fun ImportScreen(uri: Uri, onBack: () -> Unit) {
         } catch (e: BillException) {
             error = e.message
         } catch (e: Exception) {
-            error = "读取失败：${e.message ?: e.javaClass.simpleName}"
+            error = ctx.getString(R.string.imp_read_failed, e.message ?: e.javaClass.simpleName)
         }
     }
 
@@ -140,7 +144,7 @@ fun ImportScreen(uri: Uri, onBack: () -> Unit) {
                 a to f
             }
             Bubble.refresh()
-            Toast.makeText(ctx, "导入了 $added 笔，补上金额 $filled 笔", Toast.LENGTH_LONG).show()
+            Toast.makeText(ctx, ctx.getString(R.string.imp_done, added, filled), Toast.LENGTH_LONG).show()
             onBack()
         }
     }
@@ -148,19 +152,17 @@ fun ImportScreen(uri: Uri, onBack: () -> Unit) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Row(Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
-                Text(state?.source?.label?.let { "导入$it" } ?: "导入账单", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
+                Text(state?.source?.let { stringResource(R.string.imp_title_of, Labels.channel(ctx, it.channel)) } ?: stringResource(R.string.imp_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
             val st = state
             when {
                 error != null -> SoftCard(Modifier.padding(16.dp)) {
-                    Text("没能导入", fontWeight = FontWeight.SemiBold, color = ExpenseRed)
+                    Text(stringResource(R.string.imp_failed), fontWeight = FontWeight.SemiBold, color = ExpenseRed)
                     Text(error!!, style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.padding(4.dp))
                     Text(
-                        "微信：我 → 服务 → 钱包 → 账单 → 右上角 ⋯ → 下载账单 → 用于个人对账（选 Excel）。\n" +
-                            "支付宝：我的 → 账单 → 右上角 ⋯ → 开具交易流水证明 → 用于个人对账。\n" +
-                            "收到邮件后先解压（密码在微信/支付宝的消息里），再导入里面的 .xlsx / .csv。",
+                        stringResource(R.string.imp_howto),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -174,33 +176,32 @@ fun ImportScreen(uri: Uri, onBack: () -> Unit) {
                     ) {
                         item {
                             SoftCard {
-                                Text("对账结果", fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.imp_result), fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    "账单里 ${st.lines.size} 笔：已经记过 ${by[Outcome.MATCHED]?.size ?: 0} 笔，" +
-                                        "漏记 ${by[Outcome.MISSING]?.size ?: 0} 笔，能补上金额 ${by[Outcome.FILL]?.size ?: 0} 笔，" +
-                                        "以前导入过 ${by[Outcome.ALREADY_IMPORTED]?.size ?: 0} 笔。",
+                                    stringResource(R.string.imp_summary, st.lines.size, by[Outcome.MATCHED]?.size ?: 0, by[Outcome.MISSING]?.size ?: 0,
+                                        by[Outcome.FILL]?.size ?: 0, by[Outcome.ALREADY_IMPORTED]?.size ?: 0),
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                                 if (st.skipped.isNotEmpty()) Text(
-                                    "没导入：" + st.skipped.entries.joinToString("，") { "${it.key} ${it.value} 笔" },
+                                    stringResource(R.string.imp_skipped) + st.skipped.entries.joinToString(", ") { "${it.key} ${it.value}" },
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
-                        section(this, "漏记的（勾选的会加进账本）", by[Outcome.MISSING], st, chosen) { i ->
+                        section(this, R.string.imp_missing, by[Outcome.MISSING], st, chosen) { i ->
                             chosen = if (i in chosen) chosen - i else chosen + i
                         }
-                        section(this, "能补上金额的（手表付款、没写金额的到账）", by[Outcome.FILL], st, chosen) { i ->
+                        section(this, R.string.imp_fill, by[Outcome.FILL], st, chosen) { i ->
                             chosen = if (i in chosen) chosen - i else chosen + i
                         }
-                        section(this, "已经记过的", by[Outcome.MATCHED], st, null) {}
+                        section(this, R.string.imp_matched, by[Outcome.MATCHED], st, null) {}
                     }
                     Button(
                         onClick = { doImport(st) },
                         enabled = chosen.isNotEmpty() && !working,
                         colors = ButtonDefaults.buttonColors(containerColor = Brand),
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    ) { Text(if (chosen.isEmpty()) "没有要导入的" else "导入选中的 ${chosen.size} 笔") }
+                    ) { Text(if (chosen.isEmpty()) stringResource(R.string.imp_nothing) else pluralStringResource(R.plurals.imp_selected, chosen.size, chosen.size)) }
                 }
             }
         }
@@ -209,7 +210,7 @@ fun ImportScreen(uri: Uri, onBack: () -> Unit) {
 
 private fun section(
     scope: androidx.compose.foundation.lazy.LazyListScope,
-    title: String,
+    title: Int,
     indices: List<Int>?,
     st: ImportState,
     chosen: Set<Int>?,
@@ -218,7 +219,7 @@ private fun section(
     if (indices.isNullOrEmpty()) return
     scope.item {
         SoftCard(padding = 10.dp) {
-            Text("$title · ${indices.size}", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(6.dp))
+            Text(stringResource(title) + " · ${indices.size}", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(6.dp))
             val fmt = SimpleDateFormat("MM-dd HH:mm", Locale.CHINA)
             indices.take(if (chosen == null) 30 else 500).forEach { i ->
                 val r = st.lines[i].row
@@ -229,7 +230,7 @@ private fun section(
                     if (chosen != null) Checkbox(i in chosen, { toggle(i) }) else Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
-                            listOf(r.counterpart, r.goods).filter { it.isNotBlank() }.distinct().joinToString(" · ").ifEmpty { r.billCategory.ifEmpty { "（无说明）" } },
+                            listOf(r.counterpart, r.goods).filter { it.isNotBlank() }.distinct().joinToString(" · ").ifEmpty { r.billCategory.ifEmpty { stringResource(R.string.imp_no_desc) } },
                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                         Text(
@@ -244,7 +245,7 @@ private fun section(
                     )
                 }
             }
-            if (chosen == null && indices.size > 30) Text("……还有 ${indices.size - 30} 笔", Modifier.padding(6.dp), style = MaterialTheme.typography.bodySmall)
+            if (chosen == null && indices.size > 30) Text(stringResource(R.string.imp_more, indices.size - 30), Modifier.padding(6.dp), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

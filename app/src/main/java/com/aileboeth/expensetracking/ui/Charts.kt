@@ -46,12 +46,14 @@ import java.time.YearMonth
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
+import com.aileboeth.expensetracking.R
 
 /** "1234.56" style without decimals for large numbers, used on axes and tooltips. */
 fun shortYuan(cents: Long): String {
     val y = cents / 100.0
     return when {
-        y >= 10000 -> "%.1f万".format(y / 10000)
+        y >= 10000 && Money.chineseUnits -> "%.1f万".format(y / 10000)
+        y >= 10000 -> "%.1fk".format(y / 1000)
         y >= 100 -> y.roundToInt().toString()
         else -> Money.format(cents)
     }
@@ -93,6 +95,7 @@ fun DailyLineChart(
     val small = TextStyle(fontSize = 10.sp, color = muted)
     val tip = TextStyle(fontSize = 11.sp, color = color, fontWeight = FontWeight.SemiBold)
     val n = current.size
+    val ctx = androidx.compose.ui.platform.LocalContext.current
 
     fun indexAt(x: Float, width: Float, padPx: Float): Int {
         val step = if (n > 1) (width - 2 * padPx) / (n - 1) else 1f
@@ -124,7 +127,7 @@ fun DailyLineChart(
             drawLine(gridColor, Offset(pad, gy), Offset(size.width - pad, gy), 1f,
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
         }
-        label(tm, "¥" + shortYuan(maxRaw), pad, 2.dp.toPx(), small, center = false)
+        label(tm, Money.sym + shortYuan(maxRaw), pad, 2.dp.toPx(), small, center = false)
 
         previous?.let { prev ->
             val pts = prev.take(n).mapIndexed { i, v -> Offset(x(i), y(v)) }
@@ -145,7 +148,7 @@ fun DailyLineChart(
 
         // day labels
         val marks = listOf(0, 7, 14, 21, n - 1).distinct().filter { it < n }
-        for (i in marks) label(tm, "${i + 1}日", x(i), size.height - bottom + 5.dp.toPx(), small)
+        for (i in marks) label(tm, ctx.getString(R.string.day_n, i + 1), x(i), size.height - bottom + 5.dp.toPx(), small)
 
         selected?.takeIf { it in 0 until n }?.let { i ->
             val v = current[i]
@@ -154,7 +157,7 @@ fun DailyLineChart(
                 drawCircle(surface, 6.dp.toPx(), Offset(x(i), y(v)))
                 drawCircle(color, 6.dp.toPx(), Offset(x(i), y(v)), style = Stroke(2.5.dp.toPx()))
             }
-            val text = "${i + 1}日  ¥" + (v?.let { Money.format(it) } ?: "-")
+            val text = ctx.getString(R.string.day_n, i + 1) + "  " + (v?.let { Money.money(it) } ?: "-")
             label(tm, text, x(i), 2.dp.toPx(), tip)
         }
     }
@@ -176,6 +179,7 @@ fun TrendChart(
     val surface = MaterialTheme.colorScheme.surface
     val small = TextStyle(fontSize = 10.sp, color = muted)
     val n = labels.size
+    val ctx = androidx.compose.ui.platform.LocalContext.current
 
     Canvas(
         modifier.fillMaxWidth().height(200.dp).pointerInput(n) {
@@ -217,7 +221,7 @@ fun TrendChart(
         }
         labels.forEachIndexed { i, l -> label(tm, l, x(i), size.height - bottom + 5.dp.toPx(), small) }
         selected?.takeIf { it in 0 until n }?.let { i ->
-            val t = "支 ${shortYuan(expense[i])}  收 ${shortYuan(income[i])}"
+            val t = ctx.getString(R.string.day_out, shortYuan(expense[i])) + "  " + ctx.getString(R.string.day_in, shortYuan(income[i]))
             label(tm, t, x(i), 2.dp.toPx(), TextStyle(fontSize = 11.sp, color = muted, fontWeight = FontWeight.SemiBold))
         }
     }
@@ -268,7 +272,8 @@ fun CalendarHeatmap(
     val cells = List(first) { 0 } + (1..days).toList()
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            for (d in listOf("一", "二", "三", "四", "五", "六", "日")) {
+            val loc = AppLocale.locale(androidx.compose.ui.platform.LocalContext.current)
+            for (d in java.time.DayOfWeek.entries.map { it.getDisplayName(java.time.format.TextStyle.NARROW, loc) }) {
                 Text(d, Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }

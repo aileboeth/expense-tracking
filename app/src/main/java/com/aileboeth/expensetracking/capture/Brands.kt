@@ -6,6 +6,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.annotation.StringRes
+import com.aileboeth.expensetracking.R
 
 /**
  * Chinese phone makers stop background apps in their own ways. For each one: what to switch on,
@@ -13,7 +15,7 @@ import android.provider.Settings
  * several are tried; if none opens, the app's details page is shown instead).
  */
 object Brands {
-    data class Step(val title: String, val where: String, val targets: List<Target> = emptyList())
+    data class Step(@StringRes val title: Int, @StringRes val where: Int, val targets: List<Target> = emptyList())
 
     /** One way to open a settings page. */
     sealed interface Target {
@@ -23,12 +25,11 @@ object Brands {
         data object BatteryOptimization : Target
     }
 
-    data class Guide(val brand: String, val system: String, val steps: List<Step>)
+    data class Guide(@StringRes val brandRes: Int, val system: String, val steps: List<Step>) {
+        fun brandName(ctx: Context): String = if (brandRes == R.string.brand_other) Build.MANUFACTURER.ifBlank { ctx.getString(brandRes) } else ctx.getString(brandRes)
+    }
 
-    private val lockRecents = Step(
-        "在最近任务里锁住「记账」",
-        "打开最近任务（多任务）界面，找到记账的卡片，下拉或长按后点「锁定」。一键清理时就不会把它清掉。",
-    )
+    private val lockRecents = Step(R.string.step_lock, R.string.step_lock_where)
 
     /** Which maker this phone is from (lower case, e.g. "xiaomi", "huawei"). */
     fun maker(): String {
@@ -49,74 +50,74 @@ object Brands {
     fun current(): Guide = guide(maker())
 
     fun guide(maker: String): Guide = when (maker) {
-        "xiaomi" -> Guide("小米 / Redmi", "HyperOS / MIUI", listOf(
-            Step("允许自启动", "安全中心 → 应用管理 → 权限 → 自启动管理，打开「记账」。", listOf(
+        "xiaomi" -> Guide(R.string.brand_xiaomi, "HyperOS / MIUI", listOf(
+            Step(R.string.step_autostart, R.string.step_xiaomi_autostart, listOf(
                 Target.Component("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"),
                 Target.Component("com.miui.securitycenter", "com.miui.permcenter.MainAcitivty"),
             )),
-            Step("省电策略选「无限制」", "设置 → 应用设置 → 应用管理 → 记账 → 省电策略 → 无限制。", listOf(
+            Step(R.string.step_xiaomi_battery, R.string.step_xiaomi_battery_where, listOf(
                 Target.Component("com.miui.powerkeeper", "com.miui.powerkeeper.ui.HiddenAppsConfigActivity", withPackage = true),
                 Target.AppDetails,
             )),
             lockRecents,
         ))
-        "huawei" -> Guide("华为", "HarmonyOS / EMUI", listOf(
-            Step("应用启动管理改成手动", "设置 → 应用和服务 → 应用启动管理 → 记账：关掉「自动管理」，在弹出的窗口里打开「允许自启动」「允许关联启动」「允许后台活动」。", listOf(
+        "huawei" -> Guide(R.string.brand_huawei, "HarmonyOS / EMUI", listOf(
+            Step(R.string.step_launch_manual, R.string.step_huawei_where, listOf(
                 Target.Component("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
                 Target.Component("com.huawei.systemmanager", "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity"),
                 Target.Component("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"),
             )),
             lockRecents,
         ))
-        "honor" -> Guide("荣耀", "MagicOS", listOf(
-            Step("应用启动管理改成手动", "设置 → 应用 → 应用启动管理 → 记账：关掉「自动管理」，打开「允许自启动」「允许关联启动」「允许后台活动」。", listOf(
+        "honor" -> Guide(R.string.brand_honor, "MagicOS", listOf(
+            Step(R.string.step_launch_manual, R.string.step_honor_where, listOf(
                 Target.Component("com.hihonor.systemmanager", "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
                 Target.Component("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
             )),
             lockRecents,
         ))
-        "oppo", "oneplus" -> Guide(if (maker == "oneplus") "一加" else "OPPO / realme", "ColorOS", listOf(
-            Step("允许自启动", "设置 → 应用 → 自启动管理（或 手机管家 → 权限隐私 → 自启动管理），打开「记账」。", listOf(
+        "oppo", "oneplus" -> Guide(if (maker == "oneplus") R.string.brand_oneplus else R.string.brand_oppo, "ColorOS", listOf(
+            Step(R.string.step_autostart, R.string.step_oppo_autostart, listOf(
                 Target.Component("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"),
                 Target.Component("com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity"),
                 Target.Component("com.oplus.safecenter", "com.oplus.safecenter.permission.startup.StartupAppListActivity"),
                 Target.Component("com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity"),
                 Target.Component("com.oneplus.security", "com.oneplus.security.chainlaunch.view.ChainLaunchAppListActivity"),
             )),
-            Step("允许后台运行", "设置 → 电池 → 更多设置 / 应用耗电管理 → 记账：打开「允许后台运行」，关掉「智能限制」类选项。", listOf(Target.AppDetails)),
+            Step(R.string.step_background, R.string.step_oppo_background, listOf(Target.AppDetails)),
             lockRecents,
         ))
-        "vivo" -> Guide("vivo / iQOO", "OriginOS", listOf(
-            Step("允许后台高耗电", "设置 → 电池 → 后台耗电管理 → 记账 → 允许后台高耗电。", listOf(
+        "vivo" -> Guide(R.string.brand_vivo, "OriginOS", listOf(
+            Step(R.string.step_vivo_power, R.string.step_vivo_power_where, listOf(
                 Target.Component("com.vivo.abe", "com.vivo.applicationbehaviorengine.ui.ExcessivePowerManagerActivity"),
                 Target.Component("com.iqoo.powersaving", "com.iqoo.powersaving.PowerSavingManagerActivity"),
                 Target.AppDetails,
             )),
-            Step("允许自启动", "i管家 → 应用管理 → 权限管理 → 自启动（或 设置 → 应用与权限 → 权限管理 → 自启动），打开「记账」。", listOf(
+            Step(R.string.step_autostart, R.string.step_vivo_autostart, listOf(
                 Target.Component("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"),
                 Target.Component("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager"),
                 Target.Component("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity"),
             )),
-            Step("App 更新后打开一次", "vivo 在 App 更新后不会自动重新连接通知监听。更新完打开一次记账就好，App 会自己重连。"),
+            Step(R.string.step_vivo_update, R.string.step_vivo_update_where),
             lockRecents,
         ))
-        "samsung" -> Guide("三星", "One UI", listOf(
-            Step("电池改成「不受限制」", "设置 → 应用程序 → 记账 → 电池 → 不受限制。", listOf(Target.AppDetails)),
-            Step("不要放进「深度睡眠应用」", "设置 → 电池 → 后台使用限制：确认记账不在「休眠应用程序」「深度休眠应用程序」里。", listOf(
+        "samsung" -> Guide(R.string.brand_samsung, "One UI", listOf(
+            Step(R.string.step_samsung_battery, R.string.step_samsung_battery_where, listOf(Target.AppDetails)),
+            Step(R.string.step_samsung_sleep, R.string.step_samsung_sleep_where, listOf(
                 Target.Component("com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity"),
                 Target.Component("com.samsung.android.sm", "com.samsung.android.sm.ui.battery.BatteryActivity"),
             )),
         ))
-        "meizu" -> Guide("魅族", "Flyme", listOf(
-            Step("允许后台运行", "手机管家 → 权限管理 → 后台管理 → 记账 → 允许后台运行。", listOf(
+        "meizu" -> Guide(R.string.brand_meizu, "Flyme", listOf(
+            Step(R.string.step_background, R.string.step_meizu_background, listOf(
                 Target.Action("com.meizu.safe.security.SHOW_APPSEC", withPackage = true),
                 Target.AppDetails,
             )),
             lockRecents,
         ))
-        else -> Guide(Build.MANUFACTURER.ifBlank { "这台手机" }, "Android", listOf(
-            Step("关闭电池优化", "设置 → 应用 → 记账 → 电池：选「不优化」或「不受限制」。", listOf(Target.BatteryOptimization, Target.AppDetails)),
-            Step("允许自启动 / 后台运行", "如果系统有「自启动」「后台运行」之类的开关，给记账打开。", listOf(Target.AppDetails)),
+        else -> Guide(R.string.brand_other, "Android", listOf(
+            Step(R.string.step_battery_opt, R.string.step_battery_opt_where, listOf(Target.BatteryOptimization, Target.AppDetails)),
+            Step(R.string.step_generic_bg, R.string.step_generic_bg_where, listOf(Target.AppDetails)),
         ))
     }
 
@@ -126,7 +127,7 @@ object Brands {
         for (t in step.targets) {
             val intent = when (t) {
                 is Target.Component -> Intent().setComponent(ComponentName(t.pkg, t.cls)).apply {
-                    if (t.withPackage) { putExtra("package_name", pkg); putExtra("packageName", pkg); putExtra("package_label", "记账") }
+                    if (t.withPackage) { putExtra("package_name", pkg); putExtra("packageName", pkg); putExtra("package_label", ctx.getString(R.string.app_name)) }
                 }
                 is Target.Action -> Intent(t.action).apply { if (t.withPackage) putExtra("packageName", pkg) }
                 Target.AppDetails -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))

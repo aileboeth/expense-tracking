@@ -1,5 +1,9 @@
 package com.aileboeth.expensetracking.ui
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.aileboeth.expensetracking.R
+
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,6 +32,9 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Bolt
@@ -100,6 +107,7 @@ fun SettingsScreen(
     openRules: () -> Unit = {},
     openStability: () -> Unit = {},
     openUsual: () -> Unit = {},
+    openPayApps: () -> Unit = {},
     listState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
     val ctx = LocalContext.current
@@ -122,6 +130,9 @@ fun SettingsScreen(
     val blackWords = remember(dialog, tick) { prefs.blacklistWords.size }
     val budget = remember(dialog, tick) { prefs.budgetCents }
     val mirror = remember(dialog, tick) { prefs.mirrorPrefix }
+    val payApps = remember(dialog, tick) { activePayApps(ctx, prefs) }
+    val currency = remember(dialog, tick) { prefs.currency }
+    val language = remember(dialog, tick) { AppLocale.current(ctx) }
     val (versionName, _) = remember { Updater.currentVersion(ctx) }
     val brand = remember { com.aileboeth.expensetracking.capture.Brands.current() }
     val pickBill = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) onImport(uri) }
@@ -129,29 +140,29 @@ fun SettingsScreen(
     LazyColumn(Modifier.fillMaxSize().padding(padding), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)) {
         item { StatusCard(listOf(listener, overlay, battery)) }
 
-        item { Section("自动记账") }
+        item { Section(stringResource(R.string.set_sec_auto)) }
         item {
             SettingGroup(
-                { SettingRow(Icons.Filled.Notifications, Tint.Purple, "通知使用权", "读取微信、支付宝的付款通知（必需）", { StatusPill(listener) }) { Perms.openListener(ctx) } },
-                { SettingRow(Icons.Filled.PictureInPictureAlt, Tint.Blue, "悬浮窗", "付款后在屏幕边上显示记账胶囊", { StatusPill(overlay) }) { Perms.openOverlay(ctx) } },
-                { SettingRow(Icons.Filled.BatteryChargingFull, Tint.Green, "忽略电池优化", "减少后台被系统停掉", { StatusPill(battery) }) { Perms.openBattery(ctx) } },
-                { SettingRow(Icons.Filled.Bolt, Tint.Orange, "自检和后台设置", "${brand.brand}：自启动、后台运行；发条测试通知看能不能收到", onClick = openStability) },
+                { SettingRow(Icons.Filled.Notifications, Tint.Purple, stringResource(R.string.set_listener), stringResource(R.string.set_listener_sub), { StatusPill(listener) }) { Perms.openListener(ctx) } },
+                { SettingRow(Icons.Filled.PictureInPictureAlt, Tint.Blue, stringResource(R.string.set_overlay), stringResource(R.string.set_overlay_sub), { StatusPill(overlay) }) { Perms.openOverlay(ctx) } },
+                { SettingRow(Icons.Filled.BatteryChargingFull, Tint.Green, stringResource(R.string.set_battery), stringResource(R.string.set_battery_sub), { StatusPill(battery) }) { Perms.openBattery(ctx) } },
+                { SettingRow(Icons.Filled.Bolt, Tint.Orange, stringResource(R.string.set_stability), stringResource(R.string.set_stability_sub, brand.brandName(ctx)), onClick = openStability) },
                 {
-                    SettingRow(Icons.Filled.Sync, Tint.Teal, "重新连接通知监听", "发现漏记时点一下；App 更新后打开一次也会自动重连", { }) {
-                        ListenerKeeper.force(ctx); Toast.makeText(ctx, "已重新连接", Toast.LENGTH_SHORT).show()
+                    SettingRow(Icons.Filled.Sync, Tint.Teal, stringResource(R.string.set_rebind), stringResource(R.string.set_rebind_sub), { }) {
+                        ListenerKeeper.force(ctx); Toast.makeText(ctx, ctx.getString(R.string.set_rebind_done), Toast.LENGTH_SHORT).show()
                     }
                 },
             )
         }
-        item { Hint("「通知使用权」开不了（提示受限设置）时：应用详情 → 右上角 ⋮ → 允许受限设置，再回来开。") }
+        item { Hint(stringResource(R.string.set_restricted_hint)) }
 
-        item { Section("悬浮胶囊") }
+        item { Section(stringResource(R.string.set_sec_capsule)) }
         item {
             SettingGroup(
-                { SettingSwitch(Icons.Filled.TouchApp, Tint.Purple, "付款后显示", "贴在屏幕边上，不挡你正在用的 App", bubbleOn) { bubbleOn = it; prefs.bubbleEnabled = it } },
+                { SettingSwitch(Icons.Filled.TouchApp, Tint.Purple, stringResource(R.string.set_capsule_show), stringResource(R.string.set_capsule_show_sub), bubbleOn) { bubbleOn = it; prefs.bubbleEnabled = it } },
                 {
                     Column {
-                        SettingRow(Icons.Filled.Timer, Tint.Blue, "自动收起", "有金额的账多久后收起；没金额的会一直留着", { }) { }
+                        SettingRow(Icons.Filled.Timer, Tint.Blue, stringResource(R.string.set_autohide), stringResource(R.string.set_autohide_sub), { }) { }
                         Row(
                             Modifier.padding(start = 64.dp, end = 14.dp, bottom = 12.dp).fillMaxWidth()
                                 .clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.surfaceVariant).padding(3.dp),
@@ -165,7 +176,7 @@ fun SettingsScreen(
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text(
-                                        "$s 秒", softWrap = false, style = MaterialTheme.typography.bodyMedium,
+                                        stringResource(R.string.n_seconds, s), softWrap = false, style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
                                         color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -174,58 +185,67 @@ fun SettingsScreen(
                         }
                     }
                 },
-                { SettingRow(Icons.Filled.Payments, Tint.Green, "常用金额", "手表付款等没金额的账，点一下就能选", onClick = openUsual) },
+                { SettingRow(Icons.Filled.Payments, Tint.Green, stringResource(R.string.set_usual), stringResource(R.string.set_usual_sub), onClick = openUsual) },
                 {
-                    SettingRow(Icons.Filled.PendingActions, Tint.Orange, "弹出待补金额的胶囊", "把还没填金额的账再弹出来") {
-                        if (!Perms.overlay(ctx)) Toast.makeText(ctx, "先打开悬浮窗权限", Toast.LENGTH_SHORT).show()
+                    SettingRow(Icons.Filled.PendingActions, Tint.Orange, stringResource(R.string.set_show_pending), stringResource(R.string.set_show_pending_sub)) {
+                        if (!Perms.overlay(ctx)) Toast.makeText(ctx, ctx.getString(R.string.set_need_overlay), Toast.LENGTH_SHORT).show()
                         else scope.launch {
                             val n = withContext(Dispatchers.IO) { Repo.pending().size }
-                            if (n == 0) Toast.makeText(ctx, "没有待补的账", Toast.LENGTH_SHORT).show() else Bubble.showPending(ctx)
+                            if (n == 0) Toast.makeText(ctx, ctx.getString(R.string.set_no_pending), Toast.LENGTH_SHORT).show() else Bubble.showPending(ctx)
                         }
                     }
                 },
             )
         }
 
-        item { Section("识别") }
+        item { Section(stringResource(R.string.set_sec_detect)) }
         item {
             SettingGroup(
-                { SettingRow(Icons.Filled.Block, Tint.Red, "黑名单 App", "这些 App 的通知不记账", { ValueChevron(if (blackApps == 0) "未设置" else "$blackApps 个") }, openBlacklist) },
-                { SettingRow(Icons.AutoMirrored.Filled.Label, Tint.Pink, "黑名单关键词", "付款方、商户含这些词就不记", { ValueChevron(if (blackWords == 0) "未设置" else "$blackWords 个") }, openWords) },
-                { SettingSwitch(Icons.Filled.Apps, Tint.Blue, "也识别其他 App", "默认只认微信、支付宝；打开后其他 App 的金额通知要你确认才记", otherApps) { otherApps = it; prefs.otherApps = it } },
-                { SettingRow(Icons.AutoMirrored.Filled.ReceiptLong, Tint.Teal, "识别记录", "最近的付款通知：记了没有、为什么", onClick = openLog) },
+                { SettingRow(Icons.Filled.Wallet, Tint.Green, stringResource(R.string.set_pay_apps), stringResource(R.string.set_pay_apps_sub), { ValueChevron(stringResource(R.string.set_pay_apps_value, payApps)) }, openPayApps) },
+                { SettingRow(Icons.Filled.Block, Tint.Red, stringResource(R.string.set_black_apps), stringResource(R.string.set_black_apps_sub), { ValueChevron(if (blackApps == 0) stringResource(R.string.not_set) else stringResource(R.string.n_items, blackApps)) }, openBlacklist) },
+                { SettingRow(Icons.AutoMirrored.Filled.Label, Tint.Pink, stringResource(R.string.set_black_words), stringResource(R.string.set_black_words_sub), { ValueChevron(if (blackWords == 0) stringResource(R.string.not_set) else stringResource(R.string.n_items, blackWords)) }, openWords) },
+                { SettingSwitch(Icons.Filled.Apps, Tint.Blue, stringResource(R.string.set_other_apps), stringResource(R.string.set_other_apps_sub), otherApps) { otherApps = it; prefs.otherApps = it } },
+                { SettingRow(Icons.AutoMirrored.Filled.ReceiptLong, Tint.Teal, stringResource(R.string.set_log), stringResource(R.string.set_log_sub), onClick = openLog) },
             )
         }
 
-        item { Section("账本") }
+        item { Section(stringResource(R.string.set_sec_ledger)) }
         item {
             SettingGroup(
-                { SettingRow(Icons.Filled.Savings, Tint.Green, "月预算", "首页会显示还能花多少", { ValueChevron(if (budget > 0) "¥" + Money.short(budget) else "未设置") }) { dialog = "budget" } },
-                { SettingRow(Icons.Filled.UploadFile, Tint.Blue, "导入账单对账", "选微信/支付宝导出的 .xlsx / .csv，补上漏记的") { pickBill.launch(arrayOf("*/*")) } },
-                { SettingRow(Icons.Filled.Category, Tint.Orange, "管理分类", "增加或删除支出、收入的分类", onClick = openCategories) },
-                { SettingRow(Icons.Filled.AutoFixHigh, Tint.Purple, "分类规则", "写了备注没选分类时，按备注自动归类", onClick = openRules) },
+                { SettingRow(Icons.Filled.Savings, Tint.Green, stringResource(R.string.set_budget), stringResource(R.string.set_budget_sub), { ValueChevron(if (budget > 0) Money.sym + Money.short(budget) else stringResource(R.string.not_set)) }) { dialog = "budget" } },
+                { SettingRow(Icons.Filled.CurrencyExchange, Tint.Pink, stringResource(R.string.set_currency), stringResource(R.string.set_currency_sub), { ValueChevron(currencyLabel(currency)) }) { dialog = "currency" } },
+                { SettingRow(Icons.Filled.UploadFile, Tint.Blue, stringResource(R.string.set_import), stringResource(R.string.set_import_sub)) { pickBill.launch(arrayOf("*/*")) } },
+                { SettingRow(Icons.Filled.Category, Tint.Orange, stringResource(R.string.set_categories), stringResource(R.string.set_categories_sub), onClick = openCategories) },
+                { SettingRow(Icons.Filled.AutoFixHigh, Tint.Purple, stringResource(R.string.set_rules), stringResource(R.string.set_rules_sub), onClick = openRules) },
                 {
-                    SettingRow(Icons.Filled.Download, Tint.Teal, "导出 CSV", "导出到 下载/记账/，Excel、WPS 都能打开") {
+                    SettingRow(Icons.Filled.Download, Tint.Teal, stringResource(R.string.set_export), stringResource(R.string.set_export_sub)) {
                         scope.launch {
                             val msg = withContext(Dispatchers.IO) { runCatching { Export.csv(ctx) } }
-                            Toast.makeText(ctx, msg.fold({ "已导出到 $it" }, { "导出失败：${it.message}" }), Toast.LENGTH_LONG).show()
+                            Toast.makeText(ctx, msg.fold({ ctx.getString(R.string.set_exported, it) }, { ctx.getString(R.string.set_export_failed, it.message ?: "") }), Toast.LENGTH_LONG).show()
                         }
                     }
                 },
             )
         }
 
-        item { Section("更新") }
+        item { Section(stringResource(R.string.set_sec_general)) }
         item {
             SettingGroup(
-                { SettingRow(Icons.Filled.SystemUpdate, Tint.Purple, "检查更新", null, { ValueChevron("v$versionName") }) { Updater.check(ctx, manual = true) } },
-                { SettingSwitch(Icons.Filled.Autorenew, Tint.Blue, "自动检查更新", "打开 App 时检查，最多 12 小时一次", autoUpdate) { autoUpdate = it; prefs.autoUpdate = it } },
-                { SettingRow(Icons.Filled.Public, Tint.Grey, "下载加速前缀", mirror.ifBlank { "不使用，直连 GitHub" }) { dialog = "mirror" } },
+                { SettingRow(Icons.Filled.Translate, Tint.Blue, stringResource(R.string.set_language), null, { ValueChevron(AppLocale.label(ctx, language)) }) { dialog = "language" } },
+            )
+        }
+
+        item { Section(stringResource(R.string.set_sec_update)) }
+        item {
+            SettingGroup(
+                { SettingRow(Icons.Filled.SystemUpdate, Tint.Purple, stringResource(R.string.set_check_update), null, { ValueChevron("v$versionName") }) { Updater.check(ctx, manual = true) } },
+                { SettingSwitch(Icons.Filled.Autorenew, Tint.Blue, stringResource(R.string.set_auto_update), stringResource(R.string.set_auto_update_sub), autoUpdate) { autoUpdate = it; prefs.autoUpdate = it } },
+                { SettingRow(Icons.Filled.Public, Tint.Grey, stringResource(R.string.set_mirror), mirror.ifBlank { stringResource(R.string.set_mirror_none) }) { dialog = "mirror" } },
             )
         }
         item {
             Text(
-                "Expense Tracking $versionName\n账单只存在这台手机里，不会上传。",
+                "Expense Tracking $versionName\n" + stringResource(R.string.set_footer),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
             )
@@ -235,6 +255,8 @@ fun SettingsScreen(
     when (dialog) {
         "mirror" -> MirrorDialog(prefs) { dialog = "" }
         "budget" -> BudgetDialog(prefs) { dialog = ""; Widgets.scheduleUpdate(ctx) }
+        "currency" -> CurrencyDialog(prefs) { dialog = ""; Widgets.scheduleUpdate(ctx) }
+        "language" -> LanguageDialog { dialog = "" }
     }
 }
 
@@ -247,16 +269,16 @@ private fun StatusCard(perms: List<Boolean>) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    if (ready) "自动记账运行中" else "还差 $missing 项设置",
+                    if (ready) stringResource(R.string.set_status_ok) else pluralStringResource(R.plurals.set_status_missing, missing, missing),
                     color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    if (ready) "微信、支付宝付款后会自动记上" else "打开下面标红的几项，付款才会自动记",
+                    if (ready) stringResource(R.string.set_status_ok_sub) else stringResource(R.string.set_status_missing_sub),
                     color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 2.dp),
                 )
                 Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf("通知", "悬浮窗", "电池").zip(perms).forEach { (name, ok) ->
+                    listOf(stringResource(R.string.set_pill_listener), stringResource(R.string.set_pill_overlay), stringResource(R.string.set_pill_battery)).zip(perms).forEach { (name, ok) ->
                         Text(
                             (if (ok) "✓ " else "✕ ") + name, color = if (ok) Color.White else Color(0xFFFFD6CF),
                             style = MaterialTheme.typography.labelMedium,
@@ -308,15 +330,14 @@ private fun MirrorDialog(prefs: Prefs, onClose: () -> Unit) {
     var value by remember { mutableStateOf(prefs.mirrorPrefix) }
     AlertDialog(
         onDismissRequest = onClose,
-        title = { Text("下载加速前缀") },
+        title = { Text(stringResource(R.string.set_mirror)) },
         text = {
             Column {
                 Text(
-                    "手机连 GitHub 很慢或连不上时，填一个 GitHub 下载加速地址，它会加在 github.com 链接前面，" +
-                        "例如填 https://某加速站/ 。留空 = 直连。\n安装包会校验 SHA-256，系统也会校验签名，被改过的包装不上。",
+                    stringResource(R.string.set_mirror_body),
                     style = MaterialTheme.typography.bodySmall,
                 )
-                OutlinedTextField(value, { value = it }, singleLine = true, placeholder = { Text("留空 = 直连") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value, { value = it }, singleLine = true, placeholder = { Text(stringResource(R.string.set_mirror_placeholder)) }, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
@@ -324,8 +345,8 @@ private fun MirrorDialog(prefs: Prefs, onClose: () -> Unit) {
                 val v = value.trim()
                 prefs.mirrorPrefix = if (v.isEmpty() || v.endsWith("/")) v else "$v/"
                 onClose()
-            }) { Text("保存") }
+            }) { Text(stringResource(R.string.save)) }
         },
-        dismissButton = { TextButton(onClose) { Text("取消") } },
+        dismissButton = { TextButton(onClose) { Text(stringResource(R.string.cancel)) } },
     )
 }
