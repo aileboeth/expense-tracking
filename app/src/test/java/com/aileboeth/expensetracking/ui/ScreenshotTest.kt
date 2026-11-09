@@ -143,6 +143,21 @@ class ScreenshotTest {
         compose.onRoot().captureRoboImage("build/screens/7-log.png")
     }
 
+    @Config(qualifiers = "w393dp-h1100dp-xxhdpi")
+    @Test fun categories() {
+        compose.setContent { AppTheme { CategoriesScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/8-categories.png")
+    }
+
+    @Test fun usualAmounts() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        Prefs(ctx).setUsualAmounts(TxType.EXPENSE, listOf(3000L, 1500L))
+        compose.setContent { AppTheme { UsualAmountsScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/9-usual-amounts.png")
+    }
+
     @Config(qualifiers = "w393dp-h1900dp-xxhdpi")
     @Test fun settingsFull() {
         compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp), onImport = {}) } }

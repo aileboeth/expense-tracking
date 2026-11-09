@@ -110,6 +110,37 @@ fun SettingGroup(vararg rows: (@Composable () -> Unit)?) {
     }
 }
 
+/** 支出 / 收入 pill switch. */
+@Composable
+fun TypeToggle(type: com.aileboeth.expensetracking.parse.TxType, modifier: Modifier = Modifier, onChange: (com.aileboeth.expensetracking.parse.TxType) -> Unit) {
+    Row(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.surface).padding(4.dp),
+    ) {
+        for ((t, label) in listOf(com.aileboeth.expensetracking.parse.TxType.EXPENSE to "支出", com.aileboeth.expensetracking.parse.TxType.INCOME to "收入")) {
+            val on = t == type
+            Box(
+                Modifier.weight(1f).clip(RoundedCornerShape(50)).background(if (on) Brand else Color.Transparent)
+                    .clickable { onChange(t) }.padding(vertical = 9.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (on) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** Purple section label above a card. */
+@Composable
+fun GroupLabel(title: String, trailing: String = "") {
+    Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 20.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+        if (trailing.isNotEmpty()) Text(trailing, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 /** Plain full-screen page with a back arrow and a title (used by the settings sub-pages). */
 @Composable
 fun SubPage(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {

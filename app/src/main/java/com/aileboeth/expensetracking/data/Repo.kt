@@ -230,6 +230,11 @@ object Repo {
         db.query("category", arrayOf("name"), "type=?", arrayOf(type.name), null, null, "sort ASC, id ASC")
             .use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
 
+    /** How many entries of [type] use each category. */
+    fun categoryCounts(type: TxType): Map<String, Int> =
+        db.rawQuery("SELECT category, COUNT(*) FROM tx WHERE type=? AND category<>'' GROUP BY category", arrayOf(type.name))
+            .use { c -> buildMap { while (c.moveToNext()) put(c.getString(0), c.getInt(1)) } }
+
     fun addCategory(type: TxType, name: String) {
         val n = name.trim()
         if (n.isEmpty()) return

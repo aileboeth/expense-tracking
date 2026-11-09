@@ -94,8 +94,8 @@ fun SettingsScreen(
     openBlacklist: () -> Unit = {},
     openWords: () -> Unit = {},
     openLog: () -> Unit = {},
-    openUsual: Boolean = false,
-    onUsualOpened: () -> Unit = {},
+    openCategories: () -> Unit = {},
+    openUsual: () -> Unit = {},
 ) {
     val ctx = LocalContext.current
     val prefs = remember { Prefs(ctx) }
@@ -117,7 +117,6 @@ fun SettingsScreen(
     val blackWords = remember(dialog, tick) { prefs.blacklistWords.size }
     val budget = remember(dialog, tick) { prefs.budgetCents }
     val mirror = remember(dialog, tick) { prefs.mirrorPrefix }
-    LaunchedEffect(openUsual) { if (openUsual) { dialog = "usual"; onUsualOpened() } }
     val (versionName, _) = remember { Updater.currentVersion(ctx) }
     val pickBill = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) onImport(uri) }
 
@@ -159,7 +158,7 @@ fun SettingsScreen(
                         }
                     }
                 },
-                { SettingRow(Icons.Filled.Payments, Tint.Green, "常用金额", "手表付款等没金额的账，点一下就能选") { dialog = "usual" } },
+                { SettingRow(Icons.Filled.Payments, Tint.Green, "常用金额", "手表付款等没金额的账，点一下就能选", onClick = openUsual) },
                 {
                     SettingRow(Icons.Filled.PendingActions, Tint.Orange, "弹出待补金额的胶囊", "把还没填金额的账再弹出来") {
                         if (!Perms.overlay(ctx)) Toast.makeText(ctx, "先打开悬浮窗权限", Toast.LENGTH_SHORT).show()
@@ -187,7 +186,7 @@ fun SettingsScreen(
             SettingGroup(
                 { SettingRow(Icons.Filled.Savings, Tint.Green, "月预算", "首页会显示还能花多少", { ValueChevron(if (budget > 0) "¥" + Money.short(budget) else "未设置") }) { dialog = "budget" } },
                 { SettingRow(Icons.Filled.UploadFile, Tint.Blue, "导入账单对账", "选微信/支付宝导出的 .xlsx / .csv，补上漏记的") { pickBill.launch(arrayOf("*/*")) } },
-                { SettingRow(Icons.Filled.Category, Tint.Orange, "管理分类", "增加或删除支出、收入的分类") { dialog = "cats" } },
+                { SettingRow(Icons.Filled.Category, Tint.Orange, "管理分类", "增加或删除支出、收入的分类", onClick = openCategories) },
                 {
                     SettingRow(Icons.Filled.Download, Tint.Teal, "导出 CSV", "导出到 下载/记账/，Excel、WPS 都能打开") {
                         scope.launch {
@@ -217,9 +216,7 @@ fun SettingsScreen(
     }
 
     when (dialog) {
-        "cats" -> CategoriesDialog { dialog = "" }
         "mirror" -> MirrorDialog(prefs) { dialog = "" }
-        "usual" -> UsualAmountsDialog(prefs) { dialog = "" }
         "budget" -> BudgetDialog(prefs) { dialog = ""; Widgets.scheduleUpdate(ctx) }
     }
 }
@@ -289,53 +286,6 @@ private fun Hint(text: String) {
 
 // ---- dialogs --------------------------------------------------------------------------------
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
-@Composable
-private fun CategoriesDialog(onClose: () -> Unit) {
-    val scope = rememberCoroutineScope()
-    var type by remember { mutableStateOf(TxType.EXPENSE) }
-    var input by remember { mutableStateOf("") }
-    var confirmDelete by remember { mutableStateOf<String?>(null) }
-    val cats = repoQuery(type, initial = emptyList<String>()) { Repo.categories(type) }
-    AlertDialog(
-        onDismissRequest = onClose,
-        title = { Text("管理分类") },
-        text = {
-            Column {
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    SegmentedButton(type == TxType.EXPENSE, { type = TxType.EXPENSE }, SegmentedButtonDefaults.itemShape(0, 2)) { Text("支出") }
-                    SegmentedButton(type == TxType.INCOME, { type = TxType.INCOME }, SegmentedButtonDefaults.itemShape(1, 2)) { Text("收入") }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(input, { input = it }, label = { Text("新分类") }, singleLine = true, modifier = Modifier.weight(1f))
-                    TextButton({
-                        val n = input.trim(); input = ""
-                        if (n.isNotEmpty()) scope.launch(Dispatchers.IO) { Repo.addCategory(type, n) }
-                    }) { Text("添加") }
-                }
-                Text("点分类可以删除（已记的账不受影响）", style = MaterialTheme.typography.bodySmall)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    for (c in cats) InputChip(selected = false, onClick = { confirmDelete = c }, label = { Text(c) })
-                }
-            }
-        },
-        confirmButton = { TextButton(onClose) { Text("完成") } },
-    )
-    confirmDelete?.let { name ->
-        AlertDialog(
-            onDismissRequest = { confirmDelete = null },
-            title = { Text("删除分类「$name」？") },
-            confirmButton = {
-                TextButton({
-                    scope.launch(Dispatchers.IO) { Repo.deleteCategory(type, name) }
-                    confirmDelete = null
-                }) { Text("删除", color = ExpenseRed) }
-            },
-            dismissButton = { TextButton({ confirmDelete = null }) { Text("取消") } },
-        )
-    }
-}
-
 @Composable
 private fun MirrorDialog(prefs: Prefs, onClose: () -> Unit) {
     var value by remember { mutableStateOf(prefs.mirrorPrefix) }
@@ -360,53 +310,5 @@ private fun MirrorDialog(prefs: Prefs, onClose: () -> Unit) {
             }) { Text("保存") }
         },
         dismissButton = { TextButton(onClose) { Text("取消") } },
-    )
-}
-
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
-@Composable
-private fun UsualAmountsDialog(prefs: Prefs, onClose: () -> Unit) {
-    var type by remember { mutableStateOf(TxType.EXPENSE) }
-    var list by remember(type) { mutableStateOf(prefs.usualAmounts(type)) }
-    var input by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf(false) }
-    AlertDialog(
-        onDismissRequest = onClose,
-        title = { Text("常用金额") },
-        text = {
-            Column {
-                Text(
-                    "没写金额的账（手表付款、转账到账）会把这些金额列出来，点一下就选好。" +
-                        "一个都不设时，按你最近最常付的金额自动给出。点金额可以删掉。",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                    SegmentedButton(type == TxType.EXPENSE, { type = TxType.EXPENSE }, SegmentedButtonDefaults.itemShape(0, 2)) { Text("支出") }
-                    SegmentedButton(type == TxType.INCOME, { type = TxType.INCOME }, SegmentedButtonDefaults.itemShape(1, 2)) { Text("收入") }
-                }
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (list.isEmpty()) Text("还没设（现在用自动的）", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    for (c in list) InputChip(
-                        selected = false,
-                        onClick = { list = list - c; prefs.setUsualAmounts(type, list) },
-                        label = { Text("¥" + Money.short(c) + "  ×") },
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        input, { input = it; error = false }, label = { Text("新金额") }, singleLine = true, isError = error,
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton({
-                        val c = Money.parse(input)
-                        if (c == null) error = true else {
-                            list = (list + c).distinct(); prefs.setUsualAmounts(type, list); input = ""
-                        }
-                    }) { Text("添加") }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClose) { Text("完成") } },
     )
 }

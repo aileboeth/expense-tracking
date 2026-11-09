@@ -82,6 +82,8 @@ private sealed interface Overlay {
     data object BlacklistApps : Overlay
     data object BlacklistWords : Overlay
     data object Log : Overlay
+    data object Categories : Overlay
+    data object UsualAmounts : Overlay
     data class Import(val uri: Uri) : Overlay
 }
 
@@ -92,13 +94,18 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
     var overlay by remember { mutableStateOf<Overlay?>(null) }
     LaunchedEffect(Unit) { Updater.autoCheck(ctx) }
     LaunchedEffect(addRequest.value) { if (addRequest.value) { overlay = null; tab = 0 } }
-    LaunchedEffect(usualRequest.value) { if (usualRequest.value) { overlay = null; tab = 2 } }
+    // The capsule's "✎ 改" opens the usual-amounts page; back from it lands on settings.
+    LaunchedEffect(usualRequest.value) {
+        if (usualRequest.value) { tab = 2; overlay = Overlay.UsualAmounts; usualRequest.value = false }
+    }
 
     when (val o = overlay) {
         Overlay.Search -> SearchScreen(onBack = { overlay = null })
         Overlay.BlacklistApps -> BlacklistAppsScreen(onBack = { overlay = null })
         Overlay.BlacklistWords -> BlacklistWordsScreen(onBack = { overlay = null })
         Overlay.Log -> RecognitionLogScreen(onBack = { overlay = null })
+        Overlay.Categories -> CategoriesScreen(onBack = { overlay = null })
+        Overlay.UsualAmounts -> UsualAmountsScreen(onBack = { overlay = null })
         is Overlay.Import -> ImportScreen(o.uri, onBack = { overlay = null })
         null -> Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -125,8 +132,8 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
                     openBlacklist = { overlay = Overlay.BlacklistApps },
                     openWords = { overlay = Overlay.BlacklistWords },
                     openLog = { overlay = Overlay.Log },
-                    openUsual = usualRequest.value,
-                    onUsualOpened = { usualRequest.value = false },
+                    openCategories = { overlay = Overlay.Categories },
+                    openUsual = { overlay = Overlay.UsualAmounts },
                 )
             }
         }
