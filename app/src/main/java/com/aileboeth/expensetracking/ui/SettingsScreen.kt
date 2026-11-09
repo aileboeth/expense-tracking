@@ -1,7 +1,5 @@
 package com.aileboeth.expensetracking.ui
 
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.InputChip
@@ -68,6 +65,7 @@ import java.util.Locale
 fun SettingsScreen(
     padding: PaddingValues,
     onImport: (android.net.Uri) -> Unit,
+    openBlacklist: () -> Unit = {},
     openUsual: Boolean = false,
     onUsualOpened: () -> Unit = {},
 ) {
@@ -86,6 +84,9 @@ fun SettingsScreen(
     var otherApps by remember { mutableStateOf(prefs.otherApps) }
     var autoUpdate by remember { mutableStateOf(prefs.autoUpdate) }
     var dialog by remember { mutableStateOf("") }
+    // Re-read after any dialog closes, so the counts below are never stale.
+    val blackApps = remember(dialog, tick) { prefs.blacklistApps }
+    val blackWords = remember(dialog, tick) { prefs.blacklistWords.size }
     LaunchedEffect(openUsual) { if (openUsual) { dialog = "usual"; onUsualOpened() } }
     val (versionName, _) = remember { Updater.currentVersion(ctx) }
     val pickBill = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) onImport(uri) }
@@ -128,8 +129,8 @@ fun SettingsScreen(
 
         item { Section("识别") }
         item { SoftCard(padding = 4.dp) {
-            Row2("黑名单 App", "${prefs.blacklistApps.size} 个 · 这些 App 的通知不会记账") { dialog = "apps" }
-            Row2("黑名单关键词", "${prefs.blacklistWords.size} 个 · 付款方/商户/内容含这些词就不记（如「多点科技」）") { dialog = "words" }
+            Row2("黑名单 App", (if (blackApps.isEmpty()) "未设置" else "${blackApps.size} 个") + " · 这些 App 的通知不会记账", onClick = openBlacklist)
+            Row2("黑名单关键词", (if (blackWords == 0) "未设置" else "$blackWords 个") + " ·付款方/商户/内容含这些词就不记（如「多点科技」）") { dialog = "words" }
             SwitchRow("也识别其他 App 的收支通知", "默认只认微信、支付宝；打开后其他 App 的金额通知也会弹出来，要你确认才记", otherApps) {
                 otherApps = it; prefs.otherApps = it
             }
@@ -161,7 +162,6 @@ fun SettingsScreen(
     }
 
     when (dialog) {
-        "apps" -> BlacklistAppsDialog(prefs) { dialog = "" }
         "words" -> WordsDialog(prefs) { dialog = "" }
         "log" -> LogDialog { dialog = "" }
         "cats" -> CategoriesDialog { dialog = "" }
@@ -227,56 +227,6 @@ private fun SwitchRow(title: String, sub: String, checked: Boolean, onChange: (B
 }
 
 // ---- dialogs --------------------------------------------------------------------------------
-
-private data class AppItem(val pkg: String, val label: String)
-
-@Composable
-private fun BlacklistAppsDialog(prefs: Prefs, onClose: () -> Unit) {
-    val ctx = LocalContext.current
-    var chosen by remember { mutableStateOf(prefs.blacklistApps) }
-    var filter by remember { mutableStateOf("") }
-    val apps = repoQuery(initial = emptyList<AppItem>()) {
-        val pm = ctx.packageManager
-        val launch = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        pm.queryIntentActivities(launch, PackageManager.MATCH_ALL)
-            .map { AppItem(it.activityInfo.packageName, it.loadLabel(pm).toString()) }
-            .filter { it.pkg != ctx.packageName }
-            .distinctBy { it.pkg }
-            .sortedWith(compareByDescending<AppItem> { it.pkg in prefs.blacklistApps }.thenBy { it.label })
-    }
-    AlertDialog(
-        onDismissRequest = onClose,
-        title = { Text("黑名单 App") },
-        text = {
-            Column {
-                Text(
-                    "勾选的 App，它们的通知一律不记账。" +
-                        if (chosen.any { it in Parser.KNOWN_APPS }) "\n注意：你拉黑了微信或支付宝，它们的付款也不会自动记了。" else "",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                OutlinedTextField(filter, { filter = it }, label = { Text("搜索") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                LazyColumn(Modifier.heightIn(max = 380.dp)) {
-                    items(apps.filter { filter.isBlank() || it.label.contains(filter, true) || it.pkg.contains(filter, true) }, key = { it.pkg }) { app ->
-                        Row(
-                            Modifier.fillMaxWidth().clickable {
-                                chosen = if (app.pkg in chosen) chosen - app.pkg else chosen + app.pkg
-                            },
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Checkbox(app.pkg in chosen, null)
-                            Column {
-                                Text(app.label)
-                                Text(app.pkg, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton({ prefs.blacklistApps = chosen; onClose() }) { Text("保存") } },
-        dismissButton = { TextButton(onClose) { Text("取消") } },
-    )
-}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

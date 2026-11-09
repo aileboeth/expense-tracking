@@ -89,4 +89,33 @@ class ScreenshotTest {
         compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp), onImport = {}) } }
         compose.onRoot().captureRoboImage("build/screens/4-settings.png")
     }
+
+    @Test fun blacklistApps() {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val shadowPm = org.robolectric.Shadows.shadowOf(ctx.packageManager)
+        val apps = listOf(
+            "com.tencent.mm" to "微信", "com.eg.android.AlipayGphone" to "支付宝", "com.example.rent" to "租号玩",
+            "com.android.mms" to "信息", "com.taobao.taobao" to "淘宝", "com.sankuai.meituan" to "美团",
+            "com.ss.android.ugc.aweme" to "抖音", "com.netease.cloudmusic" to "网易云音乐", "com.android.bankabc" to "中国农业银行",
+        )
+        for ((pkg, label) in apps) {
+            val info = android.content.pm.ResolveInfo().apply {
+                activityInfo = android.content.pm.ActivityInfo().apply {
+                    packageName = pkg; name = "$pkg.Main"; nonLocalizedLabel = label
+                    applicationInfo = android.content.pm.ApplicationInfo().apply { packageName = pkg }
+                }
+                nonLocalizedLabel = label
+            }
+            shadowPm.addResolveInfoForIntent(
+                android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_LAUNCHER), info,
+            )
+        }
+        Prefs(ctx).blacklistApps = setOf("com.example.rent", "com.android.mms")
+        Repo.log("com.example.rent", "租号玩", "收益¥4已入账", "黑名单 App，不记")
+        Repo.log("com.example.rent", "租号玩", "收益¥6已入账", "黑名单 App，不记")
+        Repo.log("com.android.bankabc", "农业银行", "您尾号1234账户支出50.00元", "需要确认")
+        compose.setContent { AppTheme { BlacklistAppsScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/5-blacklist-apps.png")
+    }
 }
