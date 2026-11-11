@@ -105,10 +105,12 @@ private const val DAY = 24L * 3600 * 1000
 /** Add (initial = null) or edit one entry; also used to fill in a pending amount. Full screen. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TxEditor(initial: Tx?, onDone: () -> Unit) {
+fun TxEditor(initial: Tx?, initialType: TxType = TxType.EXPENSE, onDone: () -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
-    var type by remember { mutableStateOf(initial?.type ?: TxType.EXPENSE) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var saved by remember { mutableStateOf(false) }
+    var type by remember { mutableStateOf(initial?.type ?: initialType) }
     var amount by remember { mutableStateOf(initial?.amountCents?.let { Money.format(it) } ?: "") }
     // An automatic entry parked in 其他 counts as "not chosen", so a note can still decide it.
     var category by remember { mutableStateOf(initial?.category?.takeUnless { it == "其他" && initial.source == "auto" } ?: "") }
@@ -159,7 +161,11 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
 
     fun save() {
         val cents = Money.parse(amount)
-        if (cents == null) { error = ctx.getString(R.string.editor_amount_error); return }
+        if (cents == null) {
+            error = ctx.getString(R.string.editor_amount_error)
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Reject)
+            return
+        }
         val cat = category.ifBlank { noteGuess ?: initial?.category?.takeUnless { it.isBlank() } ?: "其他" }
         val tx = (initial ?: Tx(type = type, amountCents = cents, time = time, channel = "手动")).copy(
             type = type, amountCents = cents, category = cat, note = note.trim(), time = time, status = Status.OK,
@@ -170,9 +176,11 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                 val id = if (initial == null) Repo.insert(tx) else { Repo.update(tx); initial.id }
                 atts.filter { it.id == 0L }.forEach { Repo.addAttachment(it.copy(txId = id)) }
                 removed.forEach { Repo.deleteAttachment(it) }
+                Repo.markActive()
             }
             Bubble.refresh()
-            onDone()
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
+            saved = true // the check mark closes the editor when it has played
         }
     }
 
@@ -330,6 +338,9 @@ fun TxEditor(initial: Tx?, onDone: () -> Unit) {
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp).height(52.dp),
                 ) { Text(stringResource(R.string.save), fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+            }
+            if (saved) Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.7f))) {
+                SuccessCheck(onDone = onDone)
             }
         }
 

@@ -4,6 +4,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -68,7 +74,7 @@ class ScreenshotTest {
     }
 
     @Test fun home() {
-        compose.setContent { AppTheme { HomeScreen(PaddingValues(0.dp), {}, {}, false, {}) } }
+        compose.setContent { AppTheme { HomeScreen(PaddingValues(0.dp), {}, {}, null, {}) } }
         compose.onRoot().captureRoboImage("build/screens/1-home.png")
     }
 
@@ -211,7 +217,7 @@ class ScreenshotTest {
     @Config(qualifiers = "zh-rCN-w393dp-h873dp-xxhdpi")
     @Test fun homeZh() {
         java.util.Locale.setDefault(java.util.Locale.SIMPLIFIED_CHINESE)
-        compose.setContent { AppTheme { HomeScreen(PaddingValues(0.dp), {}, {}, false, {}) } }
+        compose.setContent { AppTheme { HomeScreen(PaddingValues(0.dp), {}, {}, null, {}) } }
         compose.onRoot().captureRoboImage("build/screens/20-home-zh.png")
     }
 
@@ -228,6 +234,92 @@ class ScreenshotTest {
         compose.setContent { AppTheme { PaymentAppsScreen {} } }
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/13-pay-apps.png")
+    }
+
+    private fun checkIns() {
+        for (i in 0L..9L) if (i != 4L) Repo.markActive(LocalDate.now().minusDays(i).toEpochDay())
+    }
+
+    @Config(qualifiers = "w393dp-h1300dp-xxhdpi")
+    @Test fun achievements() {
+        checkIns()
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        com.aileboeth.expensetracking.data.Achievements.check(ctx)
+        compose.setContent { AppTheme { AchievementsScreen {} } }
+        compose.waitForIdle(); Thread.sleep(300); compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/14-achievements.png")
+    }
+
+    @Config(qualifiers = "w393dp-h1100dp-xxhdpi")
+    @Test fun wishJar() {
+        if (Repo.wishes().isEmpty()) {
+            val id = Repo.putWish(com.aileboeth.expensetracking.data.Wish(name = "新耳机", emoji = "🎧", target = 129900))
+            Repo.deposit(id, 50000, "10月结余")
+            Repo.deposit(id, 30000)
+        }
+        compose.setContent { AppTheme { WishJarScreen {} } }
+        compose.waitForIdle(); Thread.sleep(300); compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/15-wish.png")
+    }
+
+    @Test fun recap() {
+        checkIns()
+        compose.setContent { AppTheme { RecapScreen(YearMonth.now().minusMonths(1)) {} } }
+        compose.waitForIdle(); Thread.sleep(300); compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/16-recap-1.png")
+        for (page in 2..6) {
+            compose.onRoot().performTouchInput { click(androidx.compose.ui.geometry.Offset(width * 0.85f, height * 0.5f)) }
+            compose.mainClock.advanceTimeBy(2500)
+            compose.waitForIdle()
+            compose.onRoot().captureRoboImage("build/screens/16-recap-$page.png")
+        }
+    }
+
+    @Test fun badgeCelebration() {
+        compose.setContent { AppTheme { BadgeCelebration(listOf("first", "streak3", "streak7", "notes50")) {} } }
+        compose.mainClock.advanceTimeBy(900)
+        compose.waitForIdle()
+        com.github.takahirom.roborazzi.captureScreenRoboImage("build/screens/17-celebration.png")
+    }
+
+    @Test fun mascots() {
+        compose.setContent {
+            AppTheme {
+                androidx.compose.foundation.layout.Column {
+                    androidx.compose.foundation.layout.Row(Modifier.background(HeaderBrush).padding(12.dp)) {
+                        for (m in com.aileboeth.expensetracking.data.Mood.entries) Mascot(m, emptyList(), size = 72.dp)
+                    }
+                    androidx.compose.foundation.layout.Row(Modifier.background(androidx.compose.ui.graphics.Color.White).padding(12.dp)) {
+                        for (m in com.aileboeth.expensetracking.data.Mood.entries) Mascot(m, emptyList(), size = 72.dp, light = false)
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/18-mascots.png")
+    }
+
+    @Test fun widgets() {
+        checkIns()
+        compose.setContent {
+            AppTheme {
+                androidx.compose.foundation.layout.Column(
+                    Modifier.background(androidx.compose.ui.graphics.Color(0xFF3A4A5A)).padding(16.dp),
+                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
+                ) {
+                    for ((k, w, h) in listOf(
+                        Triple(com.aileboeth.expensetracking.widget.Widgets.Kind.SUMMARY, 340, 180),
+                        Triple(com.aileboeth.expensetracking.widget.Widgets.Kind.TODAY, 160, 160),
+                        Triple(com.aileboeth.expensetracking.widget.Widgets.Kind.QUICK, 340, 70),
+                    )) androidx.compose.ui.viewinterop.AndroidView(
+                        { c -> com.aileboeth.expensetracking.widget.Widgets.preview(c, k).apply(c, android.widget.FrameLayout(c)) },
+                        Modifier.size(w.dp, h.dp),
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/19-widgets.png")
     }
 
     @Config(qualifiers = "w393dp-h1900dp-xxhdpi")

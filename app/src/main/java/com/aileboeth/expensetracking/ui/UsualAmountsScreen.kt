@@ -6,6 +6,7 @@ import com.aileboeth.expensetracking.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -98,20 +99,27 @@ fun UsualAmountsScreen(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            for (c in list) InputChip(
-                                selected = true,
-                                onClick = { save(list - c) },
-                                label = { Text(Money.sym + Money.short(c), fontWeight = FontWeight.SemiBold) },
-                                trailingIcon = { Icon(Icons.Filled.Close, stringResource(R.string.delete), Modifier.size(16.dp)) },
-                                colors = InputChipDefaults.inputChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                ),
-                                border = null,
-                            )
+                        ReorderGrid(list, key = { it }, columns = 3, cellHeight = 50.dp, onReorder = { save(it) }) { c, dragging ->
+                            Row(
+                                Modifier.fillMaxSize().padding(4.dp).clip(RoundedCornerShape(50))
+                                    .background(if (dragging) Brand else MaterialTheme.colorScheme.primaryContainer)
+                                    .clickable { save(list - c) }.padding(start = 14.dp, end = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    Money.sym + Money.short(c), fontWeight = FontWeight.SemiBold, maxLines = 1,
+                                    color = if (dragging) Color.White else MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Icon(Icons.Filled.Close, stringResource(R.string.delete), Modifier.size(16.dp),
+                                    tint = if (dragging) Color.White else MaterialTheme.colorScheme.onPrimaryContainer)
+                            }
                         }
-                        TextButton({ save(emptyList()) }, contentPadding = PaddingValues(horizontal = 4.dp)) { Text(stringResource(R.string.ua_reset)) }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.drag_hint), style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f).padding(start = 4.dp))
+                            TextButton({ save(emptyList()) }, contentPadding = PaddingValues(horizontal = 4.dp)) { Text(stringResource(R.string.ua_reset)) }
+                        }
                     }
                     Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(

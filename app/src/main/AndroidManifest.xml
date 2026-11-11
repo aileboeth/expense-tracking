@@ -11,6 +11,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Only for the self-test: one test notification that disappears by itself. Asked when you run it. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- A short tick when a widget button records an amount. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <queries>
         <!-- Lets the blacklist list the installed apps you can pick from. -->
@@ -69,6 +71,35 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_summary_info" />
         </receiver>
+
+        <receiver
+            android:name=".widget.TodayWidget"
+            android:exported="false"
+            android:label="@string/widget_today_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_today_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.QuickWidget"
+            android:exported="false"
+            android:label="@string/widget_quick_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_info" />
+        </receiver>
+
+        <!-- Usual-amount and "fill in" taps on the widgets. -->
+        <receiver
+            android:name=".widget.WidgetActionReceiver"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

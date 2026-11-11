@@ -91,7 +91,7 @@ class DocsScreenshotTest {
     @Config(qualifiers = "zh-rCN-w393dp-h873dp-xxhdpi")
     @Test fun zh() {
         seed(Locale.SIMPLIFIED_CHINESE, "CNY")
-        shoot("screen-home") { HomeScreen(PaddingValues(0.dp), {}, {}, false, {}) }
+        shoot("screen-home") { HomeScreen(PaddingValues(0.dp), {}, {}, null, {}) }
     }
 
     @Config(qualifiers = "zh-rCN-w393dp-h873dp-xxhdpi")
@@ -109,7 +109,7 @@ class DocsScreenshotTest {
     @Config(qualifiers = "en-rUS-w393dp-h873dp-xxhdpi")
     @Test fun en() {
         seed(Locale.US, "USD")
-        shoot("screen-home-en") { HomeScreen(PaddingValues(0.dp), {}, {}, false, {}) }
+        shoot("screen-home-en") { HomeScreen(PaddingValues(0.dp), {}, {}, null, {}) }
     }
 
     @Config(qualifiers = "en-rUS-w393dp-h873dp-xxhdpi")

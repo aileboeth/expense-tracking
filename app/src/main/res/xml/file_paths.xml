@@ -6,6 +6,8 @@
     <cache-path name="camera" path="camera/" />
     <!-- Diagnostics report handed to the share sheet. -->
     <cache-path name="diag" path="diag/" />
+    <!-- Monthly recap cards handed to the share sheet. -->
+    <cache-path name="share" path="share/" />
     <!-- Receipt photos / invoice files, shared read-only with a viewer app when opened. -->
     <files-path name="attachments" path="attachments/" />
 </paths>

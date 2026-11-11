@@ -67,6 +67,7 @@ fun SearchScreen(onBack: () -> Unit) {
     var min by remember { mutableStateOf("") }
     var max by remember { mutableStateOf("") }
     var editing by remember { mutableStateOf<Tx?>(null) }
+    val actions = rememberTxActions()
 
     val zone = ZoneId.systemDefault()
     val start = when (period) {
@@ -154,12 +155,16 @@ fun SearchScreen(onBack: () -> Unit) {
                 for ((day, list) in days) item(key = "d$day") {
                     SoftCard(padding = 12.dp) {
                         DayHeader(day, list)
-                        list.forEach { tx -> TxRow(tx) { editing = tx } }
+                        list.forEach { tx -> SwipeTxRow(tx, actions) { editing = tx } }
                     }
                 }
             }
         }
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().navigationBarsPadding(), contentAlignment = Alignment.BottomCenter) {
+            androidx.compose.material3.SnackbarHost(actions.snackbar)
+        }
     }
+    TxActionsHost(actions)
     editing?.let { tx -> TxEditor(initial = tx, onDone = { editing = null }) }
 }
 

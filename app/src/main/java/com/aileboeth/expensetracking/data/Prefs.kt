@@ -78,6 +78,26 @@ class Prefs(ctx: Context) {
     fun setUsualAmounts(type: com.aileboeth.expensetracking.parse.TxType, cents: List<Long>) =
         p.edit().putString("usual_" + type.name, cents.distinct().joinToString(",")).apply()
 
+    /** How many monthly recaps were opened (for the badge). */
+    var recapsViewed: Int
+        get() = p.getInt("recapsViewed", 0)
+        set(v) = p.edit().putInt("recapsViewed", v).apply()
+
+    /** The last month ("2026-10") whose recap banner was opened or closed on the home screen. */
+    var recapBannerDone: String
+        get() = p.getString("recapBannerDone", "") ?: ""
+        set(v) = p.edit().putString("recapBannerDone", v).apply()
+
+    /** The last month whose surplus was put into (or declined for) the wish jar. */
+    var surplusMonthDone: String
+        get() = p.getString("surplusMonthDone", "") ?: ""
+        set(v) = p.edit().putString("surplusMonthDone", v).apply()
+
+    /** The wish shown on the home screen (0 = newest unfinished). */
+    var focusWish: Long
+        get() = p.getLong("focusWish", 0L)
+        set(v) = p.edit().putLong("focusWish", v).apply()
+
     var autoUpdate: Boolean
         get() = p.getBoolean("autoUpdate", true)
         set(v) = p.edit().putBoolean("autoUpdate", v).apply()

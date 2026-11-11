@@ -107,17 +107,15 @@ fun CategoriesScreen(onBack: () -> Unit) {
             item {
                 GroupLabel(if (type == TxType.EXPENSE) stringResource(R.string.cat_expense_list) else stringResource(R.string.cat_income_list), stringResource(R.string.n_items, cats.size))
                 SoftCard(padding = 12.dp) {
-                    cats.chunked(COLUMNS).forEach { row ->
-                        Row(Modifier.fillMaxWidth()) {
-                            row.forEach { c ->
-                                CategoryTile(c, counts[c] ?: 0, deletable = c != FALLBACK, Modifier.weight(1f)) { confirmDelete = c }
-                            }
-                            repeat(COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
-                        }
+                    val t = type
+                    ReorderGrid(cats, key = { it }, columns = COLUMNS, cellHeight = 106.dp, onReorder = { order ->
+                        scope.launch(Dispatchers.IO) { Repo.reorderCategories(t, order) }
+                    }) { c, dragging ->
+                        CategoryTile(c, counts[c] ?: 0, deletable = c != FALLBACK, dragging, Modifier.fillMaxSize()) { confirmDelete = c }
                     }
                 }
                 Text(
-                    stringResource(R.string.cat_footer),
+                    stringResource(R.string.cat_footer) + " " + stringResource(R.string.drag_hint_cat),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                 )
@@ -144,9 +142,11 @@ fun CategoriesScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun CategoryTile(name: String, count: Int, deletable: Boolean, modifier: Modifier, onDelete: () -> Unit) {
+private fun CategoryTile(name: String, count: Int, deletable: Boolean, dragging: Boolean, modifier: Modifier, onDelete: () -> Unit) {
     Column(
-        modifier.clip(RoundedCornerShape(16.dp)).clickable(enabled = deletable, onClick = onDelete).padding(vertical = 10.dp),
+        modifier.clip(RoundedCornerShape(16.dp))
+            .background(if (dragging) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+            .clickable(enabled = deletable, onClick = onDelete).padding(vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box {

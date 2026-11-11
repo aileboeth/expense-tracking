@@ -93,7 +93,7 @@ private fun changeText(cur: Long, prev: Long): String = change(cur, prev).let { 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(padding: PaddingValues) {
+fun StatsScreen(padding: PaddingValues, openRecap: (YearMonth) -> Unit = {}) {
     var month by remember { mutableStateOf(YearMonth.now()) }
     var type by remember { mutableStateOf(TxType.EXPENSE) }
     var selectedDay by remember(month) { mutableStateOf<Int?>(null) }
@@ -133,6 +133,20 @@ fun StatsScreen(padding: PaddingValues) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { MonthBar(month) { month = it } }
+        if (txs.count { it.type == TxType.EXPENSE } >= 3) item {
+            val ctx = LocalContext.current
+            androidx.compose.material3.Surface(
+                onClick = { openRecap(month) }, shape = RoundedCornerShape(20.dp), shadowElevation = 1.dp,
+                color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("🎞️", fontSize = 22.sp)
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(R.string.recap_open, Labels.monthShort(ctx, month)), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         insights?.let { ins -> item { InsightCard(month, ins) { editing = it } } }
         item {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {

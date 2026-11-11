@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- drag / swipe / long press -->
+    <string name="drag_hint">Long-press to drag · tap to remove</string>
+    <string name="drag_hint_cat">Long-press to drag them into order.</string>
+    <string name="swipe_hint">Swipe left to delete · right to recategorize · long-press for more</string>
+    <string name="act_deleted">Deleted %s</string>
+    <string name="act_undo">Undo</string>
+    <string name="act_copied">Added another %s</string>
+    <string name="act_recat">Moved to %s</string>
+    <string name="act_category">Category</string>
+    <string name="act_edit">Edit</string>
+    <string name="act_copy">Same again</string>
+    <string name="act_date">Change date</string>
+    <string name="act_pick_category">Move to which category?</string>
+    <string name="kind_widget">Widget</string>
+
+    <!-- home fun row -->
+    <string name="streak_start">Check in</string>
+    <plurals name="streak_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <string name="badges_count">Badges %1$d/%2$d</string>
+
+    <!-- mascot -->
+    <string name="m_past">%2$s spent in %1$s</string>
+    <string name="m_past_kept">Stayed within budget that month 🎯</string>
+    <string name="m_past_over">Over budget that month — it\'s behind us</string>
+    <plurals name="m_pending">
+        <item quantity="one">%d entry still needs its amount</item>
+        <item quantity="other">%d entries still need their amounts</item>
+    </plurals>
+    <string name="m_today_zero">Nothing spent today yet — keep it up!</string>
+    <string name="m_today_less">%s today, less than usual 👍</string>
+    <string name="m_today_lots">%s today, that\'s a lot</string>
+    <string name="m_today">%s spent today</string>
+    <string name="m_budget_left">%1$s left this month, %2$s a day</string>
+    <string name="m_budget_over">%s over budget… sob</string>
+    <plurals name="m_streak">
+        <item quantity="one">%d-day streak!</item>
+        <item quantity="other">%d-day streak!</item>
+    </plurals>
+    <string name="m_wish">%2$s to go for “%1$s”</string>
+    <string name="m_morning">Good morning! Don\'t skip breakfast</string>
+    <string name="m_noon">Lunch time — what are we having?</string>
+    <string name="m_evening">Good evening, long day?</string>
+    <string name="m_night">Still up this late…</string>
+    <string name="m_hi">Hey, that tickles!</string>
+
+    <!-- achievements -->
+    <string name="ach_title">Streak &amp; badges</string>
+    <string name="ach_streak">Current streak</string>
+    <plurals name="days_word">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
+    <string name="ach_best_total">Best %1$d · %2$d days in total</string>
+    <string name="ach_today_done">Checked in today ✓</string>
+    <string name="ach_today_todo">Not checked in today yet</string>
+    <string name="ach_keep_going">Keep tracking — money behaves when watched</string>
+    <string name="ach_how">Opening the app or recording something yourself counts as checking in for the day. Above are the last 5 weeks; lit squares are days you checked in.</string>
+    <string name="ach_badges">Badges</string>
+    <string name="ach_unlocked_on">Unlocked %s</string>
+    <string name="ach_progress">Progress %1$d / %2$d</string>
+    <string name="ach_locked">Locked</string>
+    <string name="ach_new_one">New badge!</string>
+    <plurals name="ach_new_many">
+        <item quantity="one">%d new badge!</item>
+        <item quantity="other">%d new badges!</item>
+    </plurals>
+    <string name="ach_yay">Yay</string>
+
+    <string name="bd_first">First step</string>
+    <string name="bd_first_d">Record your first entry</string>
+    <string name="bd_streak3">Three in a row</string>
+    <string name="bd_streak3_d">A 3-day streak</string>
+    <string name="bd_streak7">Full week</string>
+    <string name="bd_streak7_d">A 7-day streak</string>
+    <string name="bd_streak30">Month strong</string>
+    <string name="bd_streak30_d">A 30-day streak</string>
+    <string name="bd_streak100">Hundred days</string>
+    <string name="bd_streak100_d">A 100-day streak</string>
+    <string name="bd_count100">Century</string>
+    <string name="bd_count100_d">100 entries recorded</string>
+    <string name="bd_count1000">Big book</string>
+    <string name="bd_count1000_d">1000 entries recorded</string>
+    <string name="bd_budget">On target</string>
+    <string name="bd_budget_d">A whole month within budget (with 15+ check-in days)</string>
+    <string name="bd_nospend">No-spend day</string>
+    <string name="bd_nospend_d">Checked in on a day you spent nothing</string>
+    <string name="bd_nospend5">Thrifty</string>
+    <string name="bd_nospend5_d">5 no-spend days in one month</string>
+    <string name="bd_notes50">Note taker</string>
+    <string name="bd_notes50_d">50 entries with a note</string>
+    <string name="bd_filled10">Puzzle master</string>
+    <string name="bd_filled10_d">Filled in 10 missing amounts</string>
+    <string name="bd_receipt">Keep the receipt</string>
+    <string name="bd_receipt_d">Attach your first receipt</string>
+    <string name="bd_night">Night owl</string>
+    <string name="bd_night_d">An entry between midnight and 5 am</string>
+    <string name="bd_early">Early bird</string>
+    <string name="bd_early_d">An entry between 5 and 7 am</string>
+    <string name="bd_custom_cat">My own category</string>
+    <string name="bd_custom_cat_d">Create a category of your own</string>
+    <string name="bd_widget">One tap</string>
+    <string name="bd_widget_d">Record something from a home-screen widget</string>
+    <string name="bd_wish">Wish come true</string>
+    <string name="bd_wish_d">Fill a wish jar</string>
+    <string name="bd_recap">Looking back</string>
+    <string name="bd_recap_d">Open a monthly recap</string>
+
+    <!-- wish jar -->
+    <string name="wish_title">Wish jar</string>
+    <string name="wish_set_one">Make a wish</string>
+    <string name="wish_done_short">Full 🎉</string>
+    <string name="wish_done_long">It\'s full — go get it 🎉</string>
+    <string name="wish_new">New wish</string>
+    <string name="wish_empty_title">Saving up for something?</string>
+    <string name="wish_empty_body">Give it a jar. Put a little in now and then and watch it fill up.</string>
+    <string name="wish_left">%s to go</string>
+    <string name="wish_put_in">Put in</string>
+    <string name="wish_take_out">Take out</string>
+    <string name="wish_surplus">You had %2$s left over in %1$s. Put it in the jar?</string>
+    <string name="wish_no_thanks">No thanks</string>
+    <string name="wish_surplus_note">%s surplus</string>
+    <string name="wish_history">History</string>
+    <string name="wish_footer">The jar only keeps count of what you set aside. No money moves, and it is not part of your income or spending.</string>
+    <string name="wish_delete_title">Delete “%s”?</string>
+    <string name="wish_delete_body">The jar and its history will be removed.</string>
+    <string name="wish_new_title">New wish</string>
+    <string name="wish_edit_title">Edit wish</string>
+    <string name="wish_name">What do you want?</string>
+    <string name="wish_name_hint">e.g. new headphones</string>
+    <string name="wish_target">How much does it cost?</string>
+    <string name="wish_note_hint">Note (optional)</string>
+
+    <!-- recap -->
+    <string name="recap_banner">Your %s recap is ready ✨</string>
+    <string name="recap_banner_sub">Where it went and your biggest day — take a look</string>
+    <string name="recap_open">See the %s recap</string>
+    <string name="recap_title">%s recap</string>
+    <string name="recap_save">Save image</string>
+    <string name="recap_share">Share</string>
+    <string name="recap_saved">Saved to Pictures/ExpenseTracking</string>
+    <string name="recap_save_failed">Could not save</string>
+    <string name="recap_empty">Too few entries in %s for a recap</string>
+    <string name="recap_hi">Let\'s look back at this month!</string>
+    <string name="recap_cover">Your %s</string>
+    <string name="recap_cover_sub">%1$d entries · %2$d check-in days</string>
+    <string name="recap_tap_hint">Tap right for next, left for back</string>
+    <string name="recap_spent">This month you spent</string>
+    <string name="recap_first">Your very first recap</string>
+    <string name="recap_less">%1$s less than last month (↓%2$d%%)</string>
+    <string name="recap_more">%1$s more than last month (↑%2$d%%)</string>
+    <string name="recap_avg">%s a day on average</string>
+    <string name="recap_income">Income %s</string>
+    <string name="recap_top_day">Your biggest day</string>
+    <string name="recap_top_day_on">Largest: %1$s %2$s</string>
+    <string name="recap_where">Where it went</string>
+    <string name="recap_habits">Little habits</string>
+    <string name="recap_top_note">Most used note: “%1$s”, %2$d times</string>
+    <string name="recap_no_spend">%d no-spend days</string>
+    <string name="recap_biggest">Biggest one %1$s · %2$s</string>
+    <string name="recap_night">%d purchases after midnight 🌙</string>
+    <string name="recap_end_over">Over budget this time — next month we\'ve got this 💪</string>
+    <string name="recap_end_first">A good start ✨</string>
+    <string name="recap_end_less">Smarter with money than last month 👏</string>
+    <string name="recap_end_more">A bit of a splurge — that\'s okay</string>
+    <string name="recap_end_sub">See you in %s!</string>
+
+    <!-- launcher shortcuts -->
+    <string name="sc_expense">Add expense</string>
+    <string name="sc_income">Add income</string>
+    <string name="sc_search">Search</string>
+
+    <!-- widgets -->
+    <string name="widget_summary_desc">This month, budget ring, last 7 days, one-tap usual amounts</string>
+    <string name="widget_today_name">Today</string>
+    <string name="widget_today_desc">The feather, today\'s spending and your streak</string>
+    <string name="widget_quick_name">One-tap entry</string>
+    <string name="widget_quick_desc">Tap a usual amount to record it</string>
+    <string name="widget_quick_done">Recorded %s — set the category in the app</string>
+    <string name="widget_pending_short">%d to fill</string>
+    <plurals name="widget_pending_tap">
+        <item quantity="one">%d entry needs its amount · tap to fill</item>
+        <item quantity="other">%d entries need amounts · tap to fill</item>
+    </plurals>
+    <plurals name="widget_streak">
+        <item quantity="one">🔥 %d day</item>
+        <item quantity="other">🔥 %d days</item>
+    </plurals>
+    <string name="widget_streak_none">Check in today</string>
+</resources>

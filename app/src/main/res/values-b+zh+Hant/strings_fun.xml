@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- drag / swipe / long press -->
+    <string name="drag_hint">長按拖動排序，點一下刪除</string>
+    <string name="drag_hint_cat">長按可以拖動排序。</string>
+    <string name="swipe_hint">左滑刪除 · 右滑改分類 · 長按更多</string>
+    <string name="act_deleted">已刪除 %s</string>
+    <string name="act_undo">撤銷</string>
+    <string name="act_copied">又記了一筆 %s</string>
+    <string name="act_recat">已改為 %s</string>
+    <string name="act_category">改分類</string>
+    <string name="act_edit">編輯</string>
+    <string name="act_copy">再記一筆一樣的</string>
+    <string name="act_date">改日期</string>
+    <string name="act_pick_category">改成哪個分類？</string>
+    <string name="kind_widget">小元件</string>
+
+    <!-- home fun row -->
+    <string name="streak_start">開始打卡</string>
+    <plurals name="streak_days">
+        <item quantity="other">連續 %d 天</item>
+    </plurals>
+    <string name="badges_count">徽章 %1$d/%2$d</string>
+
+    <!-- mascot -->
+    <string name="m_past">%1$s花了 %2$s</string>
+    <string name="m_past_kept">那個月守住了預算 🎯</string>
+    <string name="m_past_over">那個月超預算了，過去就過去啦</string>
+    <plurals name="m_pending">
+        <item quantity="other">還有 %d 筆等你補金額哦</item>
+    </plurals>
+    <string name="m_today_zero">今天還一分沒花，保持住～</string>
+    <string name="m_today_less">今天花了 %s，比平時少 👍</string>
+    <string name="m_today_lots">今天花了 %s，有點多哦</string>
+    <string name="m_today">今天花了 %s</string>
+    <string name="m_budget_left">本月還能花 %1$s，每天 %2$s</string>
+    <string name="m_budget_over">已經超預算 %s 了…嗚</string>
+    <plurals name="m_streak">
+        <item quantity="other">連續打卡 %d 天啦！</item>
+    </plurals>
+    <string name="m_wish">離「%1$s」還差 %2$s</string>
+    <string name="m_morning">早上好！今天也要好好吃早飯</string>
+    <string name="m_noon">中午啦，午飯吃什麼？</string>
+    <string name="m_evening">晚上好，今天辛苦啦</string>
+    <string name="m_night">這麼晚還不睡嗎…</string>
+    <string name="m_hi">戳我幹嘛～</string>
+
+    <!-- achievements -->
+    <string name="ach_title">打卡與徽章</string>
+    <string name="ach_streak">連續打卡</string>
+    <plurals name="days_word">
+        <item quantity="other">天</item>
+    </plurals>
+    <string name="ach_best_total">最長 %1$d 天 · 累計 %2$d 天</string>
+    <string name="ach_today_done">今天已經打卡啦 ✓</string>
+    <string name="ach_today_todo">今天還沒打卡</string>
+    <string name="ach_keep_going">堅持記帳，錢會聽話的</string>
+    <string name="ach_how">每天開啟記帳看一眼，或者親手記一筆，就算打卡。上面是最近 5 周，亮的格子是打過卡的日子。</string>
+    <string name="ach_badges">徽章</string>
+    <string name="ach_unlocked_on">%s 解鎖</string>
+    <string name="ach_progress">進度 %1$d / %2$d</string>
+    <string name="ach_locked">未解鎖</string>
+    <string name="ach_new_one">解鎖新徽章！</string>
+    <plurals name="ach_new_many">
+        <item quantity="other">解鎖了 %d 個徽章！</item>
+    </plurals>
+    <string name="ach_yay">太好了</string>
+
+    <string name="bd_first">起步</string>
+    <string name="bd_first_d">記下第一筆帳</string>
+    <string name="bd_streak3">三天打卡</string>
+    <string name="bd_streak3_d">連續打卡 3 天</string>
+    <string name="bd_streak7">一週不斷</string>
+    <string name="bd_streak7_d">連續打卡 7 天</string>
+    <string name="bd_streak30">月度堅持</string>
+    <string name="bd_streak30_d">連續打卡 30 天</string>
+    <string name="bd_streak100">百日記帳</string>
+    <string name="bd_streak100_d">連續打卡 100 天</string>
+    <string name="bd_count100">百筆達成</string>
+    <string name="bd_count100_d">一共記了 100 筆</string>
+    <string name="bd_count1000">千筆帳本</string>
+    <string name="bd_count1000_d">一共記了 1000 筆</string>
+    <string name="bd_budget">守住預算</string>
+    <string name="bd_budget_d">有一整個月沒超預算（那個月至少打卡 15 天）</string>
+    <string name="bd_nospend">無消費日</string>
+    <string name="bd_nospend_d">有一天打了卡，但一分錢都沒花</string>
+    <string name="bd_nospend5">省錢達人</string>
+    <string name="bd_nospend5_d">一個月裡有 5 個無消費日</string>
+    <string name="bd_notes50">備註控</string>
+    <string name="bd_notes50_d">50 筆帳寫了備註</string>
+    <string name="bd_filled10">拼圖大師</string>
+    <string name="bd_filled10_d">補完 10 筆手錶付款 / 到帳的金額</string>
+    <string name="bd_receipt">留個底</string>
+    <string name="bd_receipt_d">第一次給帳單加票據</string>
+    <string name="bd_night">夜貓子</string>
+    <string name="bd_night_d">凌晨 0–5 點有一筆帳</string>
+    <string name="bd_early">早起的鳥</string>
+    <string name="bd_early_d">早上 5–7 點有一筆帳</string>
+    <string name="bd_custom_cat">我的分類</string>
+    <string name="bd_custom_cat_d">新建一個自己的分類</string>
+    <string name="bd_widget">桌面一鍵</string>
+    <string name="bd_widget_d">用桌面小元件記了一筆</string>
+    <string name="bd_wish">心願成真</string>
+    <string name="bd_wish_d">存滿一個心願罐</string>
+    <string name="bd_recap">回顧者</string>
+    <string name="bd_recap_d">看了一份月度回顧</string>
+
+    <!-- wish jar -->
+    <string name="wish_title">心願罐</string>
+    <string name="wish_set_one">設一個心願</string>
+    <string name="wish_done_short">已存滿 🎉</string>
+    <string name="wish_done_long">已經存滿啦，去實現它吧 🎉</string>
+    <string name="wish_new">新心願</string>
+    <string name="wish_empty_title">想攢錢買點什麼？</string>
+    <string name="wish_empty_body">給它一個罐子。每次存一點，看著它慢慢裝滿。</string>
+    <string name="wish_left">還差 %s</string>
+    <string name="wish_put_in">存入</string>
+    <string name="wish_take_out">取出</string>
+    <string name="wish_surplus">%1$s結餘了 %2$s，要存進罐子裡嗎？</string>
+    <string name="wish_no_thanks">不用了</string>
+    <string name="wish_surplus_note">%s結餘</string>
+    <string name="wish_history">存取記錄</string>
+    <string name="wish_footer">心願罐只是幫你記著存了多少，不會真的轉走錢，也不算進收支。</string>
+    <string name="wish_delete_title">刪除「%s」？</string>
+    <string name="wish_delete_body">這個罐子和它的存取記錄都會刪掉。</string>
+    <string name="wish_new_title">新心願</string>
+    <string name="wish_edit_title">修改心願</string>
+    <string name="wish_name">想要什麼</string>
+    <string name="wish_name_hint">比如：新耳機</string>
+    <string name="wish_target">需要多少錢</string>
+    <string name="wish_note_hint">備註（可不填）</string>
+
+    <!-- recap -->
+    <string name="recap_banner">%s回顧出爐了 ✨</string>
+    <string name="recap_banner_sub">花在哪、哪天最能花，點開看看</string>
+    <string name="recap_open">看看%s回顧</string>
+    <string name="recap_title">%s回顧</string>
+    <string name="recap_save">儲存圖片</string>
+    <string name="recap_share">分享</string>
+    <string name="recap_saved">已儲存到相簿 Pictures/ExpenseTracking</string>
+    <string name="recap_save_failed">儲存失敗</string>
+    <string name="recap_empty">%s的記錄太少，湊不出一份回顧</string>
+    <string name="recap_hi">一起看看這個月吧！</string>
+    <string name="recap_cover">你的%s</string>
+    <string name="recap_cover_sub">記了 %1$d 筆，打卡 %2$d 天</string>
+    <string name="recap_tap_hint">點右邊下一頁，點左邊上一頁</string>
+    <string name="recap_spent">這個月一共花了</string>
+    <string name="recap_first">這是你的第一份回顧</string>
+    <string name="recap_less">比上個月少花 %1$s（↓%2$d%%）</string>
+    <string name="recap_more">比上個月多花 %1$s（↑%2$d%%）</string>
+    <string name="recap_avg">平均每天 %s</string>
+    <string name="recap_income">收入 %s</string>
+    <string name="recap_top_day">花錢最多的一天</string>
+    <string name="recap_top_day_on">最大的一筆：%1$s %2$s</string>
+    <string name="recap_where">錢都去哪了</string>
+    <string name="recap_habits">你的小習慣</string>
+    <string name="recap_top_note">最常寫的備註是「%1$s」，%2$d 次</string>
+    <string name="recap_no_spend">無消費日 %d 天</string>
+    <string name="recap_biggest">最大一筆 %1$s · %2$s</string>
+    <string name="recap_night">凌晨還在花錢 %d 次 🌙</string>
+    <string name="recap_end_over">這個月超預算了，下個月我們一起努力 💪</string>
+    <string name="recap_end_first">第一個月，開了個好頭 ✨</string>
+    <string name="recap_end_less">比上個月更會過日子了 👏</string>
+    <string name="recap_end_more">這個月有點放飛，沒關係～</string>
+    <string name="recap_end_sub">%s見！</string>
+
+    <!-- launcher shortcuts -->
+    <string name="sc_expense">記一筆支出</string>
+    <string name="sc_income">記一筆收入</string>
+    <string name="sc_search">搜尋帳單</string>
+
+    <!-- widgets -->
+    <string name="widget_summary_desc">本月支出、預算環、近 7 天，常用金額一鍵記</string>
+    <string name="widget_today_name">今日</string>
+    <string name="widget_today_desc">小羽毛 + 今天花了多少 + 打卡天數</string>
+    <string name="widget_quick_name">一鍵記帳</string>
+    <string name="widget_quick_desc">點常用金額直接記一筆</string>
+    <string name="widget_quick_done">已記 %s，分類在 App 裡改</string>
+    <string name="widget_pending_short">待補 %d</string>
+    <plurals name="widget_pending_tap">
+        <item quantity="other">%d 筆待補金額 · 點這裡補</item>
+    </plurals>
+    <plurals name="widget_streak">
+        <item quantity="other">🔥 %d 天</item>
+    </plurals>
+    <string name="widget_streak_none">今天打個卡吧</string>
+</resources>

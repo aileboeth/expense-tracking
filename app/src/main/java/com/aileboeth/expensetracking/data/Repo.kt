@@ -355,7 +355,132 @@ object Repo {
         changed()
     }
 
-    private class Helper(ctx: Context) : SQLiteOpenHelper(ctx, "ledger.db", null, 3) {
+    /** Saves the order the user dragged the categories into. */
+    fun reorderCategories(type: TxType, names: List<String>) {
+        db.beginTransaction()
+        try {
+            names.forEachIndexed { i, n ->
+                db.update("category", ContentValues().apply { put("sort", i) }, "type=? AND name=?", arrayOf(type.name, n))
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        changed()
+    }
+
+    // ---- check-in days (streak) -------------------------------------------------------------
+
+    /** Marks [day] (epoch day) as a day the user looked at or recorded their money. */
+    fun markActive(day: Long = java.time.LocalDate.now().toEpochDay()) {
+        val v = ContentValues().apply { put("day", day) }
+        if (db.insertWithOnConflict("activity", null, v, SQLiteDatabase.CONFLICT_IGNORE) != -1L) changed()
+    }
+
+    fun activeDays(): Set<Long> =
+        db.rawQuery("SELECT day FROM activity", null).use { c -> buildSet { while (c.moveToNext()) add(c.getLong(0)) } }
+
+    // ---- badges -------------------------------------------------------------------------------
+
+    /** id -> unlock time. */
+    fun badges(): Map<String, Long> =
+        db.rawQuery("SELECT id, time FROM badge", null).use { c -> buildMap { while (c.moveToNext()) put(c.getString(0), c.getLong(1)) } }
+
+    fun unlockBadges(ids: Collection<String>, now: Long = System.currentTimeMillis()) {
+        if (ids.isEmpty()) return
+        for (id in ids) db.insertWithOnConflict("badge", null, ContentValues().apply { put("id", id); put("time", now); put("seen", 0) }, SQLiteDatabase.CONFLICT_IGNORE)
+        changed()
+    }
+
+    /** Unlocked badges the user has not been shown yet. */
+    fun unseenBadges(): List<String> =
+        db.rawQuery("SELECT id FROM badge WHERE seen=0 ORDER BY time, id", null).use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
+
+    fun markBadgesSeen() {
+        db.execSQL("UPDATE badge SET seen=1 WHERE seen=0")
+        changed()
+    }
+
+    /** One SQL pass over the numbers the badges need. */
+    fun badgeStats(): BadgeStats {
+        fun long(sql: String, vararg a: String) = db.rawQuery(sql, a).use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }
+        val firstTime = long("SELECT COALESCE(MIN(time),0) FROM tx")
+        val hours = db.rawQuery("SELECT time FROM tx WHERE status='OK'", null).use { c ->
+            val z = java.time.ZoneId.systemDefault()
+            buildSet { while (c.moveToNext()) add(java.time.Instant.ofEpochMilli(c.getLong(0)).atZone(z).hour) }
+        }
+        val expenseDays = db.rawQuery("SELECT time FROM tx WHERE status='OK' AND type='EXPENSE'", null).use { c ->
+            val z = java.time.ZoneId.systemDefault()
+            buildSet { while (c.moveToNext()) add(java.time.Instant.ofEpochMilli(c.getLong(0)).atZone(z).toLocalDate().toEpochDay()) }
+        }
+        return BadgeStats(
+            entries = long("SELECT COUNT(*) FROM tx WHERE status='OK'"),
+            withNote = long("SELECT COUNT(*) FROM tx WHERE status='OK' AND note<>''"),
+            receipts = long("SELECT COUNT(*) FROM attachment"),
+            filled = long("SELECT COUNT(*) FROM tx WHERE status='OK' AND amount IS NOT NULL AND kind IN ('wechat_voucher','alipay_received_no_amount','wechat_income_no_amount')"),
+            widget = long("SELECT COUNT(*) FROM tx WHERE kind='widget'"),
+            wishesDone = long("SELECT COUNT(*) FROM wish WHERE done>0"),
+            firstEntry = firstTime,
+            hours = hours,
+            expenseDays = expenseDays,
+        )
+    }
+
+    /** Sum of expenses per month (yyyy-MM -> cents) for months that have any. */
+    fun monthlyExpense(): Map<String, Long> {
+        val z = java.time.ZoneId.systemDefault()
+        val out = HashMap<String, Long>()
+        db.rawQuery("SELECT time, amount FROM tx WHERE status='OK' AND type='EXPENSE' AND amount IS NOT NULL", null).use { c ->
+            while (c.moveToNext()) {
+                val ym = java.time.YearMonth.from(java.time.Instant.ofEpochMilli(c.getLong(0)).atZone(z)).toString()
+                out[ym] = (out[ym] ?: 0L) + c.getLong(1)
+            }
+        }
+        return out
+    }
+
+    // ---- wish jar -----------------------------------------------------------------------------
+
+    fun wishes(): List<Wish> =
+        db.rawQuery(
+            "SELECT w.id, w.name, w.emoji, w.target, w.created, w.done, COALESCE((SELECT SUM(amount) FROM wish_log l WHERE l.wish_id=w.id),0) " +
+                "FROM wish w ORDER BY (w.done>0), w.created DESC", null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) add(Wish(c.getLong(0), c.getString(1), c.getString(2), c.getLong(3), c.getLong(4), c.getLong(5), c.getLong(6)))
+            }
+        }
+
+    fun putWish(w: Wish): Long {
+        val v = ContentValues().apply { put("name", w.name); put("emoji", w.emoji); put("target", w.target); put("created", w.created); put("done", w.done) }
+        val id = if (w.id == 0L) db.insert("wish", null, v) else { db.update("wish", v, "id=?", arrayOf(w.id.toString())); w.id }
+        changed()
+        return id
+    }
+
+    fun deleteWish(id: Long) {
+        db.delete("wish_log", "wish_id=?", arrayOf(id.toString()))
+        db.delete("wish", "id=?", arrayOf(id.toString()))
+        changed()
+    }
+
+    /** Money put in (positive) or taken out (negative). Marks the wish done when it reaches the target. */
+    fun deposit(wishId: Long, cents: Long, note: String = "", now: Long = System.currentTimeMillis()) {
+        db.insert("wish_log", null, ContentValues().apply { put("wish_id", wishId); put("amount", cents); put("time", now); put("note", note) })
+        val w = wishes().firstOrNull { it.id == wishId }
+        if (w != null) {
+            val done = if (w.saved >= w.target) (if (w.done > 0) w.done else now) else 0L
+            if (done != w.done) db.update("wish", ContentValues().apply { put("done", done) }, "id=?", arrayOf(wishId.toString()))
+        }
+        changed()
+    }
+
+    fun wishLog(wishId: Long): List<WishLog> =
+        db.rawQuery("SELECT id, amount, time, note FROM wish_log WHERE wish_id=? ORDER BY time DESC, id DESC", arrayOf(wishId.toString())).use { c ->
+            buildList { while (c.moveToNext()) add(WishLog(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3) ?: "")) }
+        }
+
+    private class Helper(ctx: Context) : SQLiteOpenHelper(ctx, "ledger.db", null, 4) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 """CREATE TABLE tx (
@@ -382,6 +507,24 @@ object Repo {
             DEFAULT_EXPENSE.forEachIndexed { i, n -> seed(db, TxType.EXPENSE, n, i) }
             DEFAULT_INCOME.forEachIndexed { i, n -> seed(db, TxType.INCOME, n, i) }
             createV3(db)
+            createV4(db)
+        }
+
+        /** 0.2.1: check-in days, badges, wish jars. */
+        private fun createV4(db: SQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS activity (day INTEGER PRIMARY KEY)")
+            db.execSQL("CREATE TABLE IF NOT EXISTS badge (id TEXT PRIMARY KEY, time INTEGER NOT NULL, seen INTEGER NOT NULL DEFAULT 0)")
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS wish (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, emoji TEXT NOT NULL, " +
+                    "target INTEGER NOT NULL, created INTEGER NOT NULL, done INTEGER NOT NULL DEFAULT 0)"
+            )
+            db.execSQL("CREATE TABLE IF NOT EXISTS wish_log (id INTEGER PRIMARY KEY AUTOINCREMENT, wish_id INTEGER NOT NULL, amount INTEGER NOT NULL, time INTEGER NOT NULL, note TEXT NOT NULL DEFAULT '')")
+            // Days that already have entries count as checked in, so an existing ledger does not start at 0.
+            val z = java.time.ZoneId.systemDefault()
+            db.rawQuery("SELECT time FROM tx", null).use { c ->
+                val days = buildSet { while (c.moveToNext()) add(java.time.Instant.ofEpochMilli(c.getLong(0)).atZone(z).toLocalDate().toEpochDay()) }
+                for (d in days) db.insertWithOnConflict("activity", null, ContentValues().apply { put("day", d) }, SQLiteDatabase.CONFLICT_IGNORE)
+            }
         }
 
         /** 0.1.3: category rules and attachments. */
@@ -406,6 +549,7 @@ object Repo {
                 db.execSQL("CREATE INDEX IF NOT EXISTS tx_ref ON tx(ref)")
             }
             if (oldVersion < 3) createV3(db)
+            if (oldVersion < 4) createV4(db)
         }
     }
 

@@ -44,11 +44,19 @@ import com.aileboeth.expensetracking.capture.ListenerKeeper
 import com.aileboeth.expensetracking.update.Updater
 import com.aileboeth.expensetracking.widget.Widgets
 
+/** What an outside entry point (widget, launcher shortcut, capsule) asked the app to open. */
+class Requests {
+    /** "+ 记一笔" from the widget or a launcher shortcut: the type to start with. */
+    val add = mutableStateOf<com.aileboeth.expensetracking.parse.TxType?>(null)
+    /** The capsule's ✎ 改 asks to edit the usual amounts. */
+    val usual = mutableStateOf(false)
+    val search = mutableStateOf(false)
+    /** Open the editor on this entry (widget "fill in" without the overlay permission). */
+    val fill = mutableStateOf<Long?>(null)
+}
+
 class MainActivity : ComponentActivity() {
-    /** Set when opened from the widget's "+ 记一笔". */
-    private val addRequest = mutableStateOf(false)
-    /** Set when the bubble's ✎ 改 asks to edit the usual amounts. */
-    private val usualRequest = mutableStateOf(false)
+    private val requests = Requests()
 
     override fun attachBaseContext(newBase: android.content.Context) = super.attachBaseContext(AppLocale.wrap(newBase))
 
@@ -56,10 +64,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handle(intent)
+        Shortcuts.publish(this)
         setContent {
             AppTheme {
                 val counts = repoQuery(initial = emptyMap<Long, Int>()) { com.aileboeth.expensetracking.data.Repo.attachmentCounts() }
-                androidx.compose.runtime.CompositionLocalProvider(LocalAttachCounts provides counts) { AppRoot(addRequest, usualRequest) }
+                androidx.compose.runtime.CompositionLocalProvider(LocalAttachCounts provides counts) { AppRoot(requests) }
             }
         }
     }
@@ -68,6 +77,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         com.aileboeth.expensetracking.bubble.Bubble.setAppInFront(true)
         ListenerKeeper.ensure(this, 1500)
+        // Opening the app counts as today's check-in.
+        Thread { runCatching { com.aileboeth.expensetracking.data.Repo.markActive() } }.start()
     }
 
     override fun onPause() {
@@ -81,8 +92,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handle(intent: Intent?) {
-        if (intent?.action == Widgets.ACTION_ADD) addRequest.value = true
-        if (intent?.action == com.aileboeth.expensetracking.bubble.Bubble.ACTION_USUAL_AMOUNTS) usualRequest.value = true
+        when (intent?.action) {
+            Widgets.ACTION_ADD -> requests.add.value =
+                if (intent.getStringExtra("type") == "INCOME") com.aileboeth.expensetracking.parse.TxType.INCOME else com.aileboeth.expensetracking.parse.TxType.EXPENSE
+            com.aileboeth.expensetracking.bubble.Bubble.ACTION_USUAL_AMOUNTS -> requests.usual.value = true
+            Shortcuts.ACTION_SEARCH -> requests.search.value = true
+            Widgets.ACTION_FILL -> intent.getLongExtra("tx", 0L).takeIf { it > 0 }?.let { requests.fill.value = it }
+        }
     }
 }
 
@@ -97,23 +113,42 @@ private sealed interface Overlay {
     data object Stability : Overlay
     data object PayApps : Overlay
     data class Import(val uri: Uri) : Overlay
+    data object Achievements : Overlay
+    data object Wish : Overlay
+    data class Recap(val month: java.time.YearMonth) : Overlay
 }
 
 @Composable
-private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableState<Boolean>) {
+private fun AppRoot(req: Requests) {
     val ctx = LocalContext.current
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var overlay by remember { mutableStateOf<Overlay?>(null) }
     // Lives here so the settings list keeps its scroll position while a sub-page is open.
     val settingsList = androidx.compose.foundation.lazy.rememberLazyListState()
     LaunchedEffect(Unit) { Updater.autoCheck(ctx) }
-    LaunchedEffect(addRequest.value) { if (addRequest.value) { overlay = null; tab = 0 } }
+    LaunchedEffect(req.add.value, req.fill.value) { if (req.add.value != null || req.fill.value != null) { overlay = null; tab = 0 } }
+    LaunchedEffect(req.search.value) { if (req.search.value) { overlay = Overlay.Search; req.search.value = false } }
     // The capsule's "✎ 改" opens the usual-amounts page; back from it lands on settings.
-    LaunchedEffect(usualRequest.value) {
-        if (usualRequest.value) { tab = 2; overlay = Overlay.UsualAmounts; usualRequest.value = false }
+    LaunchedEffect(req.usual.value) {
+        if (req.usual.value) { tab = 2; overlay = Overlay.UsualAmounts; req.usual.value = false }
+    }
+
+    // Badges: re-checked a moment after the data changes; new ones get a little party.
+    val version by com.aileboeth.expensetracking.data.Repo.version.collectAsState()
+    var celebrate by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(version) {
+        kotlinx.coroutines.delay(900)
+        val fresh = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { com.aileboeth.expensetracking.data.Achievements.check(ctx) }
+            com.aileboeth.expensetracking.data.Repo.unseenBadges()
+        }
+        if (fresh.isNotEmpty() && celebrate.isEmpty()) celebrate = fresh
     }
 
     when (val o = overlay) {
+        Overlay.Achievements -> AchievementsScreen(onBack = { overlay = null })
+        Overlay.Wish -> WishJarScreen(onBack = { overlay = null })
+        is Overlay.Recap -> RecapScreen(o.month, onBack = { overlay = null })
         Overlay.Search -> SearchScreen(onBack = { overlay = null })
         Overlay.BlacklistApps -> BlacklistAppsScreen(onBack = { overlay = null })
         Overlay.BlacklistWords -> BlacklistWordsScreen(onBack = { overlay = null })
@@ -139,10 +174,15 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
                     padding,
                     openSettings = { tab = 2 },
                     openSearch = { overlay = Overlay.Search },
-                    addRequested = addRequest.value,
-                    onAddHandled = { addRequest.value = false },
+                    addRequested = req.add.value,
+                    onAddHandled = { req.add.value = null },
+                    fillRequested = req.fill.value,
+                    onFillHandled = { req.fill.value = null },
+                    openAchievements = { overlay = Overlay.Achievements },
+                    openWish = { overlay = Overlay.Wish },
+                    openRecap = { overlay = Overlay.Recap(it) },
                 )
-                1 -> StatsScreen(padding)
+                1 -> StatsScreen(padding, openRecap = { overlay = Overlay.Recap(it) })
                 else -> SettingsScreen(
                     padding,
                     onImport = { overlay = Overlay.Import(it) },
@@ -160,6 +200,10 @@ private fun AppRoot(addRequest: MutableState<Boolean>, usualRequest: MutableStat
         }
     }
     UpdateDialog()
+    if (celebrate.isNotEmpty()) BadgeCelebration(celebrate) {
+        celebrate = emptyList()
+        Thread { com.aileboeth.expensetracking.data.Repo.markBadgesSeen() }.start()
+    }
 }
 
 @Composable

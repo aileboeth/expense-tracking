@@ -50,7 +50,12 @@ UI in English, Simplified Chinese and Traditional Chinese. The currency is a set
 - **Search and filters**: by note, counterpart, category, amount range, channel and date.
 - **Bill import** (WeChat .xlsx / Alipay .csv): finds missed payments and fills in amounts for
   "needs amount" entries; the same payment is never imported twice.
-- **Home-screen widget**: spent this month, spent today, budget left, and "+ Add".
+- **Home-screen widgets (three)**: 4×2 "This month" (budget ring with the feather, last 7 days, usual amounts you tap to record, pending entries you tap to fill), 2×2 "Today" (the feather, today's spending, your streak) and 4×1 "One-tap entry". Colours follow the budget (orange when close, red when over, dusk at night).
+- **Handy gestures**: swipe an entry left to delete (with undo), right to change its category; long-press for Same again / Category / Change date / Delete; swipe the header to change month; long-press and drag usual amounts and categories into order; a check mark and a light buzz on save, rolling numbers; launcher shortcuts for Add expense / Add income / Search.
+- **The feather**: the little purple feather on the home screen changes its face with your budget and the time of day (happy / calm / worried / sad / sleepy). Tap it for a one-line summary.
+- **Streak & badges**: opening the app or recording something yourself counts as a check-in; 19 badges (7-day streak, no-spend day, on budget, night owl…) with confetti when you unlock one.
+- **Wish jar**: set a goal for something you want, put money in or take it out, and watch the liquid slosh when you tilt the phone; last month's surplus is offered to the jar. It only keeps count; no money moves.
+- **Monthly recap**: early each month the home screen offers last month's recap as story cards: total, biggest day, where it went, little habits. Save or share any card as an image.
 - **Blacklist**: apps, and keywords in the payer / merchant / text.
 - **Keeping it running**: **Settings → Self-test & background settings** lists the switches to turn on for
   your phone's brand (Xiaomi/Redmi, Huawei, Honor, OPPO/OnePlus/realme, vivo/iQOO, Samsung, Meizu, others)

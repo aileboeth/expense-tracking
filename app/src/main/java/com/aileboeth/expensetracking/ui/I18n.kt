@@ -114,6 +114,7 @@ object Labels {
             "generic" -> R.string.kind_generic
             "wechat_bill" -> R.string.kind_wechat_bill
             "alipay_bill" -> R.string.kind_alipay_bill
+            "widget" -> R.string.kind_widget
             "" -> R.string.ch_manual
             else -> return kind
         }

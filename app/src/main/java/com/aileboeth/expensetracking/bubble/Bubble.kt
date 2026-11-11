@@ -117,6 +117,23 @@ object Bubble {
         scheduleHide()
     }
 
+    /** Opens the card for one entry right away (the widget's "fill in"). False when overlays are not allowed. */
+    fun openFor(ctx: Context, txId: Long): Boolean {
+        val app = ctx.applicationContext
+        if (!canDraw(app) || Repo.get(txId) == null) return false
+        appCtx = app
+        wm = app.getSystemService(WindowManager::class.java)
+        queue.remove(txId)
+        queue.addFirst(txId)
+        return try {
+            showCapsule()
+            openCard()
+            true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     /** Call after an entry was edited or deleted elsewhere (in the app). */
     fun refresh() {
         main.post {
@@ -640,10 +657,47 @@ object Bubble {
 
     private fun save(t: Tx, category: String, note: String) {
         val updated = t.copy(category = category.ifBlank { OTHER }, note = note.trim(), status = Status.OK)
-        Thread { Repo.update(updated) }.start()
+        Thread { Repo.update(updated); Repo.markActive() }.start()
+        card?.let { c ->
+            c.performHapticFeedback(if (android.os.Build.VERSION.SDK_INT >= 30) android.view.HapticFeedbackConstants.CONFIRM else android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+        }
         queue.remove(t.id)
-        toast(s(R.string.bub_saved, Labels.category(appCtx!!, updated.category), Money.signed(updated)))
-        next()
+        val label = CategoryStyle.of(updated.category).emoji + " " + Money.signed(updated).let { x -> if (x.endsWith(".00")) x.dropLast(3) else x }
+        if (queue.isEmpty() && capsule != null && !appInFront) {
+            closeCard()
+            flashDone(label)
+        } else {
+            toast(s(R.string.bub_saved, Labels.category(appCtx!!, updated.category), Money.signed(updated)))
+            next()
+        }
+    }
+
+    /** The capsule turns into "✓ 🍜 -30", pops once and slides away. */
+    private fun flashDone(label: String) {
+        val v = capsule ?: return hideAll()
+        main.removeCallbacks(autoHide)
+        v.visibility = View.VISIBLE
+        val text = (0 until v.childCount).map { v.getChildAt(it) }.firstOrNull { it is TextView } as? TextView
+        text?.text = "✓ $label"
+        text?.setTextColor(Color.WHITE)
+        val r = dp(22f).toFloat()
+        v.background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(INCOME_2, INCOME, INCOME)).apply {
+            cornerRadii = if (onLeft) floatArrayOf(0f, 0f, r, r, r, r, 0f, 0f) else floatArrayOf(r, r, 0f, 0f, 0f, 0f, r, r)
+        }
+        v.scaleX = 0.8f; v.scaleY = 0.8f
+        v.animate().scaleX(1.08f).scaleY(1.08f).setDuration(160).withEndAction {
+            v.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+        }.start()
+        main.postDelayed({
+            v.animate().alpha(0f).translationX(if (onLeft) -v.width.toFloat() else v.width.toFloat()).setDuration(260)
+                .withEndAction {
+                    if (queue.isEmpty()) hideAll() else {
+                        // a new payment came in meanwhile: show it instead
+                        v.alpha = 1f; v.translationX = 0f
+                        refreshCapsule(); scheduleHide()
+                    }
+                }.start()
+        }, 1100)
     }
 
     /** Tap on the dim area / back: entries with an amount are already saved; amount-less ones stay waiting. */
