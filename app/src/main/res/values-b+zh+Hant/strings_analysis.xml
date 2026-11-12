@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- settings categories (0.2.2) -->
+    <string name="state_on">開</string>
+    <string name="state_off">關</string>
+    <string name="set_categories_label">設定</string>
+    <string name="set_ready">已就緒</string>
+    <string name="set_sec_auto_sub">許可權 · 背景 · 自檢</string>
+    <string name="set_sec_capsule_sub">顯示 · 自動隱藏 · 常用金額</string>
+    <string name="set_sec_detect_sub">支付 App · 黑名單 · 識別記錄</string>
+    <string name="set_sec_ledger_sub">預算 · 貨幣 · 分類 · 匯入匯出</string>
+    <string name="set_budget_value">預算 %s</string>
+    <string name="set_sec_fun">趣味與動效</string>
+    <string name="set_sec_fun_sub">小羽毛 · 震動 · 動畫 · 徽章</string>
+    <string name="set_fun_value">開了 %1$d/%2$d</string>
+    <string name="set_sec_general_sub">語言 · 更新</string>
+    <string name="set_group_perms">許可權</string>
+    <string name="set_group_keep">保持執行</string>
+    <string name="set_capsule_intro">付款後螢幕邊上會出現一個小膠囊，點它可以選分類、補金額。</string>
+    <string name="set_group_sources">讀取哪些</string>
+    <string name="set_group_filters">跳過哪些</string>
+    <string name="set_group_check">檢查</string>
+    <string name="set_group_money">金額</string>
+    <string name="set_group_sorting">分類</string>
+    <string name="set_group_data">資料</string>
+    <string name="set_group_home">首頁</string>
+    <string name="set_group_feel">手感</string>
+    <string name="set_group_collect">收藏</string>
+    <string name="set_group_display">顯示</string>
+    <string name="fx_mascot">小羽毛</string>
+    <string name="fx_mascot_sub">待在首頁頂部，表情跟著預算變，點它會說話</string>
+    <string name="fx_fun_row">打卡和心願小卡片</string>
+    <string name="fx_fun_row_sub">首頁頂部下面的連續打卡、徽章和心願罐</string>
+    <string name="fx_recap">月度回顧提醒</string>
+    <string name="fx_recap_sub">每月前幾天在首頁提示「看看 10 月回顧」</string>
+    <string name="fx_haptics">震動反饋</string>
+    <string name="fx_haptics_sub">儲存、滑動、拖動和點元件按鈕時輕輕震一下</string>
+    <string name="fx_motion">動畫</string>
+    <string name="fx_motion_sub">撒花、儲存時的對勾、數字滾動</string>
+    <string name="fx_badges">徽章彈窗</string>
+    <string name="fx_badges_sub">解鎖新徽章時撒花慶祝；關掉後徽章照樣收集，只是不彈出來</string>
+    <string name="fx_open_badges">打卡與徽章</string>
+    <string name="fx_open_badges_sub">打卡日曆和全部徽章</string>
+    <string name="fx_open_wish_sub">給想買的東西攢錢</string>
+
+    <!-- stats overview -->
+    <string name="stat_balance">結餘</string>
+    <string name="stat_forecast">月底預計 %s</string>
+    <string name="stat_forecast_over">超預算 %s</string>
+    <string name="stat_forecast_ok">在預算內</string>
+    <string name="stat_budget_used">預算 %2$s 已用 %1$d%%</string>
+    <string name="stat_tap_more">點進去看詳細</string>
+    <string name="stat_more_analysis">更多：年度、習慣和趨勢</string>
+    <string name="tile_forecast">月底預計 %s</string>
+    <string name="tile_forecast_none">速度和預算</string>
+    <string name="tile_habits">%s花得最多</string>
+    <string name="tile_habits_none">什麼時候、怎麼花的</string>
+    <string name="tile_cat_up">%s比平時多</string>
+    <string name="tile_cat_down">%s比平時少</string>
+    <string name="tile_cat_ok">各分類都和平時差不多</string>
+    <string name="tile_cat_none">近 6 個月走勢</string>
+    <string name="tile_year">%1$d 年已花 %2$s</string>
+
+    <!-- analysis -->
+    <string name="an_title">詳細分析</string>
+    <string name="an_tab_forecast">預測</string>
+    <string name="an_tab_habits">習慣</string>
+    <string name="an_tab_categories">分類</string>
+    <string name="an_tab_year">年度</string>
+    <string name="an_budget_line">預算 %s</string>
+
+    <string name="an_fc_empty">記幾天帳，這裡就能預測了。</string>
+    <string name="an_fc_heading">按現在的速度，月底大約會花</string>
+    <string name="an_fc_heading_past">這個月一共花了</string>
+    <string name="an_fc_range">大概在 %1$s – %2$s 之間 · 已花 %3$s（第 %4$d/%5$d 天）</string>
+    <string name="an_fc_past_sub">日均 %s</string>
+    <string name="an_fc_budget">預算</string>
+    <string name="an_fc_budget_change">修改</string>
+    <string name="an_fc_budget_set">設一個</string>
+    <string name="an_fc_no_budget">設了每月預算，這裡會告訴你每天還能花多少、照這樣哪天會花完。</string>
+    <string name="an_fc_pace">累計花費</string>
+    <string name="an_fc_actual">已花</string>
+    <string name="an_fc_projected">預測</string>
+    <string name="an_fc_rate">按每天約 %s 推算</string>
+    <string name="an_fc_oneoffs">；大額一次性支出（%s）不算進速度</string>
+    <string name="an_fc_budget_of">%2$s 裡已花 %1$s</string>
+    <string name="an_fc_keep">月底預計還能剩 %s</string>
+    <string name="an_fc_kept">月底剩了 %s</string>
+    <string name="an_fc_over">照這樣會超出預算 %s</string>
+    <string name="an_fc_was_over">超出預算 %s</string>
+    <string name="an_fc_safe">之後每天最多花 %s，就能守住預算</string>
+    <string name="an_fc_used_up">這個月的預算已經用完了</string>
+    <string name="an_fc_run_out">照這個速度，預算大約 %s 花完</string>
+    <string name="an_fc_run_out_sub">每天約花 %s</string>
+    <string name="an_fc_ahead">往後看</string>
+    <string name="an_fc_next">%1$s大概會花 %2$s</string>
+    <string name="an_fc_next_sub">按近 3 個月加權估算，越近的月份越重要</string>
+    <string name="an_fc_wish_none">「%s」要等有結餘的月份啦</string>
+    <string name="an_fc_wish_none_sub">近 3 個月還沒有結餘</string>
+    <string name="an_fc_wish_sub">按每月約結餘 %1$s 算，還差 %2$s</string>
+
+    <string name="an_hb_days">%d 天</string>
+    <string name="an_hb_year">1 年</string>
+    <string name="an_hb_empty">這段時間沒有支出。</string>
+    <string name="an_hb_rhythm">節奏</string>
+    <string name="an_hb_per_day">平均每天幾筆</string>
+    <string name="an_hb_total">支出筆數</string>
+    <string name="an_hb_no_spend">無消費日</string>
+    <string name="an_hb_longest">最長連續沒花錢</string>
+    <string name="an_hb_weekdays">星期幾花得多</string>
+    <string name="an_hb_weekday_top">%1$s花得最多，平均 %2$s</string>
+    <string name="an_hb_weekend">週末日均 %1$s，工作日 %2$s</string>
+    <string name="an_hb_weekend_more">週末比工作日多花 %d%%</string>
+    <string name="an_hb_weekday_more">工作日比周末多花 %d%%</string>
+    <string name="an_hb_hours">一天裡什麼時候花</string>
+    <string name="an_hb_hour_top">最常在 %d 點左右花錢</string>
+    <string name="an_hb_hour_tip">%1$d 點 · %2$d 筆 · %3$s</string>
+    <string name="an_hb_noon">%d%% 的消費發生在午飯時間（11–14 點）</string>
+    <string name="an_hb_amounts">單筆金額分佈</string>
+    <string name="an_hb_median">一半的消費在 %s 以下</string>
+    <string name="an_hb_below">%s 以下</string>
+    <string name="an_hb_above">%s 以上</string>
+    <string name="an_hb_small_share">%1$d%% 的消費不到 %2$s</string>
+    <string name="an_hb_small_sum">加起來 %s</string>
+
+    <string name="an_ct_empty">近 6 個月沒有支出。</string>
+    <string name="an_ct_alerts">和平時比</string>
+    <string name="an_ct_paced_note">本月按已過的天數折算成整月來比。</string>
+    <string name="an_ct_no_history">再記一兩個月，就能和平時比了。</string>
+    <string name="an_ct_all_normal">各分類都和平時差不多</string>
+    <string name="an_ct_up">%1$s是平時的 %2$s 倍</string>
+    <string name="an_ct_down">%1$s比平時少 %2$d%%</string>
+    <string name="an_ct_vs">本月約 %1$s，平時 %2$s</string>
+    <string name="an_ct_tap">點開看每月</string>
+    <string name="an_ct_six">近 6 個月</string>
+    <string name="an_ct_usual">平時每月 %s</string>
+    <string name="an_ct_new">本月新出現</string>
+
+    <string name="an_yr_title">%d 年</string>
+    <string name="an_yr_spent">今年一共花了</string>
+    <string name="an_yr_line">收入 %1$s · 結餘 %2$s</string>
+    <string name="an_yr_rate">存下 %d%%</string>
+    <string name="an_yr_empty">%d 年沒有記錄。</string>
+    <string name="an_yr_heat">一年裡的每一天</string>
+    <string name="an_yr_heat_hint">顏色越深花得越多，點小格子看那一天。</string>
+    <string name="an_yr_day">%1$s：%2$s</string>
+    <string name="an_yr_months">每個月</string>
+    <string name="an_yr_month_line">支出 %1$s · 收入 %2$s · 結餘 %3$s</string>
+    <string name="an_yr_recap">看回顧</string>
+    <string name="an_yr_most">花得最多：%1$s %2$s</string>
+    <string name="an_yr_least">最省的月份：%1$s %2$s</string>
+    <string name="an_fun_title">趣味推算</string>
+    <string name="an_fun_sub">按近 90 天推算，圖一樂</string>
+    <string name="an_fun_year">照今年的速度，全年大約花 %s</string>
+    <string name="an_fun_note">照這樣，一年「%1$s」要花 %2$s</string>
+    <string name="an_fun_small">%1$s 以下的小錢，一年加起來約 %2$s</string>
+    <string name="an_fun_save">每天少花 %1$s，一年能多存 %2$s</string>
+
+    <!-- widgets -->
+    <string name="widget_today_short">今</string>
+    <string name="widget_per_day">每天還能花 %s</string>
+    <string name="widget_budget_gone">預算用完了</string>
+
+    <plurals name="set_missing_short">
+        <item quantity="other">缺 %d 項</item>
+    </plurals>
+    <plurals name="an_fc_days_left">
+        <item quantity="other">還剩 %d 天</item>
+    </plurals>
+    <plurals name="an_fc_wish">
+        <item quantity="other">「%1$s」大約還要 %2$d 個月</item>
+    </plurals>
+    <plurals name="an_days">
+        <item quantity="other">%d 天</item>
+    </plurals>
+    <plurals name="an_hb_night">
+        <item quantity="other">夜裡（22 點到 5 點）花了 %d 筆</item>
+    </plurals>
+    <plurals name="an_yr_active">
+        <item quantity="other">有 %d 天記了帳</item>
+    </plurals>
+    <plurals name="an_yr_kept_months">
+        <item quantity="other">%d 個月有結餘</item>
+    </plurals>
+    <plurals name="an_fun_note_sub">
+        <item quantity="other">近 90 天 %1$d 次，共 %2$s</item>
+    </plurals>
+    <plurals name="an_fun_small_sub">
+        <item quantity="other">近 90 天 %1$d 筆，共 %2$s</item>
+    </plurals>
+</resources>

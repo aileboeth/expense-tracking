@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- settings categories (0.2.2) -->
+    <string name="state_on">On</string>
+    <string name="state_off">Off</string>
+    <string name="set_categories_label">Settings</string>
+    <string name="set_ready">Ready</string>
+    <string name="set_sec_auto_sub">Permissions, background, self-test</string>
+    <string name="set_sec_capsule_sub">Show, auto-hide, usual amounts</string>
+    <string name="set_sec_detect_sub">Payment apps, blacklists, log</string>
+    <string name="set_sec_ledger_sub">Budget, currency, categories, import / export</string>
+    <string name="set_budget_value">Budget %s</string>
+    <string name="set_sec_fun">Fun &amp; motion</string>
+    <string name="set_sec_fun_sub">Feather, vibration, animations, badges</string>
+    <string name="set_fun_value">%1$d/%2$d on</string>
+    <string name="set_sec_general_sub">Language, updates</string>
+    <string name="set_group_perms">Permissions</string>
+    <string name="set_group_keep">Keep it running</string>
+    <string name="set_capsule_intro">After a payment a small capsule appears at the screen edge; tap it to pick a category or fill in the amount.</string>
+    <string name="set_group_sources">What is read</string>
+    <string name="set_group_filters">What is skipped</string>
+    <string name="set_group_check">Check</string>
+    <string name="set_group_money">Money</string>
+    <string name="set_group_sorting">Sorting</string>
+    <string name="set_group_data">Data</string>
+    <string name="set_group_home">On the home screen</string>
+    <string name="set_group_feel">Feel</string>
+    <string name="set_group_collect">Collections</string>
+    <string name="set_group_display">Display</string>
+    <string name="fx_mascot">Feather mascot</string>
+    <string name="fx_mascot_sub">Sits on the header, its mood follows your budget; tap it to hear a line</string>
+    <string name="fx_fun_row">Streak &amp; wish tiles</string>
+    <string name="fx_fun_row_sub">Check-in days, badges and your wish jar under the header</string>
+    <string name="fx_recap">Monthly recap banner</string>
+    <string name="fx_recap_sub">In the first days of a month: \"Your October recap\"</string>
+    <string name="fx_haptics">Vibration</string>
+    <string name="fx_haptics_sub">A light tap on saves, swipes, drags and widget buttons</string>
+    <string name="fx_motion">Animations</string>
+    <string name="fx_motion_sub">Confetti, the save check mark and rolling numbers</string>
+    <string name="fx_badges">Badge pop-up</string>
+    <string name="fx_badges_sub">Celebrate new badges; when off they are still collected quietly</string>
+    <string name="fx_open_badges">Streak &amp; badges</string>
+    <string name="fx_open_badges_sub">Your check-in calendar and all badges</string>
+    <string name="fx_open_wish_sub">Save towards something you want</string>
+
+    <!-- stats overview -->
+    <string name="stat_balance">Balance</string>
+    <string name="stat_forecast">Month end ≈ %s</string>
+    <string name="stat_forecast_over">%s over budget</string>
+    <string name="stat_forecast_ok">within budget</string>
+    <string name="stat_budget_used">%1$d%% of the %2$s budget used</string>
+    <string name="stat_tap_more">Tap for details</string>
+    <string name="stat_more_analysis">More: the year, habits and trends</string>
+    <string name="tile_forecast">Month end ≈ %s</string>
+    <string name="tile_forecast_none">Pace and budget</string>
+    <string name="tile_habits">Spend most on %s</string>
+    <string name="tile_habits_none">When and how you spend</string>
+    <string name="tile_cat_up">%s higher than usual</string>
+    <string name="tile_cat_down">%s lower than usual</string>
+    <string name="tile_cat_ok">All as usual</string>
+    <string name="tile_cat_none">6-month trends</string>
+    <string name="tile_year">%1$d: %2$s so far</string>
+
+    <!-- analysis -->
+    <string name="an_title">Analysis</string>
+    <string name="an_tab_forecast">Forecast</string>
+    <string name="an_tab_habits">Habits</string>
+    <string name="an_tab_categories">Categories</string>
+    <string name="an_tab_year">Year</string>
+    <string name="an_budget_line">Budget %s</string>
+
+    <string name="an_fc_empty">Record a few days and the forecast appears here.</string>
+    <string name="an_fc_heading">At this pace the month ends at about</string>
+    <string name="an_fc_heading_past">This month you spent</string>
+    <string name="an_fc_range">Likely %1$s – %2$s · spent %3$s so far (day %4$d of %5$d)</string>
+    <string name="an_fc_past_sub">%s a day on average</string>
+    <string name="an_fc_budget">Budget</string>
+    <string name="an_fc_budget_change">Change</string>
+    <string name="an_fc_budget_set">Set one</string>
+    <string name="an_fc_no_budget">With a monthly budget this shows how much is left per day and when it would run out.</string>
+    <string name="an_fc_pace">Spending so far</string>
+    <string name="an_fc_actual">Spent</string>
+    <string name="an_fc_projected">Forecast</string>
+    <string name="an_fc_rate">Based on about %s a day</string>
+    <string name="an_fc_oneoffs">; one-off big expenses (%s) are not extrapolated</string>
+    <string name="an_fc_budget_of">%1$s of %2$s</string>
+    <string name="an_fc_keep">You should end %s under budget</string>
+    <string name="an_fc_kept">Ended %s under budget</string>
+    <string name="an_fc_over">Heading %s over budget</string>
+    <string name="an_fc_was_over">Went %s over budget</string>
+    <string name="an_fc_safe">Up to %s a day keeps you within budget</string>
+    <string name="an_fc_used_up">The budget is used up for this month</string>
+    <string name="an_fc_run_out">At this pace the budget runs out around %s</string>
+    <string name="an_fc_run_out_sub">Spending about %s a day</string>
+    <string name="an_fc_ahead">Looking ahead</string>
+    <string name="an_fc_next">%1$s will likely cost about %2$s</string>
+    <string name="an_fc_next_sub">Weighted average of the last three months, recent ones count more</string>
+    <string name="an_fc_wish_none">%s needs a month with money left over</string>
+    <string name="an_fc_wish_none_sub">No surplus in the last three months yet</string>
+    <string name="an_fc_wish_sub">Keeping about %1$s a month; %2$s still to go</string>
+
+    <string name="an_hb_days">%d days</string>
+    <string name="an_hb_year">1 year</string>
+    <string name="an_hb_empty">No spending in this period.</string>
+    <string name="an_hb_rhythm">Rhythm</string>
+    <string name="an_hb_per_day">Entries per day</string>
+    <string name="an_hb_total">Expenses</string>
+    <string name="an_hb_no_spend">No-spend days</string>
+    <string name="an_hb_longest">Longest no-spend run</string>
+    <string name="an_hb_weekdays">By weekday</string>
+    <string name="an_hb_weekday_top">You spend most on %1$s: %2$s on average</string>
+    <string name="an_hb_weekend">Weekend %1$s a day, weekdays %2$s</string>
+    <string name="an_hb_weekend_more">Weekends cost %d%% more</string>
+    <string name="an_hb_weekday_more">Weekdays cost %d%% more</string>
+    <string name="an_hb_hours">By hour</string>
+    <string name="an_hb_hour_top">Most often around %d:00</string>
+    <string name="an_hb_hour_tip">%1$d:00 · %2$d · %3$s</string>
+    <string name="an_hb_noon">%d%% of expenses happen around lunch (11–14)</string>
+    <string name="an_hb_amounts">Amount sizes</string>
+    <string name="an_hb_median">Half of your expenses are below %s</string>
+    <string name="an_hb_below">under %s</string>
+    <string name="an_hb_above">%s +</string>
+    <string name="an_hb_small_share">%1$d%% of expenses are under %2$s</string>
+    <string name="an_hb_small_sum">Together %s</string>
+
+    <string name="an_ct_empty">No spending in the last six months.</string>
+    <string name="an_ct_alerts">Compared with usual</string>
+    <string name="an_ct_paced_note">This month is scaled to a full month by the days so far.</string>
+    <string name="an_ct_no_history">Record one or two more months to compare with usual.</string>
+    <string name="an_ct_all_normal">Every category is about as usual</string>
+    <string name="an_ct_up">%1$s: %2$s× usual</string>
+    <string name="an_ct_down">%1$s: %2$d%% less than usual</string>
+    <string name="an_ct_vs">This month ≈ %1$s, usually %2$s</string>
+    <string name="an_ct_tap">Tap for monthly bars</string>
+    <string name="an_ct_six">Last 6 months</string>
+    <string name="an_ct_usual">Usually %s a month</string>
+    <string name="an_ct_new">New this month</string>
+
+    <string name="an_yr_title">%d</string>
+    <string name="an_yr_spent">Spent this year</string>
+    <string name="an_yr_line">Income %1$s · kept %2$s</string>
+    <string name="an_yr_rate">saved %d%%</string>
+    <string name="an_yr_empty">Nothing recorded in %d.</string>
+    <string name="an_yr_heat">Every day of the year</string>
+    <string name="an_yr_heat_hint">Darker = more spent. Tap a square to see the day.</string>
+    <string name="an_yr_day">%1$s: %2$s</string>
+    <string name="an_yr_months">Month by month</string>
+    <string name="an_yr_month_line">Spent %1$s · income %2$s · kept %3$s</string>
+    <string name="an_yr_recap">Recap</string>
+    <string name="an_yr_most">Biggest month: %1$s, %2$s</string>
+    <string name="an_yr_least">Lightest month: %1$s, %2$s</string>
+    <string name="an_fun_title">Just for fun</string>
+    <string name="an_fun_sub">Projections from the last 90 days</string>
+    <string name="an_fun_year">At this year\'s pace the whole year comes to about %s</string>
+    <string name="an_fun_note">\"%1$s\" adds up to about %2$s a year</string>
+    <string name="an_fun_small">Small spends under %1$s add up to about %2$s a year</string>
+    <string name="an_fun_save">Spend %1$s less a day and you keep %2$s more a year</string>
+
+    <!-- widgets -->
+    <string name="widget_today_short"></string>
+    <string name="widget_per_day">%s/day left</string>
+    <string name="widget_budget_gone">Budget used up</string>
+
+    <plurals name="set_missing_short">
+        <item quantity="one">%d missing</item>
+        <item quantity="other">%d missing</item>
+    </plurals>
+    <plurals name="an_fc_days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <plurals name="an_fc_wish">
+        <item quantity="one">%1$s: about %2$d month to go</item>
+        <item quantity="other">%1$s: about %2$d months to go</item>
+    </plurals>
+    <plurals name="an_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="an_hb_night">
+        <item quantity="one">%d expense late at night (22:00–05:00)</item>
+        <item quantity="other">%d expenses late at night (22:00–05:00)</item>
+    </plurals>
+    <plurals name="an_yr_active">
+        <item quantity="one">Records on %d day</item>
+        <item quantity="other">Records on %d days</item>
+    </plurals>
+    <plurals name="an_yr_kept_months">
+        <item quantity="one">%d month ended with money left over</item>
+        <item quantity="other">%d months ended with money left over</item>
+    </plurals>
+    <plurals name="an_fun_note_sub">
+        <item quantity="one">%1$d time in 90 days, %2$s</item>
+        <item quantity="other">%1$d times in 90 days, %2$s</item>
+    </plurals>
+    <plurals name="an_fun_small_sub">
+        <item quantity="one">%1$d expense in 90 days, %2$s</item>
+        <item quantity="other">%1$d expenses in 90 days, %2$s</item>
+    </plurals>
+</resources>

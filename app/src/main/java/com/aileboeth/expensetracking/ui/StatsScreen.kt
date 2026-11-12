@@ -91,23 +91,57 @@ private fun change(cur: Long, prev: Long): String = when {
 @Composable
 private fun changeText(cur: Long, prev: Long): String = change(cur, prev).let { if (it == NEW) stringResource(R.string.stat_new) else it }
 
+/** One line per analysis tab for the overview tiles, worked out from the last 13 months. */
+private data class Teaser(
+    val projected: Long? = null,
+    val budget: Long = 0,
+    val topWeekday: Int? = null,
+    val anomaly: com.aileboeth.expensetracking.data.CategoryTrend? = null,
+    val hasHistory: Boolean = false,
+    val yearSpent: Long = 0,
+)
+
+private fun teaser(ctx: android.content.Context, month: YearMonth): Teaser {
+    val hist = Repo.listRange(monthRange(month.minusMonths(12)).first, monthRange(month).second)
+    val budget = com.aileboeth.expensetracking.data.Prefs(ctx).budgetCents
+    val running = month == YearMonth.now()
+    val fc = if (running) {
+        val prev = hist.filter { val m = YearMonth.from(localDate(it.time)); m >= month.minusMonths(3) && m < month }
+        com.aileboeth.expensetracking.data.Analysis.forecast(hist.filter { YearMonth.from(localDate(it.time)) == month }, prev, month, budget)
+    } else null
+    val end = if (running) LocalDate.now() else month.atEndOfMonth()
+    val h = com.aileboeth.expensetracking.data.Analysis.habits(hist, end.minusDays(89), end)
+    val trends = com.aileboeth.expensetracking.data.Analysis.categoryTrends(hist, month)
+    return Teaser(
+        projected = fc?.takeIf { it.spent > 0 }?.projected,
+        budget = budget,
+        topWeekday = if (h.count >= 5) h.weekdayAvg.indices.maxBy { h.weekdayAvg[it] } else null,
+        anomaly = com.aileboeth.expensetracking.data.Analysis.anomalies(trends).firstOrNull(),
+        hasHistory = trends.any { it.usual > 0 },
+        yearSpent = hist.filter { it.type == TxType.EXPENSE && it.status == com.aileboeth.expensetracking.data.Status.OK && localDate(it.time).year == month.year }
+            .sumOf { it.amountCents ?: 0 },
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(padding: PaddingValues, openRecap: (YearMonth) -> Unit = {}) {
+fun StatsScreen(
+    padding: PaddingValues,
+    openRecap: (YearMonth) -> Unit = {},
+    openAnalysis: (YearMonth, Int) -> Unit = { _, _ -> },
+) {
     var month by remember { mutableStateOf(YearMonth.now()) }
     var type by remember { mutableStateOf(TxType.EXPENSE) }
     var selectedDay by remember(month) { mutableStateOf<Int?>(null) }
-    var span by remember { mutableIntStateOf(6) }
-    var trendSel by remember(span, month) { mutableStateOf<Int?>(null) }
     var editing by remember { mutableStateOf<Tx?>(null) }
+    val ctx = LocalContext.current
 
     val range = monthRange(month)
     val prevMonth = month.minusMonths(1)
     val prevRange = monthRange(prevMonth)
     val txs = repoQuery(month, initial = emptyList<Tx>()) { Repo.listRange(range.first, range.second) }
     val prevTxs = repoQuery(month, initial = emptyList<Tx>()) { Repo.listRange(prevRange.first, prevRange.second) }
-    val trendFirst = month.minusMonths((span - 1).toLong())
-    val trendTxs = repoQuery(month, span, initial = emptyList<Tx>()) { Repo.listRange(monthRange(trendFirst).first, range.second) }
+    val tz = repoQuery(month, initial = Teaser()) { teaser(ctx, month) }
 
     val color = if (type == TxType.EXPENSE) ExpenseRed else IncomeGreen
     val picked = txs.filter { it.type == type }
@@ -133,8 +167,13 @@ fun StatsScreen(padding: PaddingValues, openRecap: (YearMonth) -> Unit = {}) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { MonthBar(month) { month = it } }
+        item {
+            val exp = txs.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
+            val inc = txs.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
+            OverviewCard(month, exp, inc, tz) { openAnalysis(month, TAB_FORECAST) }
+        }
+        item { AnalysisTiles(month, tz) { openAnalysis(month, it) } }
         if (txs.count { it.type == TxType.EXPENSE } >= 3) item {
-            val ctx = LocalContext.current
             androidx.compose.material3.Surface(
                 onClick = { openRecap(month) }, shape = RoundedCornerShape(20.dp), shadowElevation = 1.dp,
                 color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth(),
@@ -267,40 +306,116 @@ fun StatsScreen(padding: PaddingValues, openRecap: (YearMonth) -> Unit = {}) {
             }
         }
 
-        // 5. months trend
+        // 5. more
         item {
-            val months = (0 until span).map { trendFirst.plusMonths(it.toLong()) }
-            val exp = months.map { m -> trendTxs.filter { it.type == TxType.EXPENSE && sameMonth(it, m) }.sumOf { it.amountCents ?: 0 } }
-            val inc = months.map { m -> trendTxs.filter { it.type == TxType.INCOME && sameMonth(it, m) }.sumOf { it.amountCents ?: 0 } }
-            SoftCard {
-                SectionTitle(stringResource(R.string.stat_last_n_months, span)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FilterChip(span == 6, { span = 6 }, label = { Text(stringResource(R.string.stat_n_months, 6)) })
-                        FilterChip(span == 12, { span = 12 }, label = { Text(stringResource(R.string.stat_n_months, 12)) })
-                    }
-                }
-                TrendChart(months.map { Labels.monthShort(LocalContext.current, it) }, exp, inc, trendSel, { trendSel = it })
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Legend(ExpenseRed, stringResource(R.string.expense))
-                    Spacer(Modifier.width(16.dp))
-                    Legend(IncomeGreen, stringResource(R.string.income))
-                }
-                Spacer(Modifier.height(8.dp))
-                val active = months.indices.filter { exp[it] > 0 || inc[it] > 0 }
-                if (active.isNotEmpty()) {
-                    val avgE = active.sumOf { exp[it] } / active.size
-                    val avgI = active.sumOf { inc[it] } / active.size
-                    val most = active.maxBy { exp[it] }
-                    Text(
-                        stringResource(R.string.stat_trend_summary, Money.money(avgE), Money.money(avgI), Labels.monthShort(LocalContext.current, months[most]), Money.money(exp[most])),
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            TextButton({ openAnalysis(month, TAB_YEAR) }, Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.stat_more_analysis))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, modifier = Modifier.size(18.dp))
             }
         }
     }
 
     editing?.let { tx -> TxEditor(initial = tx, onDone = { editing = null }) }
+}
+
+/** The month at a glance: spent / earned / kept, the month-end forecast and the budget bar. */
+@Composable
+private fun OverviewCard(month: YearMonth, expense: Long, income: Long, tz: Teaser, onClick: () -> Unit) {
+    val white = Color.White
+    val soft = Color.White.copy(alpha = 0.8f)
+    Box(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(HeaderBrush).clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 16.dp),
+    ) {
+        Column {
+            Row {
+                for ((label, value) in listOf(
+                    stringResource(R.string.expense) to expense,
+                    stringResource(R.string.income) to income,
+                    stringResource(R.string.stat_balance) to income - expense,
+                )) {
+                    Column(Modifier.weight(1f)) {
+                        Text(label, color = soft, style = MaterialTheme.typography.labelMedium)
+                        Text((if (value < 0) "-" else "") + Money.sym + shortYuan(kotlin.math.abs(value)),
+                            color = white, fontWeight = FontWeight.Bold, fontSize = 20.sp, maxLines = 1)
+                    }
+                }
+            }
+            if (tz.projected != null && month == YearMonth.now()) {
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(white.copy(alpha = 0.16f)).padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("🔮", fontSize = 16.sp)
+                    Text(
+                        "  " + stringResource(R.string.stat_forecast, Money.money(tz.projected)) + when {
+                            tz.budget <= 0 -> ""
+                            tz.projected > tz.budget -> " · " + stringResource(R.string.stat_forecast_over, Money.money(tz.projected - tz.budget))
+                            else -> " · " + stringResource(R.string.stat_forecast_ok)
+                        },
+                        color = white, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), maxLines = 2,
+                    )
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = soft, modifier = Modifier.size(18.dp))
+                }
+            }
+            if (tz.budget > 0) {
+                val ratio = expense.toFloat() / tz.budget
+                Spacer(Modifier.height(10.dp))
+                LinearProgressIndicator(
+                    progress = { ratio.coerceIn(0f, 1f) }, color = if (ratio >= 1f) Color(0xFFFFB4A8) else white,
+                    trackColor = white.copy(alpha = 0.25f), strokeCap = StrokeCap.Round, gapSize = 0.dp, drawStopIndicator = {},
+                    modifier = Modifier.fillMaxWidth().height(6.dp),
+                )
+                Text(stringResource(R.string.stat_budget_used, (ratio * 100).toInt(), Money.money(tz.budget)), color = soft,
+                    style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 4.dp))
+            }
+        }
+    }
+}
+
+/** Four tiles into the analysis tabs, each with one finding as a teaser. */
+@Composable
+private fun AnalysisTiles(month: YearMonth, tz: Teaser, open: (Int) -> Unit) {
+    val ctx = LocalContext.current
+    val tiles = listOf(
+        Triple("🔮", stringResource(R.string.an_tab_forecast), when {
+            tz.projected != null -> stringResource(R.string.tile_forecast, Money.sym + shortYuan(tz.projected))
+            else -> stringResource(R.string.tile_forecast_none)
+        }),
+        Triple("🗓️", stringResource(R.string.an_tab_habits), tz.topWeekday?.let { stringResource(R.string.tile_habits, Labels.weekdayShort(ctx, it)) }
+            ?: stringResource(R.string.tile_habits_none)),
+        Triple("📊", stringResource(R.string.an_tab_categories), tz.anomaly?.let { a ->
+            if (a.paced > a.usual) stringResource(R.string.tile_cat_up, catName(a.category)) else stringResource(R.string.tile_cat_down, catName(a.category))
+        } ?: stringResource(if (tz.hasHistory) R.string.tile_cat_ok else R.string.tile_cat_none)),
+        Triple("📅", stringResource(R.string.an_tab_year), stringResource(R.string.tile_year, month.year, Money.sym + shortYuan(tz.yearSpent))),
+    )
+    SoftCard(padding = 12.dp) {
+        SectionTitle(stringResource(R.string.an_title), Modifier.padding(start = 4.dp, bottom = 8.dp)) {
+            Text(stringResource(R.string.stat_tap_more), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            tiles.chunked(2).forEachIndexed { r, row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEachIndexed { c, (emoji, title, sub) ->
+                        val i = r * 2 + c
+                        Column(
+                            Modifier.weight(1f).clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f))
+                                .clickable { open(i) }.padding(horizontal = 12.dp, vertical = 10.dp),
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(emoji, fontSize = 18.sp)
+                                Text("  $title", fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            }
+                            Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2, minLines = 2, modifier = Modifier.padding(top = 4.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /** Under an expanded category: how much went to each note (午饭 / 奶茶 / …). */

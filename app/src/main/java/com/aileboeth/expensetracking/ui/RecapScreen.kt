@@ -14,8 +14,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -112,6 +112,17 @@ fun RecapScreen(month: YearMonth, onBack: () -> Unit) {
         HorizontalPager(pager, Modifier.fillMaxSize()) { page ->
             Box(
                 Modifier.fillMaxSize()
+                    // Taps on the left / right third go back / forward like stories. This sits inside the pager
+                    // (not on top of it) so swiping still turns the pages.
+                    .pointerInput(Unit) {
+                        detectTapGestures { o ->
+                            when {
+                                o.x < size.width / 3f -> scope.launch { pager.animateScrollToPage((pager.currentPage - 1).coerceAtLeast(0)) }
+                                o.x > size.width * 2 / 3f ->
+                                    if (pager.currentPage == pages - 1) onBack() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
+                            }
+                        }
+                    }
                     .drawWithContent { layers[page].record { this@drawWithContent.drawContent() }; drawLayer(layers[page]) }
                     .background(Brush.linearGradient(BGS[page % BGS.size])),
             ) {
@@ -128,17 +139,6 @@ fun RecapScreen(month: YearMonth, onBack: () -> Unit) {
                 Text("Expense Tracking", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp,
                     modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 86.dp))
             }
-        }
-        // tap the left / right third to go back / forward, like stories
-        Row(Modifier.fillMaxSize().padding(top = 90.dp, bottom = 120.dp)) {
-            val none = remember { MutableInteractionSource() }
-            Box(Modifier.weight(1f).fillMaxHeight().clickable(none, null) {
-                scope.launch { pager.animateScrollToPage((pager.currentPage - 1).coerceAtLeast(0)) }
-            })
-            Spacer(Modifier.weight(1f))
-            Box(Modifier.weight(1f).fillMaxHeight().clickable(none, null) {
-                if (pager.currentPage == pages - 1) onBack() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
-            })
         }
         Column(Modifier.statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

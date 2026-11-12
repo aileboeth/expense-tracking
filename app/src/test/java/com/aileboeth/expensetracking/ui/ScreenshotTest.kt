@@ -20,6 +20,9 @@ import com.aileboeth.expensetracking.data.Tx
 import com.aileboeth.expensetracking.parse.TxType
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Assume.assumeTrue
+import com.aileboeth.expensetracking.widget.Widgets
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -67,6 +70,13 @@ class ScreenshotTest {
             Repo.insert(Tx(type = TxType.EXPENSE, amountCents = cents, category = cat, note = note,
                 channel = if (i % 2 == 0) "微信" else "支付宝", time = at(ago, 9 + i % 12, (i * 7) % 60), source = "auto", kind = "wechat_paid"))
         }
+        // a few earlier months so the trends, year view and forecast history have something to show
+        for (k in 2L..6L) for ((cat, cents, note) in listOf(Triple("餐饮", 2600L, "午饭"), Triple("餐饮", 1800L, "午饭"), Triple("零食饮料", 1500L, "奶茶"),
+            Triple("交通", 600L, "地铁"), Triple("购物", 9900L, ""), Triple("娱乐", 3500L, "电影"))) {
+            Repo.insert(Tx(type = TxType.EXPENSE, amountCents = cents + k * 100, category = cat, note = note, channel = "微信",
+                time = at(k * 30 + (cents % 17), 12 + (cents % 9).toInt(), 0)))
+        }
+        for (k in 1L..6L) Repo.insert(Tx(type = TxType.INCOME, amountCents = 400000, category = "工资", channel = "手动", time = at(k * 30 + 15, 10, 0)))
         Repo.insert(Tx(type = TxType.INCOME, amountCents = 120000, category = "兼职", note = "家教", channel = "支付宝", time = at(3, 20, 0)))
         Repo.insert(Tx(type = TxType.INCOME, amountCents = 400000, category = "工资", channel = "手动", time = at(45, 10, 0)))
         Repo.insert(Tx(type = TxType.EXPENSE, amountCents = null, channel = "微信", time = at(0, 18, 58),
@@ -95,7 +105,7 @@ class ScreenshotTest {
     }
 
     @Test fun settings() {
-        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp), onImport = {}) } }
+        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp)) } }
         compose.onRoot().captureRoboImage("build/screens/4-settings.png")
     }
 
@@ -224,7 +234,7 @@ class ScreenshotTest {
     @Config(qualifiers = "b+zh+Hant+TW-w393dp-h1900dp-xxhdpi")
     @Test fun settingsHant() {
         java.util.Locale.setDefault(java.util.Locale.TRADITIONAL_CHINESE)
-        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp), onImport = {}) } }
+        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp)) } }
         compose.onRoot().captureRoboImage("build/screens/21-settings-hant.png")
     }
 
@@ -299,22 +309,30 @@ class ScreenshotTest {
         compose.onRoot().captureRoboImage("build/screens/18-mascots.png")
     }
 
+    @Config(qualifiers = "w393dp-h1400dp-xxhdpi")
     @Test fun widgets() {
         checkIns()
         compose.setContent {
             AppTheme {
                 androidx.compose.foundation.layout.Column(
                     Modifier.background(androidx.compose.ui.graphics.Color(0xFF3A4A5A)).padding(16.dp),
-                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
+                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(14.dp),
                 ) {
-                    for ((k, w, h) in listOf(
-                        Triple(com.aileboeth.expensetracking.widget.Widgets.Kind.SUMMARY, 340, 180),
-                        Triple(com.aileboeth.expensetracking.widget.Widgets.Kind.TODAY, 160, 160),
-                        Triple(com.aileboeth.expensetracking.widget.Widgets.Kind.QUICK, 340, 70),
-                    )) androidx.compose.ui.viewinterop.AndroidView(
-                        { c -> com.aileboeth.expensetracking.widget.Widgets.preview(c, k).apply(c, android.widget.FrameLayout(c)) },
+                    @androidx.compose.runtime.Composable
+                    fun one(k: com.aileboeth.expensetracking.widget.Widgets.Kind, w: Int, h: Int) = androidx.compose.ui.viewinterop.AndroidView(
+                        { c -> Widgets.preview(c, k, Widgets.SizeDp(w, h)).apply(c, android.widget.FrameLayout(c)) },
                         Modifier.size(w.dp, h.dp),
                     )
+                    // the sizes a launcher may give: narrow-and-tall like the user's vivo, wide, short
+                    androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(14.dp)) {
+                        one(Widgets.Kind.SUMMARY, 180, 210)
+                        one(Widgets.Kind.TODAY, 150, 150)
+                    }
+                    one(Widgets.Kind.SUMMARY, 320, 250)
+                    one(Widgets.Kind.SUMMARY, 250, 170)
+                    one(Widgets.Kind.SUMMARY, 320, 110)
+                    one(Widgets.Kind.QUICK, 360, 56)
+                    one(Widgets.Kind.QUICK, 220, 56)
                 }
             }
         }
@@ -322,9 +340,57 @@ class ScreenshotTest {
         compose.onRoot().captureRoboImage("build/screens/19-widgets.png")
     }
 
+    @Config(qualifiers = "w393dp-h1000dp-xxhdpi")
+    @Test fun settingsSections() {
+        var sec by androidx.compose.runtime.mutableStateOf(SettingsSection.AUTO)
+        compose.setContent { AppTheme { SettingsSectionScreen(sec, {}) } }
+        for (s in SettingsSection.entries) {
+            sec = s
+            compose.waitForIdle()
+            compose.onRoot().captureRoboImage("build/screens/4c-settings-${s.ordinal}-${s.name.lowercase()}.png")
+        }
+    }
+
+    @Config(qualifiers = "w393dp-h2000dp-xxhdpi")
+    @Test fun analysis() {
+        checkIns()
+        var tab by androidx.compose.runtime.mutableIntStateOf(0)
+        compose.setContent { AppTheme { androidx.compose.runtime.key(tab) { AnalysisScreen(YearMonth.now(), tab, onBack = {}) } } }
+        for (t in 0..3) {
+            tab = t
+            compose.waitForIdle(); Thread.sleep(300); compose.waitForIdle()
+            compose.onRoot().captureRoboImage("build/screens/20-analysis-$t.png")
+        }
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h2000dp-xxhdpi")
+    @Test fun analysisZh() {
+        checkIns()
+        var tab by androidx.compose.runtime.mutableIntStateOf(0)
+        compose.setContent { AppTheme { androidx.compose.runtime.key(tab) { AnalysisScreen(YearMonth.now(), tab, onBack = {}) } } }
+        for (t in 0..3) {
+            tab = t
+            compose.waitForIdle(); Thread.sleep(300); compose.waitForIdle()
+            compose.onRoot().captureRoboImage("build/screens/20-analysis-zh-$t.png")
+        }
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h1000dp-xxhdpi")
+    @Test fun settingsZh() {
+        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp)) } }
+        compose.onRoot().captureRoboImage("build/screens/4d-settings-zh.png")
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h1600dp-xxhdpi")
+    @Test fun statsZh() {
+        compose.setContent { AppTheme { StatsScreen(PaddingValues(0.dp)) } }
+        compose.waitForIdle(); Thread.sleep(300); compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/2c-stats-zh.png")
+    }
+
     @Config(qualifiers = "w393dp-h1900dp-xxhdpi")
     @Test fun settingsFull() {
-        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp), onImport = {}) } }
+        compose.setContent { AppTheme { SettingsScreen(PaddingValues(0.dp)) } }
         compose.onRoot().captureRoboImage("build/screens/4b-settings-full.png")
     }
 }

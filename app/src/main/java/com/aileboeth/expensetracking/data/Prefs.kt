@@ -98,6 +98,38 @@ class Prefs(ctx: Context) {
         get() = p.getLong("focusWish", 0L)
         set(v) = p.edit().putLong("focusWish", v).apply()
 
+    // ---- fun & motion switches (settings → 趣味与动效); all on by default ----
+
+    /** The feather on the home header. */
+    var fxMascot: Boolean
+        get() = p.getBoolean("fxMascot", true)
+        set(v) = p.edit().putBoolean("fxMascot", v).apply()
+
+    /** Vibration on saves, swipes, drags and widget taps. */
+    var fxHaptics: Boolean
+        get() = p.getBoolean("fxHaptics", true)
+        set(v) = p.edit().putBoolean("fxHaptics", v).apply()
+
+    /** Confetti, the save check mark and rolling numbers. */
+    var fxMotion: Boolean
+        get() = p.getBoolean("fxMotion", true)
+        set(v) = p.edit().putBoolean("fxMotion", v).apply()
+
+    /** Streak + wish tiles under the home header. */
+    var fxFunRow: Boolean
+        get() = p.getBoolean("fxFunRow", true)
+        set(v) = p.edit().putBoolean("fxFunRow", v).apply()
+
+    /** "Your October recap" banner on the home screen in the first days of a month. */
+    var fxRecapBanner: Boolean
+        get() = p.getBoolean("fxRecapBanner", true)
+        set(v) = p.edit().putBoolean("fxRecapBanner", v).apply()
+
+    /** Pop-up with confetti when a badge is unlocked (badges are still collected when off). */
+    var fxBadgePopup: Boolean
+        get() = p.getBoolean("fxBadgePopup", true)
+        set(v) = p.edit().putBoolean("fxBadgePopup", v).apply()
+
     var autoUpdate: Boolean
         get() = p.getBoolean("autoUpdate", true)
         set(v) = p.edit().putBoolean("autoUpdate", v).apply()

@@ -47,6 +47,7 @@ import kotlin.random.Random
  */
 @Composable
 fun RollingText(text: String, up: Boolean, style: TextStyle, color: Color, modifier: Modifier = Modifier) {
+    if (!Fx.state.value.motion) { Text(text, style = style, color = color, maxLines = 1, modifier = modifier); return }
     Row(modifier) {
         val n = text.length
         text.forEachIndexed { i, ch ->
@@ -85,7 +86,7 @@ private val CONFETTI = listOf(
 /** A burst of confetti from [origin] (fractions of the box) whenever [trigger] changes. Draws nothing when done. */
 @Composable
 fun Confetti(trigger: Any?, modifier: Modifier = Modifier.fillMaxSize(), origin: Offset = Offset(0.5f, 0.35f), count: Int = 110) {
-    if (trigger == null) return
+    if (trigger == null || !Fx.state.value.motion) return
     val bits = remember(trigger) {
         List(count) {
             val a = Random.nextFloat() * 2f * PI.toFloat()
@@ -121,6 +122,7 @@ fun Confetti(trigger: Any?, modifier: Modifier = Modifier.fillMaxSize(), origin:
 /** A purple disc that pops in and draws a check mark; [onDone] after it has been seen. */
 @Composable
 fun SuccessCheck(onDone: () -> Unit, modifier: Modifier = Modifier) {
+    if (!Fx.state.value.motion) { LaunchedEffect(Unit) { onDone() }; return }
     val pop = remember { Animatable(0.3f) }
     val draw = remember { Animatable(0f) }
     LaunchedEffect(Unit) {

@@ -658,7 +658,7 @@ object Bubble {
     private fun save(t: Tx, category: String, note: String) {
         val updated = t.copy(category = category.ifBlank { OTHER }, note = note.trim(), status = Status.OK)
         Thread { Repo.update(updated); Repo.markActive() }.start()
-        card?.let { c ->
+        card?.takeIf { Prefs(it.context).fxHaptics }?.let { c ->
             c.performHapticFeedback(if (android.os.Build.VERSION.SDK_INT >= 30) android.view.HapticFeedbackConstants.CONFIRM else android.view.HapticFeedbackConstants.VIRTUAL_KEY)
         }
         queue.remove(t.id)

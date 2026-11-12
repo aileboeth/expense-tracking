@@ -165,8 +165,9 @@ fun HomeScreen(
             item {
                 HeaderCard(month, { month = it }, expense, income, budget, daily, mood, lines, openSearch) { budgetDialog = true }
             }
-            item { FunRow(fun_, openAchievements, openWish) }
-            fun_.recapMonth?.let { rm ->
+            val fx = Fx.state.value
+            if (fx.funRow) item { FunRow(fun_, openAchievements, openWish) }
+            fun_.recapMonth?.takeIf { fx.recapBanner }?.let { rm ->
                 item {
                     RecapBanner(rm, onOpen = { prefs.recapBannerDone = rm.toString(); openRecap(rm) }) {
                         prefs.recapBannerDone = rm.toString(); Repo.markActive()
@@ -388,7 +389,7 @@ private fun HeaderCard(
                 Text(stringResource(R.string.home_month_spent), color = soft, style = MaterialTheme.typography.labelLarge)
                 RollingMoney(expense, androidx.compose.ui.text.TextStyle(fontSize = 34.sp, fontWeight = FontWeight.Bold), white)
                }
-               Mascot(mood, lines, size = 62.dp)
+               if (Fx.state.value.mascot) Mascot(mood, lines, size = 62.dp)
               }
                 Row(Modifier.padding(top = 2.dp)) {
                     Text(stringResource(R.string.home_income, Money.money(income)), color = soft, style = MaterialTheme.typography.bodyMedium)

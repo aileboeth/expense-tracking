@@ -133,6 +133,15 @@ object Labels {
 
     fun weekday(ctx: Context, d: LocalDate): String = d.dayOfWeek.getDisplayName(TextStyle.SHORT, AppLocale.locale(ctx))
 
+    /** 周一 / Mon for index 0 = Monday. */
+    fun weekdayShort(ctx: Context, i: Int): String = java.time.DayOfWeek.of(i + 1).getDisplayName(TextStyle.SHORT, AppLocale.locale(ctx))
+
+    /** 星期一 / Monday. */
+    fun weekdayFull(ctx: Context, i: Int): String = java.time.DayOfWeek.of(i + 1).getDisplayName(TextStyle.FULL, AppLocale.locale(ctx))
+
+    /** 1月 / Jan for month 1..12. */
+    fun monthNarrow(ctx: Context, m: Int): String = monthShort(ctx, YearMonth.of(2000, m))
+
     /** 今天 / 昨天 / 11月7日. */
     fun day(ctx: Context, d: LocalDate): String = when (d) {
         LocalDate.now() -> ctx.getString(R.string.today)

@@ -10,8 +10,8 @@
 
     <ImageView
         android:id="@+id/widget_mascot"
-        android:layout_width="54dp"
-        android:layout_height="54dp"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
         android:contentDescription="@null"
         android:scaleType="fitCenter" />
 
@@ -33,6 +33,16 @@
         android:textColor="#FFFFFFFF"
         android:textSize="19sp"
         android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:text=""
+        android:textColor="#CCFFFFFF"
+        android:textSize="10sp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/widget_streak"

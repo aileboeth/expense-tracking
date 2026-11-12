@@ -65,10 +65,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         handle(intent)
         Shortcuts.publish(this)
+        Fx.load(this)
         setContent {
             AppTheme {
                 val counts = repoQuery(initial = emptyMap<Long, Int>()) { com.aileboeth.expensetracking.data.Repo.attachmentCounts() }
-                androidx.compose.runtime.CompositionLocalProvider(LocalAttachCounts provides counts) { AppRoot(requests) }
+                FxProvider {
+                    androidx.compose.runtime.CompositionLocalProvider(LocalAttachCounts provides counts) { AppRoot(requests) }
+                }
             }
         }
     }
@@ -116,21 +119,27 @@ private sealed interface Overlay {
     data object Achievements : Overlay
     data object Wish : Overlay
     data class Recap(val month: java.time.YearMonth) : Overlay
+    data class Analysis(val month: java.time.YearMonth, val tab: Int = 0) : Overlay
+    data class Settings(val section: SettingsSection) : Overlay
 }
 
 @Composable
 private fun AppRoot(req: Requests) {
     val ctx = LocalContext.current
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    var overlay by remember { mutableStateOf<Overlay?>(null) }
+    // Pages opened on top of the tabs; back pops one (a settings category → its blacklist page → back to the category).
+    var stack by remember { mutableStateOf(listOf<Overlay>()) }
+    val overlay = stack.lastOrNull()
+    fun open(o: Overlay) { stack = stack + o }
+    fun back() { stack = stack.dropLast(1) }
     // Lives here so the settings list keeps its scroll position while a sub-page is open.
     val settingsList = androidx.compose.foundation.lazy.rememberLazyListState()
     LaunchedEffect(Unit) { Updater.autoCheck(ctx) }
-    LaunchedEffect(req.add.value, req.fill.value) { if (req.add.value != null || req.fill.value != null) { overlay = null; tab = 0 } }
-    LaunchedEffect(req.search.value) { if (req.search.value) { overlay = Overlay.Search; req.search.value = false } }
-    // The capsule's "✎ 改" opens the usual-amounts page; back from it lands on settings.
+    LaunchedEffect(req.add.value, req.fill.value) { if (req.add.value != null || req.fill.value != null) { stack = emptyList(); tab = 0 } }
+    LaunchedEffect(req.search.value) { if (req.search.value) { stack = listOf(Overlay.Search); req.search.value = false } }
+    // The capsule's "✎ 改" opens the usual-amounts page; back from it lands on the capsule settings.
     LaunchedEffect(req.usual.value) {
-        if (req.usual.value) { tab = 2; overlay = Overlay.UsualAmounts; req.usual.value = false }
+        if (req.usual.value) { tab = 2; stack = listOf(Overlay.Settings(SettingsSection.CAPSULE), Overlay.UsualAmounts); req.usual.value = false }
     }
 
     // Badges: re-checked a moment after the data changes; new ones get a little party.
@@ -142,23 +151,44 @@ private fun AppRoot(req: Requests) {
             runCatching { com.aileboeth.expensetracking.data.Achievements.check(ctx) }
             com.aileboeth.expensetracking.data.Repo.unseenBadges()
         }
-        if (fresh.isNotEmpty() && celebrate.isEmpty()) celebrate = fresh
+        if (fresh.isNotEmpty() && celebrate.isEmpty()) {
+            // With the pop-up switched off the badges are still collected, just quietly.
+            if (Fx.flags.badgePopup) celebrate = fresh
+            else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.aileboeth.expensetracking.data.Repo.markBadgesSeen() }
+        }
     }
 
     when (val o = overlay) {
-        Overlay.Achievements -> AchievementsScreen(onBack = { overlay = null })
-        Overlay.Wish -> WishJarScreen(onBack = { overlay = null })
-        is Overlay.Recap -> RecapScreen(o.month, onBack = { overlay = null })
-        Overlay.Search -> SearchScreen(onBack = { overlay = null })
-        Overlay.BlacklistApps -> BlacklistAppsScreen(onBack = { overlay = null })
-        Overlay.BlacklistWords -> BlacklistWordsScreen(onBack = { overlay = null })
-        Overlay.Log -> RecognitionLogScreen(onBack = { overlay = null })
-        Overlay.Categories -> CategoriesScreen(onBack = { overlay = null })
-        Overlay.UsualAmounts -> UsualAmountsScreen(onBack = { overlay = null })
-        Overlay.Rules -> CategoryRulesScreen(onBack = { overlay = null })
-        Overlay.Stability -> StabilityScreen(onBack = { overlay = null })
-        Overlay.PayApps -> PaymentAppsScreen(onBack = { overlay = null })
-        is Overlay.Import -> ImportScreen(o.uri, onBack = { overlay = null })
+        Overlay.Achievements -> AchievementsScreen(onBack = ::back)
+        Overlay.Wish -> WishJarScreen(onBack = ::back)
+        is Overlay.Recap -> RecapScreen(o.month, onBack = ::back)
+        is Overlay.Analysis -> AnalysisScreen(o.month, o.tab, onBack = ::back, openRecap = { open(Overlay.Recap(it)) }, openWish = { open(Overlay.Wish) })
+        Overlay.Search -> SearchScreen(onBack = ::back)
+        Overlay.BlacklistApps -> BlacklistAppsScreen(onBack = ::back)
+        Overlay.BlacklistWords -> BlacklistWordsScreen(onBack = ::back)
+        Overlay.Log -> RecognitionLogScreen(onBack = ::back)
+        Overlay.Categories -> CategoriesScreen(onBack = ::back)
+        Overlay.UsualAmounts -> UsualAmountsScreen(onBack = ::back)
+        Overlay.Rules -> CategoryRulesScreen(onBack = ::back)
+        Overlay.Stability -> StabilityScreen(onBack = ::back)
+        Overlay.PayApps -> PaymentAppsScreen(onBack = ::back)
+        is Overlay.Import -> ImportScreen(o.uri, onBack = ::back)
+        is Overlay.Settings -> SettingsSectionScreen(
+            o.section, onBack = ::back,
+            nav = SettingsNav(
+                import = { open(Overlay.Import(it)) },
+                blacklist = { open(Overlay.BlacklistApps) },
+                words = { open(Overlay.BlacklistWords) },
+                log = { open(Overlay.Log) },
+                categories = { open(Overlay.Categories) },
+                rules = { open(Overlay.Rules) },
+                stability = { open(Overlay.Stability) },
+                usual = { open(Overlay.UsualAmounts) },
+                payApps = { open(Overlay.PayApps) },
+                achievements = { open(Overlay.Achievements) },
+                wish = { open(Overlay.Wish) },
+            ),
+        )
         null -> Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
@@ -173,27 +203,23 @@ private fun AppRoot(req: Requests) {
                 0 -> HomeScreen(
                     padding,
                     openSettings = { tab = 2 },
-                    openSearch = { overlay = Overlay.Search },
+                    openSearch = { open(Overlay.Search) },
                     addRequested = req.add.value,
                     onAddHandled = { req.add.value = null },
                     fillRequested = req.fill.value,
                     onFillHandled = { req.fill.value = null },
-                    openAchievements = { overlay = Overlay.Achievements },
-                    openWish = { overlay = Overlay.Wish },
-                    openRecap = { overlay = Overlay.Recap(it) },
+                    openAchievements = { open(Overlay.Achievements) },
+                    openWish = { open(Overlay.Wish) },
+                    openRecap = { open(Overlay.Recap(it)) },
                 )
-                1 -> StatsScreen(padding, openRecap = { overlay = Overlay.Recap(it) })
+                1 -> StatsScreen(
+                    padding,
+                    openRecap = { open(Overlay.Recap(it)) },
+                    openAnalysis = { m, t -> open(Overlay.Analysis(m, t)) },
+                )
                 else -> SettingsScreen(
                     padding,
-                    onImport = { overlay = Overlay.Import(it) },
-                    openBlacklist = { overlay = Overlay.BlacklistApps },
-                    openWords = { overlay = Overlay.BlacklistWords },
-                    openLog = { overlay = Overlay.Log },
-                    openCategories = { overlay = Overlay.Categories },
-                    openRules = { overlay = Overlay.Rules },
-                    openStability = { overlay = Overlay.Stability },
-                    openPayApps = { overlay = Overlay.PayApps },
-                    openUsual = { overlay = Overlay.UsualAmounts },
+                    openSection = { open(Overlay.Settings(it)) },
                     listState = settingsList,
                 )
             }

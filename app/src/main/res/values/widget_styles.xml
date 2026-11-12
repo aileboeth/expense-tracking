@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- A usual-amount button on the widgets: tap = one entry. -->
+    <!-- A usual-amount button on the widgets: tap = one entry. Text shrinks to fit instead of being cut. -->
     <style name="WidgetChip">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">match_parent</item>
@@ -9,8 +9,13 @@
         <item name="android:background">@drawable/widget_btn</item>
         <item name="android:gravity">center</item>
         <item name="android:maxLines">1</item>
+        <item name="android:paddingStart">3dp</item>
+        <item name="android:paddingEnd">3dp</item>
         <item name="android:textColor">#FFFFFFFF</item>
         <item name="android:textSize">13sp</item>
+        <item name="android:autoSizeTextType">uniform</item>
+        <item name="android:autoSizeMinTextSize">9sp</item>
+        <item name="android:autoSizeMaxTextSize">13sp</item>
         <item name="android:textStyle">bold</item>
     </style>
 </resources>

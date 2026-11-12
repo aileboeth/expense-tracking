@@ -103,7 +103,7 @@ class DocsScreenshotTest {
     @Config(qualifiers = "zh-rCN-w393dp-h873dp-xxhdpi")
     @Test fun zhSettings() {
         seed(Locale.SIMPLIFIED_CHINESE, "CNY")
-        shoot("screen-settings") { SettingsScreen(PaddingValues(0.dp), onImport = {}) }
+        shoot("screen-settings") { SettingsScreen(PaddingValues(0.dp)) }
     }
 
     @Config(qualifiers = "en-rUS-w393dp-h873dp-xxhdpi")
@@ -121,6 +121,6 @@ class DocsScreenshotTest {
     @Config(qualifiers = "en-rUS-w393dp-h873dp-xxhdpi")
     @Test fun enSettings() {
         seed(Locale.US, "USD")
-        shoot("screen-settings-en") { SettingsScreen(PaddingValues(0.dp), onImport = {}) }
+        shoot("screen-settings-en") { SettingsScreen(PaddingValues(0.dp)) }
     }
 }
