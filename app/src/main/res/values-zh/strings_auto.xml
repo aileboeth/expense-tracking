@@ -30,6 +30,9 @@
     <string name="fa_samples_send">发送屏幕样本</string>
     <string name="fa_samples_send_sub">%d 条，发送前可以先打开看看</string>
     <string name="fa_samples_clear">清空屏幕样本</string>
+    <string name="fa_samples_clear_title">删除屏幕样本？</string>
+    <string name="fa_samples_clear_body">%d 条样本会被删掉，删了不能恢复。还没发送的话，先点「发送屏幕样本」。</string>
+    <string name="fa_samples_clear_ok">删除</string>
     <string name="fa_samples_cleared">已清空</string>
     <string name="fa_samples_none">还没有样本：打开开关后，去微信、支付宝的付款页面和消息里转一圈</string>
     <string name="fa_recent">最近读到</string>

@@ -38,6 +38,8 @@ object ScreenLink {
     private val events = ArrayDeque<Event>()
     fun events(): List<Event> = synchronized(events) { events.toList().asReversed() }
     @Volatile var lastWindow: Pair<Long, String>? = null
+    /** What the last WeChat / Alipay read found, for "timed out" messages: lines, money-looking lines, payments understood. */
+    @Volatile var lastScan = ""
 
     fun note(text: String) = synchronized(events) {
         events.addLast(Event(System.currentTimeMillis(), text))
@@ -65,6 +67,9 @@ object ScreenLink {
         trim(now)
         if (Prefs(ctx).screenSamples && ScreenParser.looksLikeMoney(lines)) ScreenSamples.add(ctx, pkg, lines, now)
         val seen = ScreenParser.read(pkg, lines, now)
+        val moneyLines = lines.count { ScreenParser.looksLikeMoney(listOf(it)) }
+        lastScan = "${if (pkg == com.aileboeth.expensetracking.parse.Parser.ALIPAY) "支付宝" else "微信"}画面 ${lines.size} 行，像金额的 $moneyLines 行，认出 ${seen.size} 笔" +
+            (if (seen.isNotEmpty()) "（${seen.joinToString("、") { it.kind.removePrefix("screen_") + " " + it.amountCents }}）" else "")
         if (seen.isEmpty()) return
         val recent = Repo.listAll(now - ScreenMatch.FILL_WINDOW - 3600_000L, now + 60_000L)
 

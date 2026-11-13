@@ -30,6 +30,9 @@
     <string name="fa_samples_send">傳送螢幕樣本</string>
     <string name="fa_samples_send_sub">%d 條，傳送前可以先開啟看看</string>
     <string name="fa_samples_clear">清空螢幕樣本</string>
+    <string name="fa_samples_clear_title">刪除螢幕樣本？</string>
+    <string name="fa_samples_clear_body">%d 條樣本會被刪掉，刪了不能恢復。還沒傳送的話，先點「傳送螢幕樣本」。</string>
+    <string name="fa_samples_clear_ok">刪除</string>
     <string name="fa_samples_cleared">已清空</string>
     <string name="fa_samples_none">還沒有樣本：開啟開關後，去微信、支付寶的付款頁面和訊息裡轉一圈</string>
     <string name="fa_recent">最近讀到</string>

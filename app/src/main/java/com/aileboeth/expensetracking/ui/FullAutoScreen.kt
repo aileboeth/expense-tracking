@@ -78,6 +78,21 @@ fun FullAutoScreen(onBack: () -> Unit) {
     var samples by remember { mutableStateOf(prefs.screenSamples) }
     val sampleCount = remember(tick, samples) { ScreenSamples.count(ctx) }
     val fmt = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+    /** "clear" / "off" while the delete-samples question is open. */
+    var confirm by remember { mutableStateOf("") }
+    if (confirm.isNotEmpty()) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { confirm = "" },
+        title = { Text(stringResource(R.string.fa_samples_clear_title)) },
+        text = { Text(stringResource(R.string.fa_samples_clear_body, sampleCount)) },
+        confirmButton = {
+            androidx.compose.material3.TextButton({
+                if (confirm == "off") { samples = false; prefs.screenSamples = false }
+                ScreenSamples.clear(ctx); confirm = ""; tick++
+                Toast.makeText(ctx, ctx.getString(R.string.fa_samples_cleared), Toast.LENGTH_SHORT).show()
+            }) { Text(stringResource(R.string.fa_samples_clear_ok), color = ExpenseRed) }
+        },
+        dismissButton = { androidx.compose.material3.TextButton({ confirm = "" }) { Text(stringResource(R.string.cancel)) } },
+    )
 
     SubPage(stringResource(R.string.fa_title), onBack) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp)) {
@@ -149,8 +164,8 @@ fun FullAutoScreen(onBack: () -> Unit) {
                     },
                     {
                         SettingSwitch(Icons.Filled.Science, Tint.Teal, stringResource(R.string.fa_samples), stringResource(R.string.fa_samples_sub), samples) {
-                            samples = it; prefs.screenSamples = it
-                            if (!it) ScreenSamples.clear(ctx)
+                            // Turning it off deletes the samples: ask first when there are some.
+                            if (!it && sampleCount > 0) confirm = "off" else { samples = it; prefs.screenSamples = it }
                         }
                     },
                     if (samples || sampleCount > 0) {
@@ -168,8 +183,7 @@ fun FullAutoScreen(onBack: () -> Unit) {
                     if (sampleCount > 0) {
                         {
                             SettingRow(Icons.Filled.DeleteSweep, Tint.Red, stringResource(R.string.fa_samples_clear), null, { }) {
-                                ScreenSamples.clear(ctx); tick++
-                                Toast.makeText(ctx, ctx.getString(R.string.fa_samples_cleared), Toast.LENGTH_SHORT).show()
+                                confirm = "clear"
                             }
                         }
                     } else null,

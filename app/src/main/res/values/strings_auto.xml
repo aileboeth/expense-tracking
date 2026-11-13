@@ -30,6 +30,9 @@
     <string name="fa_samples_send">Send screen samples</string>
     <string name="fa_samples_send_sub">Screens kept: %d. You can open the file before sending</string>
     <string name="fa_samples_clear">Clear screen samples</string>
+    <string name="fa_samples_clear_title">Delete screen samples?</string>
+    <string name="fa_samples_clear_body">%d samples will be deleted and cannot be restored. If you have not sent them yet, tap \"Send screen samples\" first.</string>
+    <string name="fa_samples_clear_ok">Delete</string>
     <string name="fa_samples_cleared">Cleared</string>
     <string name="fa_samples_none">No samples yet: turn it on, then look around the payment pages and messages in WeChat and Alipay</string>
     <string name="fa_recent">Recently read</string>

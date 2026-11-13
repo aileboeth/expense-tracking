@@ -162,7 +162,7 @@ object AutoFetch {
     private var running: Job? = null
     private const val EXPIRE = 3 * 3600_000L
     private const val TIMEOUT = 9_000L
-    private val timeout = Runnable { finish("超时，没读到") }
+    private val timeout = Runnable { finish("超时，没读到：" + ScreenLink.lastScan.ifEmpty { "这段时间没收到微信/支付宝的画面" }) }
     private val check = Runnable { ScreenService.instance?.let { maybeStart(it) } }
 
     fun offer(ctx: Context, txId: Long, pkg: String, open: PendingIntent?) {
@@ -204,6 +204,7 @@ object AutoFetch {
                 if (running != null || svc.foreground !in svc.homePackages) return@post
                 job.tried = true
                 running = job
+                ScreenLink.lastScan = ""
                 ScreenLink.note("自动打开${if (job.pkg == Parser.ALIPAY) "支付宝" else "微信"}读 #${job.txId} 的金额")
                 try {
                     val opts = ActivityOptions.makeBasic()
