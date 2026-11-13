@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- full auto (accessibility) -->
+    <string name="screen_service_label">Expense Tracking full auto</string>
+    <string name="screen_service_desc">Reads the amount on WeChat and Alipay payment pages and in the \"WeChat Pay\" chat: payments made inside the app without a notification still get recorded, and entries whose notification had no amount (watch payments and the like) get it filled in. Only those two apps are read, and nothing leaves the phone.</string>
+    <string name="set_group_full_auto">Full auto (experimental)</string>
+    <string name="set_full_auto">Full auto</string>
+    <string name="set_full_auto_sub">Reads payment pages through accessibility to fill missing amounts</string>
+    <string name="fa_title">Full auto</string>
+    <string name="fa_badge">Beta</string>
+    <string name="fa_state_off">Not turned on</string>
+    <string name="fa_state_on">On and working</string>
+    <string name="fa_state_stuck">On in settings, but not running</string>
+    <string name="fa_state_off_sub">With notifications alone, watch payments and \"sent you money\" entries need their amount typed in.</string>
+    <string name="fa_state_on_sub">Opening a payment page or message in WeChat or Alipay records it and fills in the amount.</string>
+    <string name="fa_state_stuck_sub">Turn it off and on again under accessibility; if that does not help, the system is blocking it.</string>
+    <string name="fa_open">Turn on in accessibility</string>
+    <string name="fa_open_again">Open accessibility settings</string>
+    <string name="fa_where">Under accessibility → \"Downloaded apps\" or \"Installed services\", find \"Expense Tracking full auto\" and turn it on.</string>
+    <string name="fa_restricted">If it says \"Restricted setting\": app info → ⋮ at the top right → Allow restricted settings, then come back.</string>
+    <string name="fa_what">What it adds</string>
+    <string name="fa_what_1">Paying inside WeChat or Alipay without a notification: recorded from the \"payment successful\" page, with the shop name.</string>
+    <string name="fa_what_2">Entries without an amount (watch payments, \"X sent you money\"): when you open that message or its details, the amount is filled in.</string>
+    <string name="fa_what_3">When the screen and the notification show the same payment, it is recorded once.</string>
+    <string name="fa_options">Options</string>
+    <string name="fa_fetch">Fetch amounts by itself</string>
+    <string name="fa_fetch_sub">For entries without an amount: when the phone is unlocked on the home screen, opens that message for a few seconds, reads the amount and goes back home. One try per entry, never over the app you are using.</string>
+    <string name="fa_samples">Keep screen samples</string>
+    <string name="fa_samples_sub">Helps improve recognition: kept only on this phone and deleted after 3 days; only lines with digits or payment words are kept, the rest become \"·\".</string>
+    <string name="fa_samples_send">Send screen samples</string>
+    <string name="fa_samples_send_sub">Screens kept: %d. You can open the file before sending</string>
+    <string name="fa_samples_clear">Clear screen samples</string>
+    <string name="fa_samples_cleared">Cleared</string>
+    <string name="fa_samples_none">No samples yet: turn it on, then look around the payment pages and messages in WeChat and Alipay</string>
+    <string name="fa_recent">Recently read</string>
+    <string name="fa_recent_none">No payment page read yet</string>
+    <string name="fa_last_window">Last window seen: %1$s, %2$s</string>
+    <string name="fa_privacy">Only WeChat and Alipay screens are read (with \"Fetch amounts\" on, it also needs to know whether the home screen is in front). What is read is only used for your ledger and never uploaded.</string>
+    <string name="fa_note">The payment pages are matched from common app versions and may differ on your phone. If it is off, turn on \"Keep screen samples\" for a day or two and send them.</string>
+    <string name="state_full_auto_on">On</string>
+    <string name="state_full_auto_off">Off</string>
+
+    <!-- guide -->
+    <string name="guide_skip">Skip</string>
+    <string name="guide_next">Next</string>
+    <string name="guide_start">Start</string>
+    <string name="guide_back">Back</string>
+    <string name="guide_1_title">Pay, and it is recorded</string>
+    <string name="guide_1_body">Reads the payment notifications of your payment apps and records amount and time. Your ledger stays on this phone.</string>
+    <string name="guide_1_a">No need to open the app after paying</string>
+    <string name="guide_1_b">Categories learn from your choices</string>
+    <string name="guide_1_c">Stats, budget and monthly recaps included</string>
+    <string name="guide_2_title">The capsule on the screen edge</string>
+    <string name="guide_2_body">Each new entry shows a small capsule on the edge of the screen that tucks itself away after a few seconds.</string>
+    <string name="guide_2_a">Tap it to change the category or add a note; tapping a category saves</string>
+    <string name="guide_2_b">Light purple capsule = no amount (watch payment…): tap and pick a usual amount</string>
+    <string name="guide_2_c">Drag to switch sides, long-press to hide</string>
+    <string name="guide_demo_notice">WeChat Pay</string>
+    <string name="guide_demo_notice_text">Paid ¥30.00</string>
+    <string name="guide_demo_pending">Add amount</string>
+    <string name="guide_3_title">Three permissions</string>
+    <string name="guide_3_body">Without them no payment notification reaches the app. Tap one to turn it on; this page refreshes when you come back.</string>
+    <string name="guide_3_listener">Notification access</string>
+    <string name="guide_3_listener_sub">Reads payment notifications, required</string>
+    <string name="guide_3_overlay">Display over other apps</string>
+    <string name="guide_3_overlay_sub">Shows the capsule</string>
+    <string name="guide_3_battery">Ignore battery optimization</string>
+    <string name="guide_3_battery_sub">Keeps the system from stopping it</string>
+    <string name="guide_3_more">Some phones also need autostart / background permission: Settings → Automatic recording → Self-test &amp; background settings.</string>
+    <string name="guide_4_title">Want it all automatic? (optional)</string>
+    <string name="guide_4_body">When a notification has no amount (watch payments, \"sent you money\"), turn on \"full auto\" under accessibility and the amount is read from the payment page or message.</string>
+    <string name="guide_4_later">You can also turn it on later under Settings → Automatic recording → Full auto.</string>
+    <string name="guide_5_title">A few tips</string>
+    <string name="guide_5_a">Swipe an entry left to delete, right to change its category, long-press for more</string>
+    <string name="guide_5_b">Swipe the top card on the home page to change month</string>
+    <string name="guide_5_c">Tap the cards on the stats page for forecasts, habits and the year in detail</string>
+    <string name="guide_5_d">Home-screen widgets: one tap records a usual amount</string>
+    <string name="guide_5_e">Missed one? Settings → Ledger → Import bills to reconcile</string>
+    <string name="set_guide">Getting started</string>
+    <string name="set_guide_sub">See how it works again</string>
+</resources>

@@ -53,6 +53,7 @@ import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
@@ -120,6 +121,8 @@ class SettingsNav(
     val payApps: () -> Unit = {},
     val achievements: () -> Unit = {},
     val wish: () -> Unit = {},
+    val fullAuto: () -> Unit = {},
+    val guide: () -> Unit = {},
 )
 
 /** Re-read on resume and whenever a dialog closes, so the values shown are never stale. */
@@ -148,7 +151,8 @@ fun SettingsScreen(
     val (versionName, _) = remember { Updater.currentVersion(ctx) }
 
     LazyColumn(Modifier.fillMaxSize().padding(padding), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)) {
-        item { StatusCard(perms) { openSection(SettingsSection.AUTO) } }
+        // Only shows the state; the 自动记账 row below is the one way into that page.
+        item { StatusCard(perms) }
         item { GroupLabel(stringResource(R.string.set_categories_label)) }
         item {
             val on = listOf(fx.mascot, fx.haptics, fx.motion, fx.funRow, fx.recapBanner, fx.badgePopup).count { it }
@@ -205,7 +209,7 @@ fun SettingsSectionScreen(section: SettingsSection, onBack: () -> Unit, nav: Set
                 SettingsSection.DETECT -> item { DetectSection(nav) }
                 SettingsSection.LEDGER -> item { LedgerSection(nav) }
                 SettingsSection.FUN -> item { FunSection(nav) }
-                SettingsSection.GENERAL -> item { GeneralSection() }
+                SettingsSection.GENERAL -> item { GeneralSection(nav) }
             }
         }
     }
@@ -219,8 +223,9 @@ private fun AutoSection(nav: SettingsNav) {
     val overlay = remember(tick) { Perms.overlay(ctx) }
     val battery = remember(tick) { Perms.battery(ctx) }
     val brand = remember { com.aileboeth.expensetracking.capture.Brands.current() }
+    val full = remember(tick) { fullAutoState(ctx) }
     Column {
-        StatusCard(listOf(listener, overlay, battery), Modifier.padding(top = 8.dp))
+        // No status card here: each row below shows its own state.
         GroupLabel(stringResource(R.string.set_group_perms))
         SettingGroup(
             { SettingRow(Icons.Filled.Notifications, Tint.Purple, stringResource(R.string.set_listener), stringResource(R.string.set_listener_sub), { StatusPill(listener) }) { Perms.openListener(ctx) } },
@@ -237,6 +242,13 @@ private fun AutoSection(nav: SettingsNav) {
             },
         )
         Hint(stringResource(R.string.set_restricted_hint))
+        GroupLabel(stringResource(R.string.set_group_full_auto))
+        SettingGroup(
+            {
+                SettingRow(Icons.Filled.AutoAwesome, Tint.Pink, stringResource(R.string.set_full_auto), stringResource(R.string.set_full_auto_sub),
+                    { ValueChevron(stringResource(if (full == 1) R.string.state_full_auto_on else R.string.state_full_auto_off)) }, nav.fullAuto)
+            },
+        )
     }
 }
 
@@ -383,7 +395,7 @@ private fun FunSection(nav: SettingsNav) {
 }
 
 @Composable
-private fun GeneralSection() {
+private fun GeneralSection(nav: SettingsNav) {
     val ctx = LocalContext.current
     val prefs = remember { Prefs(ctx) }
     var dialog by remember { mutableStateOf("") }
@@ -395,6 +407,10 @@ private fun GeneralSection() {
         GroupLabel(stringResource(R.string.set_group_display))
         SettingGroup(
             { SettingRow(Icons.Filled.Translate, Tint.Blue, stringResource(R.string.set_language), null, { ValueChevron(AppLocale.label(ctx, language)) }) { dialog = "language" } },
+        )
+        GroupLabel(stringResource(R.string.set_guide))
+        SettingGroup(
+            { SettingRow(Icons.Filled.School, Tint.Green, stringResource(R.string.set_guide), stringResource(R.string.set_guide_sub), onClick = nav.guide) },
         )
         GroupLabel(stringResource(R.string.set_sec_update))
         SettingGroup(

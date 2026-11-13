@@ -130,6 +130,23 @@ class Prefs(ctx: Context) {
         get() = p.getBoolean("fxBadgePopup", true)
         set(v) = p.edit().putBoolean("fxBadgePopup", v).apply()
 
+    // ---- full auto (accessibility) ----
+
+    /** Open the chat behind a no-amount notification for a moment to read the amount (home screen only). */
+    var autoFetch: Boolean
+        get() = p.getBoolean("autoFetch", false)
+        set(v) = p.edit().putBoolean("autoFetch", v).apply()
+
+    /** Keep WeChat / Alipay screens that show money, so the reading rules can be fixed (off by default). */
+    var screenSamples: Boolean
+        get() = p.getBoolean("screenSamples", false)
+        set(v) = p.edit().putBoolean("screenSamples", v).apply()
+
+    /** The first-run guide was finished or skipped. */
+    var guideDone: Boolean
+        get() = p.getBoolean("guideDone", false)
+        set(v) = p.edit().putBoolean("guideDone", v).apply()
+
     var autoUpdate: Boolean
         get() = p.getBoolean("autoUpdate", true)
         set(v) = p.edit().putBoolean("autoUpdate", v).apply()

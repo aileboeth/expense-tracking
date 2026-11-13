@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- full auto (accessibility) -->
+    <string name="screen_service_label">Expense Tracking 全自動記帳</string>
+    <string name="screen_service_desc">讀取微信、支付寶的付款頁面和「微信支付」訊息裡的金額：在 App 裡付款沒有通知時也能記上，手錶付款等沒寫金額的帳會自動補上金額。只讀這兩個 App 的畫面，內容不會離開手機。</string>
+    <string name="set_group_full_auto">全自動（實驗）</string>
+    <string name="set_full_auto">全自動記帳</string>
+    <string name="set_full_auto_sub">用無障礙讀付款頁面，補上沒金額的帳</string>
+    <string name="fa_title">全自動記帳</string>
+    <string name="fa_badge">實驗</string>
+    <string name="fa_state_off">還沒開啟</string>
+    <string name="fa_state_on">已開啟，正在工作</string>
+    <string name="fa_state_stuck">系統裡開著，但沒有執行</string>
+    <string name="fa_state_off_sub">只靠通知時，手錶付款、「轉了1筆錢」這類帳要你手動補金額。</string>
+    <string name="fa_state_on_sub">開啟微信、支付寶的付款頁面或訊息時，會自動記帳、補金額。</string>
+    <string name="fa_state_stuck_sub">在無障礙裡把它關掉再開啟一次；還不行就是系統攔下了。</string>
+    <string name="fa_open">去無障礙裡開啟</string>
+    <string name="fa_open_again">開啟無障礙設定</string>
+    <string name="fa_where">在無障礙 →「已下載的應用」或「已安裝的服務」裡找到「Expense Tracking 全自動記帳」，開啟它。vivo：設定 → 快捷與輔助 → 無障礙。</string>
+    <string name="fa_restricted">開啟時提示「受限設定」：應用詳情 → 右上角 ⋮ → 允許受限設定，再回來開。</string>
+    <string name="fa_what">它能補上什麼</string>
+    <string name="fa_what_1">在微信、支付寶裡付款，沒收到通知時，從「支付成功」頁面記上，還能讀到商戶名。</string>
+    <string name="fa_what_2">手錶付款、「某某給你轉了1筆錢」這種沒金額的帳：你開啟那條訊息或詳情時，金額自動補上。</string>
+    <string name="fa_what_3">螢幕和通知看到的是同一筆時，只記一次。</string>
+    <string name="fa_options">選項</string>
+    <string name="fa_fetch">自動去讀金額</string>
+    <string name="fa_fetch_sub">沒金額的帳：手機解鎖停在桌面時，自動開啟那條訊息幾秒，讀到金額就回桌面。每筆只試一次，不會蓋住你正在用的 App。</string>
+    <string name="fa_samples">記錄螢幕樣本</string>
+    <string name="fa_samples_sub">幫忙改進識別：只存在這臺手機裡，3 天后自動刪；只留帶數字或付款字樣的行，其他行變成「·」。</string>
+    <string name="fa_samples_send">傳送螢幕樣本</string>
+    <string name="fa_samples_send_sub">%d 條，傳送前可以先開啟看看</string>
+    <string name="fa_samples_clear">清空螢幕樣本</string>
+    <string name="fa_samples_cleared">已清空</string>
+    <string name="fa_samples_none">還沒有樣本：開啟開關後，去微信、支付寶的付款頁面和訊息裡轉一圈</string>
+    <string name="fa_recent">最近讀到</string>
+    <string name="fa_recent_none">還沒有讀到付款頁面</string>
+    <string name="fa_last_window">最近看到的視窗：%1$s，%2$s</string>
+    <string name="fa_privacy">只讀微信和支付寶的畫面（開著「自動去讀金額」時，還要知道桌面是不是在前臺）。讀到的內容只用來記帳，不會上傳。</string>
+    <string name="fa_note">付款頁面的樣子是按常見版本寫的，你手機上的版本可能對不上。不準的話開啟「記錄螢幕樣本」，用一兩天後發給我。</string>
+    <string name="state_full_auto_on">已開</string>
+    <string name="state_full_auto_off">未開</string>
+
+    <!-- guide -->
+    <string name="guide_skip">跳過</string>
+    <string name="guide_next">下一步</string>
+    <string name="guide_start">開始記帳</string>
+    <string name="guide_back">上一步</string>
+    <string name="guide_1_title">付款後，自動記上</string>
+    <string name="guide_1_body">讀微信、支付寶的付款通知，金額、時間自動記好。帳單隻存在這臺手機裡。</string>
+    <string name="guide_1_a">不用開啟 App，付完就記</string>
+    <string name="guide_1_b">分類會按你的習慣越猜越準</string>
+    <string name="guide_1_c">統計、預算、月度回顧都有</string>
+    <string name="guide_2_title">螢幕邊上的小膠囊</string>
+    <string name="guide_2_body">每記一筆，螢幕邊上會冒出一個膠囊，幾秒後自己收起。</string>
+    <string name="guide_2_a">點膠囊：改分類、寫備註；點分類就算儲存</string>
+    <string name="guide_2_b">淺紫色膠囊 = 沒金額（手錶付款等），點開選個常用金額</string>
+    <string name="guide_2_c">拖動換邊，長按藏起來</string>
+    <string name="guide_demo_notice">微信支付</string>
+    <string name="guide_demo_notice_text">已支付¥30.00</string>
+    <string name="guide_demo_pending">待補金額</string>
+    <string name="guide_3_title">開啟三個許可權</string>
+    <string name="guide_3_body">沒有它們就收不到付款通知。點一項去開啟，回來會自動重新整理。</string>
+    <string name="guide_3_listener">通知使用權</string>
+    <string name="guide_3_listener_sub">讀付款通知，必需</string>
+    <string name="guide_3_overlay">懸浮窗</string>
+    <string name="guide_3_overlay_sub">顯示記帳膠囊</string>
+    <string name="guide_3_battery">忽略電池最佳化</string>
+    <string name="guide_3_battery_sub">別讓系統在背景停掉它</string>
+    <string name="guide_3_more">國產手機還要設自啟動、背景執行：設定 → 自動記帳 → 自檢和背景設定。</string>
+    <string name="guide_4_title">想全部自動？（可選）</string>
+    <string name="guide_4_body">通知不寫金額的時候（手錶付款、「轉了1筆錢」），開啟無障礙裡的「全自動記帳」，就能從付款頁面和訊息裡讀到金額。</string>
+    <string name="guide_4_later">以後在 設定 → 自動記帳 → 全自動 裡也能開。</string>
+    <string name="guide_5_title">幾個小技巧</string>
+    <string name="guide_5_a">帳單往左滑刪除，往右滑改分類，長按有更多</string>
+    <string name="guide_5_b">首頁頂部左右滑，切換月份</string>
+    <string name="guide_5_c">統計頁的卡片點進去，看預測、習慣、年度這些詳細分析</string>
+    <string name="guide_5_d">桌面小元件：一點就記常用金額</string>
+    <string name="guide_5_e">漏記了？設定 → 帳本 → 匯入帳單對帳</string>
+    <string name="set_guide">新手教程</string>
+    <string name="set_guide_sub">再看一遍怎麼用</string>
+</resources>

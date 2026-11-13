@@ -24,6 +24,13 @@ UI in English, Simplified Chinese and Traditional Chinese. The currency is a set
 - **WeChat Pay and Alipay** (China): full support, built from real notifications. Payments are recorded
   directly; notifications without an amount (smartwatch payments, Alipay "someone sent you money") become
   "needs amount" entries and stay in the capsule until you fill them in.
+- **Full auto (experimental, optional)**: turn on "Expense Tracking full auto" under the system's
+  accessibility settings and the app also reads WeChat / Alipay payment pages and the "WeChat Pay" chat:
+  payments made inside those apps without a notification are recorded from the "payment successful" page
+  (with the shop name), opening a watch payment's or "sent you money" message fills in its amount, and the
+  same payment seen on screen and in a notification is recorded once. Optional "Fetch amounts by itself":
+  when the phone is unlocked on the home screen, it opens that message for a few seconds, reads the amount
+  and goes back home. Only those two apps are read; nothing leaves the phone.
 - **Payment apps in other regions**: the app lists the ones common where you live — Google Wallet,
   Samsung Wallet, PayPal, Wise, Revolut, Monzo, Venmo, Cash App, PayPay, KakaoPay, Toss, Octopus, JKOPAY,
   GCash, Grab, PhonePe, Paytm, Mercado Pago … Turn them on in **Settings → Payment apps**. Their
@@ -32,6 +39,8 @@ UI in English, Simplified Chinese and Traditional Chinese. The currency is a set
 
 ## Features
 
+- **Getting started guide**: five pages on first start (what it does, the capsule, the three permissions
+  with live status, full auto, tips); open it again under **Settings → General → Getting started**.
 - **No duplicates, no merging**: a notification that gets updated is recorded once, but two real payments
   of the same amount right after each other stay two entries.
 - **Edge capsule**: no focus stealing, no app switch. Drag it up/down or to the other side, long-press to
@@ -72,6 +81,8 @@ UI in English, Simplified Chinese and Traditional Chinese. The currency is a set
    Allow restricted settings.
 2. Display over other apps (for the capsule).
 3. Background running: follow **Settings → Self-test & background settings** for your brand, then run the self-test.
+4. Optional: "Expense Tracking full auto" under accessibility (see Full auto above). It may also say
+   "Restricted setting"; handle it as in step 1.
 
 ## Help us add formats
 

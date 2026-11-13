@@ -54,7 +54,7 @@ class CaptureService : NotificationListenerService() {
         }
         if ((sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return
         try {
-            Ingest.post(this, toInput(sbn))
+            Ingest.post(this, toInput(sbn), sbn.notification.contentIntent)
         } catch (_: Throwable) {
         }
     }
@@ -79,21 +79,23 @@ class CaptureService : NotificationListenerService() {
 
 /** Notification -> parsed -> filtered -> saved -> bubble. One worker thread keeps it in order. */
 object Ingest {
-    private val worker = Executors.newSingleThreadExecutor()
+    /** Shared with [ScreenLink] so screens and notifications are handled one at a time, in order. */
+    internal val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
 
-    fun post(ctx: Context, n: NoticeInput) {
+    /** [open] = the notification's tap action; full auto uses it to open the chat that shows a missing amount. */
+    fun post(ctx: Context, n: NoticeInput, open: android.app.PendingIntent? = null) {
         val app = ctx.applicationContext
         worker.execute {
             try {
-                handle(app, n)
+                handle(app, n, open)
             } catch (e: Throwable) {
                 runCatching { Repo.log(n.pkg, n.title, n.text, "出错：$e") }
             }
         }
     }
 
-    private fun handle(ctx: Context, n: NoticeInput) {
+    private fun handle(ctx: Context, n: NoticeInput, open: android.app.PendingIntent?) {
         Repo.init(ctx)
         val prefs = Prefs(ctx)
         val known = n.pkg in Parser.KNOWN_APPS
@@ -124,6 +126,14 @@ object Ingest {
                     return
                 }
                 if (!Repo.markSeen(n.signature)) return // same message posted again
+                val at = if (n.postTime > 0) n.postTime else System.currentTimeMillis()
+                // Full auto read this payment off the screen first (paying inside WeChat / Alipay): it is the same one.
+                if (result.amountCents != null && !result.needsConfirm) {
+                    ScreenLink.alreadyFromScreen(result.type, result.channel, result.amountCents, at)?.let { id ->
+                        Repo.log(n.pkg, n.title, text, "屏幕已经记过 #$id")
+                        return
+                    }
+                }
                 val pending = result.amountCents == null || result.needsConfirm
                 val tx = Tx(
                     type = result.type,
@@ -140,6 +150,7 @@ object Ingest {
                 val id = Repo.insert(tx)
                 Repo.log(n.pkg, n.title, text, if (pending) "待补金额/待确认 #$id" else "已记账 #$id")
                 main.post { Bubble.show(ctx, id) }
+                if (result.amountCents == null) AutoFetch.offer(ctx, id, n.pkg, open)
             }
         }
     }

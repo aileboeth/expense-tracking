@@ -121,6 +121,8 @@ private sealed interface Overlay {
     data class Recap(val month: java.time.YearMonth) : Overlay
     data class Analysis(val month: java.time.YearMonth, val tab: Int = 0) : Overlay
     data class Settings(val section: SettingsSection) : Overlay
+    data object FullAuto : Overlay
+    data object Guide : Overlay
 }
 
 @Composable
@@ -135,6 +137,8 @@ private fun AppRoot(req: Requests) {
     // Lives here so the settings list keeps its scroll position while a sub-page is open.
     val settingsList = androidx.compose.foundation.lazy.rememberLazyListState()
     LaunchedEffect(Unit) { Updater.autoCheck(ctx) }
+    // First start: the guide comes first (also once for people updating from a version without it).
+    LaunchedEffect(Unit) { if (guidePending(ctx) && stack.isEmpty()) stack = listOf(Overlay.Guide) }
     LaunchedEffect(req.add.value, req.fill.value) { if (req.add.value != null || req.fill.value != null) { stack = emptyList(); tab = 0 } }
     LaunchedEffect(req.search.value) { if (req.search.value) { stack = listOf(Overlay.Search); req.search.value = false } }
     // The capsule's "✎ 改" opens the usual-amounts page; back from it lands on the capsule settings.
@@ -172,6 +176,8 @@ private fun AppRoot(req: Requests) {
         Overlay.Rules -> CategoryRulesScreen(onBack = ::back)
         Overlay.Stability -> StabilityScreen(onBack = ::back)
         Overlay.PayApps -> PaymentAppsScreen(onBack = ::back)
+        Overlay.FullAuto -> FullAutoScreen(onBack = ::back)
+        Overlay.Guide -> GuideScreen(onDone = { guideDone(ctx); back() })
         is Overlay.Import -> ImportScreen(o.uri, onBack = ::back)
         is Overlay.Settings -> SettingsSectionScreen(
             o.section, onBack = ::back,
@@ -187,6 +193,8 @@ private fun AppRoot(req: Requests) {
                 payApps = { open(Overlay.PayApps) },
                 achievements = { open(Overlay.Achievements) },
                 wish = { open(Overlay.Wish) },
+                fullAuto = { open(Overlay.FullAuto) },
+                guide = { open(Overlay.Guide) },
             ),
         )
         null -> Scaffold(
@@ -226,7 +234,8 @@ private fun AppRoot(req: Requests) {
         }
     }
     UpdateDialog()
-    if (celebrate.isNotEmpty()) BadgeCelebration(celebrate) {
+    // Badges wait until the guide is closed.
+    if (celebrate.isNotEmpty() && overlay != Overlay.Guide) BadgeCelebration(celebrate) {
         celebrate = emptyList()
         Thread { com.aileboeth.expensetracking.data.Repo.markBadgesSeen() }.start()
     }

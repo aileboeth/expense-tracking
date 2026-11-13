@@ -1,0 +1,145 @@
+package com.aileboeth.expensetracking.capture
+
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import com.aileboeth.expensetracking.bubble.Bubble
+import com.aileboeth.expensetracking.data.Categorizer
+import com.aileboeth.expensetracking.data.Prefs
+import com.aileboeth.expensetracking.data.Repo
+import com.aileboeth.expensetracking.data.ScreenMatch
+import com.aileboeth.expensetracking.data.Status
+import com.aileboeth.expensetracking.data.Tx
+import com.aileboeth.expensetracking.parse.ScreenParser
+import java.util.concurrent.Executors
+
+/**
+ * Puts what the accessibility service read off the screen into the ledger: confirms or completes
+ * entries the notifications made, fills watch-pay amounts, and records payments no notification
+ * told us about. Runs on the same single worker as [Ingest] so the two never race.
+ */
+object ScreenLink {
+    private val main = Handler(Looper.getMainLooper())
+
+    /** Entries a screen sighting already accounts for (so a second sighting does not pair with them). */
+    private val claimed = LinkedHashMap<Long, Long>()
+    /** Screen-made entries a notification already paired with. */
+    private val noticed = LinkedHashMap<Long, Long>()
+
+    /**
+     * Sightings of the last 10 minutes. A page fires many change events while it stays open (and pop-ups
+     * re-fire it), so the same payment on screen counts once. The price: a second identical payment at
+     * the same shop within 10 minutes is only recorded if its notification comes.
+     */
+    private val seenSigs = LinkedHashMap<String, Long>()
+
+    /** What the full-auto page shows: the last few things read. */
+    data class Event(val time: Long, val text: String)
+    private val events = ArrayDeque<Event>()
+    fun events(): List<Event> = synchronized(events) { events.toList().asReversed() }
+    @Volatile var lastWindow: Pair<Long, String>? = null
+
+    fun note(text: String) = synchronized(events) {
+        events.addLast(Event(System.currentTimeMillis(), text))
+        while (events.size > 30) events.removeFirst()
+    }
+
+    private val worker get() = Ingest.worker
+
+    fun onScreen(ctx: Context, pkg: String, lines: List<String>) {
+        val app = ctx.applicationContext
+        worker.execute {
+            runCatching { handle(app, pkg, lines) }.onFailure { note("出错：$it") }
+        }
+    }
+
+    private fun trim(now: Long) {
+        claimed.entries.removeAll { now - it.value > 6 * 3600_000L }
+        noticed.entries.removeAll { now - it.value > 6 * 3600_000L }
+        seenSigs.entries.removeAll { now - it.value > 10 * 60_000L }
+    }
+
+    private fun handle(ctx: Context, pkg: String, lines: List<String>) {
+        Repo.init(ctx)
+        val now = System.currentTimeMillis()
+        trim(now)
+        if (Prefs(ctx).screenSamples && ScreenParser.looksLikeMoney(lines)) ScreenSamples.add(ctx, pkg, lines, now)
+        val seen = ScreenParser.read(pkg, lines, now)
+        if (seen.isEmpty()) return
+        val recent = Repo.listAll(now - ScreenMatch.FILL_WINDOW - 3600_000L, now + 60_000L)
+
+        // The 微信支付 chat: cards for the watch payments still waiting for their amount.
+        if (seen.any { it.kind == "screen_voucher" || it.kind == "screen_wechat_card" }) {
+            val waiting = recent.filter { it.status == Status.PENDING && it.amountCents == null && it.kind == "wechat_voucher" && it.id !in claimed }
+            if (waiting.isEmpty()) return
+            val newestWaiting = waiting.maxOf { it.time }
+            val newerDone = recent.any { it.kind == "wechat_voucher" && it.amountCents != null && it.time > newestWaiting }
+            val fills = ScreenMatch.planCards(seen, waiting, newerDone)
+            for (f in fills) fill(ctx, f.txId, f.cents, f.counterpart, "微信支付聊天卡片")
+            if (fills.isEmpty()) note("看到微信支付卡片 ${seen.size} 张，对不上待补的 ${waiting.size} 笔")
+            return
+        }
+
+        for (s in seen) {
+            val sig = "${s.type}|${s.amountCents}|${s.counterpart}|${s.kind}"
+            if (seenSigs.containsKey(sig)) continue
+            seenSigs[sig] = now
+            when (val a = ScreenMatch.plan(s, recent, claimed.keys, now)) {
+                is ScreenMatch.Action.Confirm -> {
+                    claimed[a.txId] = now
+                    val tx = Repo.get(a.txId) ?: continue
+                    if (tx.counterpart.isBlank() && a.counterpart.isNotBlank()) {
+                        val cat = if (tx.category.isBlank() || tx.category == Bubble.OTHER) Categorizer.auto(tx.type, a.counterpart, tx.kind).ifBlank { tx.category } else tx.category
+                        Repo.update(tx.copy(counterpart = a.counterpart, category = cat))
+                        main.post { Bubble.refresh() }
+                    }
+                    note("屏幕和通知是同一笔 #${a.txId}" + if (a.counterpart.isNotBlank()) "（${a.counterpart}）" else "")
+                }
+                is ScreenMatch.Action.Fill -> fill(ctx, a.txId, a.cents, a.counterpart, s.summary)
+                ScreenMatch.Action.Create -> {
+                    val prefs = Prefs(ctx)
+                    if (prefs.blacklistHit(s.counterpart, s.summary) != null) { note("黑名单，不记：${s.summary}"); continue }
+                    val id = Repo.insert(
+                        Tx(
+                            type = s.type, amountCents = s.amountCents,
+                            category = Categorizer.auto(s.type, s.counterpart, s.kind).ifBlank { Bubble.OTHER },
+                            channel = s.channel, counterpart = s.counterpart, time = now,
+                            status = Status.OK, source = "auto", kind = s.kind, raw = s.summary,
+                        ),
+                    )
+                    claimed[id] = now
+                    Repo.log(pkg, "屏幕", s.summary, "已记账 #$id（从屏幕读到，通知没来）")
+                    note("从屏幕记了一笔 #$id：${s.summary}")
+                    main.post { Bubble.show(ctx, id) }
+                }
+                ScreenMatch.Action.Skip -> note("看到 ${s.summary}，是以前的账，不记")
+            }
+        }
+    }
+
+    private fun fill(ctx: Context, id: Long, cents: Long, counterpart: String, from: String) {
+        val tx = Repo.get(id) ?: return
+        if (tx.amountCents != null) return
+        claimed[id] = System.currentTimeMillis()
+        val who = tx.counterpart.ifBlank { counterpart }
+        val cat = tx.category.ifBlank { Categorizer.auto(tx.type, who, tx.kind).ifBlank { Bubble.OTHER } }
+        Repo.update(tx.copy(amountCents = cents, counterpart = who, category = cat, status = Status.OK))
+        Repo.log(if (tx.channel == "支付宝") com.aileboeth.expensetracking.parse.Parser.ALIPAY else com.aileboeth.expensetracking.parse.Parser.WECHAT, "屏幕", from, "补上金额 #$id")
+        note("补上金额 #$id：${com.aileboeth.expensetracking.data.Money.money(cents)}（$from）")
+        AutoFetch.done(id)
+        main.post { Bubble.refresh() }
+    }
+
+    /**
+     * Called by [Ingest] (on the worker) before it records a notification with an amount: true = a
+     * screen sighting already recorded this payment, so the notification must not add it again.
+     */
+    fun alreadyFromScreen(type: com.aileboeth.expensetracking.parse.TxType, channel: String, cents: Long, at: Long): Long? {
+        trim(at)
+        val hit = Repo.listAll(at - ScreenMatch.PAIR_WINDOW, at + ScreenMatch.PAIR_WINDOW).filter {
+            ScreenMatch.isScreenKind(it.kind) && it.id !in noticed && it.type == type && it.channel == channel && it.amountCents == cents
+        }.minByOrNull { kotlin.math.abs(it.time - at) } ?: return null
+        noticed[hit.id] = at
+        return hit.id
+    }
+}

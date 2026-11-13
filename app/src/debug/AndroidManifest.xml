@@ -10,5 +10,13 @@
                 <action android:name="com.aileboeth.expensetracking.SIMULATE" />
             </intent-filter>
         </receiver>
+        <!-- Debug only: a fake WeChat / Alipay page for testing full auto on phones without them. -->
+        <activity
+            android:name=".debug.FakeScreenActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.aileboeth.fake"
+            android:permission="android.permission.DUMP" />
     </application>
 </manifest>

@@ -47,6 +47,10 @@ object Diagnostics {
         line("悬浮窗", if (Perms.overlay(ctx)) "已允许" else "未允许")
         line("忽略电池优化", if (Perms.battery(ctx)) "是" else "否")
         line("发通知权限", if (SelfTest.canPost(ctx)) "有" else "没有")
+        line("全自动（无障碍）", if (ScreenService.connected) "运行中" else if (ScreenService.enabled(ctx)) "开了但没运行" else "没开")
+        line("自动去读金额", prefs.autoFetch)
+        line("最近看到的窗口", ScreenLink.lastWindow?.let { "${it.second} ${fmt.format(Date(it.first))}" } ?: "没有")
+        ScreenLink.events().take(15).forEach { sb.append("  · ").append(fmt.format(Date(it.time))).append("  ").append(it.text).append('\n') }
         sb.append('\n')
         line("付款后显示悬浮胶囊", prefs.bubbleEnabled)
         line("也识别其他 App", prefs.otherApps)

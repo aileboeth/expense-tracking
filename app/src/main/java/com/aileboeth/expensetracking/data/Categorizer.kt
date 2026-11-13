@@ -20,7 +20,7 @@ object Categorizer {
         "生活缴费" to listOf("慧生活", "水费", "电费", "燃气", "物业", "房租", "宿舍", "校园卡", "热水", "洗衣", "网费",
             "rent", "electricity", "electric bill", "water bill", "utilities", "utility"),
         "通讯" to listOf("话费", "流量", "宽带", "移动", "联通", "电信", "phone bill", "mobile plan", "data plan", "internet", "broadband"),
-        "交通" to listOf("打车", "滴滴", "地铁", "公交", "车票", "高铁", "火车", "机票", "12306", "铁路", "高德打车", "哈啰", "单车", "加油", "停车", "过路费",
+        "交通" to listOf("打车", "滴滴", "地铁", "公交", "车票", "高铁", "火车", "机票", "12306", "铁路", "高德打车", "哈啰", "单车", "美团单车", "共享单车", "加油", "停车", "过路费",
             "uber", "lyft", "taxi", "cab", "bus", "metro", "subway", "train", "flight", "airline", "petrol", "gas station", "parking", "toll"),
         "餐饮" to listOf("早饭", "早餐", "午饭", "午餐", "晚饭", "晚餐", "夜宵", "宵夜", "外卖", "食堂", "饭卡", "餐厅", "饭", "聚餐", "火锅", "烧烤", "美团", "饿了么", "麦当劳", "肯德基", "汉堡",
             "breakfast", "lunch", "dinner", "restaurant", "mcdonald", "kfc", "burger", "pizza", "meal", "takeout", "doordash", "uber eats", "deliveroo"),

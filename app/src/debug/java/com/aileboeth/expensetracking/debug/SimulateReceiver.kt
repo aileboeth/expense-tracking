@@ -15,6 +15,15 @@ import com.aileboeth.expensetracking.parse.NoticeInput
 class SimulateReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val now = System.currentTimeMillis()
+        // --es openlines '…|…': the fake notification's tap opens a fake chat with these lines (tests 自动去读金额).
+        val open = intent.getStringExtra("openlines")?.let { lines ->
+            android.app.PendingIntent.getActivity(
+                context, now.toInt(),
+                Intent(context, FakeScreenActivity::class.java).putExtra("as", intent.getStringExtra("pkg") ?: "com.tencent.mm").putExtra("lines", lines)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        }
         Ingest.post(
             context,
             NoticeInput(
@@ -27,6 +36,7 @@ class SimulateReceiver : BroadcastReceiver() {
                 whenMs = now,
                 postTime = now,
             ),
+            open,
         )
     }
 }

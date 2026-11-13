@@ -3,6 +3,7 @@ package com.aileboeth.expensetracking.ui
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
@@ -386,6 +387,38 @@ class ScreenshotTest {
         compose.setContent { AppTheme { StatsScreen(PaddingValues(0.dp)) } }
         compose.waitForIdle(); Thread.sleep(300); compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/2c-stats-zh.png")
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h873dp-xxhdpi")
+    @Test fun guideZh() {
+        compose.setContent { AppTheme { GuideScreen {} } }
+        for (p in 0 until 5) {
+            compose.waitForIdle(); Thread.sleep(200); compose.waitForIdle()
+            compose.onRoot().captureRoboImage("build/screens/21-guide-zh-$p.png")
+            if (p < 4) compose.onNodeWithText("下一步").performClick()
+        }
+    }
+
+    @Config(qualifiers = "w393dp-h873dp-xxhdpi")
+    @Test fun guideEn() {
+        compose.setContent { AppTheme { GuideScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/21-guide-en-0.png")
+        compose.onNodeWithText("Next").performClick(); compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/21-guide-en-1.png")
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h1500dp-xxhdpi")
+    @Test fun fullAutoZh() {
+        compose.setContent { AppTheme { FullAutoScreen {} } }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/22-full-auto-zh.png")
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h1000dp-xxhdpi")
+    @Test fun autoSectionZh() {
+        compose.setContent { AppTheme { SettingsSectionScreen(SettingsSection.AUTO, {}) } }
+        compose.onRoot().captureRoboImage("build/screens/22-auto-section-zh.png")
     }
 
     @Config(qualifiers = "w393dp-h1900dp-xxhdpi")

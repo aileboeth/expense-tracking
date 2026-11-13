@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- full auto (accessibility) -->
+    <string name="screen_service_label">Expense Tracking 全自动记账</string>
+    <string name="screen_service_desc">读取微信、支付宝的付款页面和「微信支付」消息里的金额：在 App 里付款没有通知时也能记上，手表付款等没写金额的账会自动补上金额。只读这两个 App 的画面，内容不会离开手机。</string>
+    <string name="set_group_full_auto">全自动（实验）</string>
+    <string name="set_full_auto">全自动记账</string>
+    <string name="set_full_auto_sub">用无障碍读付款页面，补上没金额的账</string>
+    <string name="fa_title">全自动记账</string>
+    <string name="fa_badge">实验</string>
+    <string name="fa_state_off">还没开启</string>
+    <string name="fa_state_on">已开启，正在工作</string>
+    <string name="fa_state_stuck">系统里开着，但没有运行</string>
+    <string name="fa_state_off_sub">只靠通知时，手表付款、「转了1笔钱」这类账要你手动补金额。</string>
+    <string name="fa_state_on_sub">打开微信、支付宝的付款页面或消息时，会自动记账、补金额。</string>
+    <string name="fa_state_stuck_sub">在无障碍里把它关掉再打开一次；还不行就是系统拦下了。</string>
+    <string name="fa_open">去无障碍里打开</string>
+    <string name="fa_open_again">打开无障碍设置</string>
+    <string name="fa_where">在无障碍 →「已下载的应用」或「已安装的服务」里找到「Expense Tracking 全自动记账」，打开它。vivo：设置 → 快捷与辅助 → 无障碍。</string>
+    <string name="fa_restricted">打开时提示「受限设置」：应用详情 → 右上角 ⋮ → 允许受限设置，再回来开。</string>
+    <string name="fa_what">它能补上什么</string>
+    <string name="fa_what_1">在微信、支付宝里付款，没收到通知时，从「支付成功」页面记上，还能读到商户名。</string>
+    <string name="fa_what_2">手表付款、「某某给你转了1笔钱」这种没金额的账：你打开那条消息或详情时，金额自动补上。</string>
+    <string name="fa_what_3">屏幕和通知看到的是同一笔时，只记一次。</string>
+    <string name="fa_options">选项</string>
+    <string name="fa_fetch">自动去读金额</string>
+    <string name="fa_fetch_sub">没金额的账：手机解锁停在桌面时，自动打开那条消息几秒，读到金额就回桌面。每笔只试一次，不会盖住你正在用的 App。</string>
+    <string name="fa_samples">记录屏幕样本</string>
+    <string name="fa_samples_sub">帮忙改进识别：只存在这台手机里，3 天后自动删；只留带数字或付款字样的行，其他行变成「·」。</string>
+    <string name="fa_samples_send">发送屏幕样本</string>
+    <string name="fa_samples_send_sub">%d 条，发送前可以先打开看看</string>
+    <string name="fa_samples_clear">清空屏幕样本</string>
+    <string name="fa_samples_cleared">已清空</string>
+    <string name="fa_samples_none">还没有样本：打开开关后，去微信、支付宝的付款页面和消息里转一圈</string>
+    <string name="fa_recent">最近读到</string>
+    <string name="fa_recent_none">还没有读到付款页面</string>
+    <string name="fa_last_window">最近看到的窗口：%1$s，%2$s</string>
+    <string name="fa_privacy">只读微信和支付宝的画面（开着「自动去读金额」时，还要知道桌面是不是在前台）。读到的内容只用来记账，不会上传。</string>
+    <string name="fa_note">付款页面的样子是按常见版本写的，你手机上的版本可能对不上。不准的话打开「记录屏幕样本」，用一两天后发给我。</string>
+    <string name="state_full_auto_on">已开</string>
+    <string name="state_full_auto_off">未开</string>
+
+    <!-- guide -->
+    <string name="guide_skip">跳过</string>
+    <string name="guide_next">下一步</string>
+    <string name="guide_start">开始记账</string>
+    <string name="guide_back">上一步</string>
+    <string name="guide_1_title">付款后，自动记上</string>
+    <string name="guide_1_body">读微信、支付宝的付款通知，金额、时间自动记好。账单只存在这台手机里。</string>
+    <string name="guide_1_a">不用打开 App，付完就记</string>
+    <string name="guide_1_b">分类会按你的习惯越猜越准</string>
+    <string name="guide_1_c">统计、预算、月度回顾都有</string>
+    <string name="guide_2_title">屏幕边上的小胶囊</string>
+    <string name="guide_2_body">每记一笔，屏幕边上会冒出一个胶囊，几秒后自己收起。</string>
+    <string name="guide_2_a">点胶囊：改分类、写备注；点分类就算保存</string>
+    <string name="guide_2_b">浅紫色胶囊 = 没金额（手表付款等），点开选个常用金额</string>
+    <string name="guide_2_c">拖动换边，长按藏起来</string>
+    <string name="guide_demo_notice">微信支付</string>
+    <string name="guide_demo_notice_text">已支付¥30.00</string>
+    <string name="guide_demo_pending">待补金额</string>
+    <string name="guide_3_title">打开三个权限</string>
+    <string name="guide_3_body">没有它们就收不到付款通知。点一项去打开，回来会自动刷新。</string>
+    <string name="guide_3_listener">通知使用权</string>
+    <string name="guide_3_listener_sub">读付款通知，必需</string>
+    <string name="guide_3_overlay">悬浮窗</string>
+    <string name="guide_3_overlay_sub">显示记账胶囊</string>
+    <string name="guide_3_battery">忽略电池优化</string>
+    <string name="guide_3_battery_sub">别让系统在后台停掉它</string>
+    <string name="guide_3_more">国产手机还要设自启动、后台运行：设置 → 自动记账 → 自检和后台设置。</string>
+    <string name="guide_4_title">想全部自动？（可选）</string>
+    <string name="guide_4_body">通知不写金额的时候（手表付款、「转了1笔钱」），打开无障碍里的「全自动记账」，就能从付款页面和消息里读到金额。</string>
+    <string name="guide_4_later">以后在 设置 → 自动记账 → 全自动 里也能开。</string>
+    <string name="guide_5_title">几个小技巧</string>
+    <string name="guide_5_a">账单往左滑删除，往右滑改分类，长按有更多</string>
+    <string name="guide_5_b">首页顶部左右滑，切换月份</string>
+    <string name="guide_5_c">统计页的卡片点进去，看预测、习惯、年度这些详细分析</string>
+    <string name="guide_5_d">桌面小组件：一点就记常用金额</string>
+    <string name="guide_5_e">漏记了？设置 → 账本 → 导入账单对账</string>
+    <string name="set_guide">新手教程</string>
+    <string name="set_guide_sub">再看一遍怎么用</string>
+</resources>
