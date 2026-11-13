@@ -117,7 +117,7 @@ object ScreenLink {
                     note("从屏幕记了一笔 #$id：${s.summary}")
                     main.post { Bubble.show(ctx, id) }
                 }
-                ScreenMatch.Action.Skip -> note("看到 ${s.summary}，是以前的账，不记")
+                ScreenMatch.Action.Skip -> note("看到 ${s.summary}，当成以前的账，不记" + if (s.why.isNotEmpty()) "（${s.why}）" else "")
             }
         }
     }

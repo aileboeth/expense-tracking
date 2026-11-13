@@ -95,6 +95,7 @@ class ScreenService : AccessibilityService() {
             AutoFetch.onForeground(this, pkg)
         }
         if (pkg !in watched) return
+        lastEventPkg = pkg
         // Pages fire many change events; read at most every 400 ms.
         if (!readScheduled) {
             readScheduled = true
@@ -102,10 +103,24 @@ class ScreenService : AccessibilityService() {
         }
     }
 
+    private var lastEventPkg = ""
+    private var lastUnreadableNote = 0L
+
     private fun readNow() {
-        val root = try { rootInActiveWindow } catch (_: Throwable) { null } ?: return
+        // The active window first; else any window on screen from WeChat / Alipay (an app clone, a pop-up on top).
+        val active = try { rootInActiveWindow } catch (_: Throwable) { null }
+        val root = active?.takeIf { it.packageName?.toString() in watched }
+            ?: try { windows.mapNotNull { it.root }.firstOrNull { it.packageName?.toString() in watched } } catch (_: Throwable) { null }
+        if (root == null) {
+            // Events come from WeChat / Alipay but no window content can be read (e.g. an app clone in another user).
+            val now = System.currentTimeMillis()
+            if (now - lastUnreadableNote > 30_000) {
+                lastUnreadableNote = now
+                ScreenLink.note("收到${if (lastEventPkg == Parser.ALIPAY) "支付宝" else "微信"}的画面变化，但读不到内容（前台窗口：${active?.packageName ?: "读不到"}）")
+            }
+            return
+        }
         var pkg = root.packageName?.toString() ?: return
-        if (pkg !in watched) return
         var lines = collect(root)
         if (pkg == packageName) {
             // Our own screens are never read, except the debug stand-in for WeChat / Alipay.
@@ -161,7 +176,8 @@ object AutoFetch {
     private val jobs = LinkedHashMap<Long, Job>()
     private var running: Job? = null
     private const val EXPIRE = 3 * 3600_000L
-    private const val TIMEOUT = 9_000L
+    // Bill pages are web pages and can take a while to load.
+    private const val TIMEOUT = 15_000L
     private val timeout = Runnable { finish("超时，没读到：" + ScreenLink.lastScan.ifEmpty { "这段时间没收到微信/支付宝的画面" }) }
     private val check = Runnable { ScreenService.instance?.let { maybeStart(it) } }
 

@@ -30,6 +30,8 @@ object ScreenParser {
         /** When the page says it happened (a bill's 支付时间, a chat time label); null = not shown. */
         val time: Long? = null,
         val summary: String = "",
+        /** Why it is not [fresh] (shown on the full-auto page). */
+        val why: String = "",
     )
 
     private const val NUM = """\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?"""
@@ -39,6 +41,8 @@ object ScreenParser {
     private val AMOUNT_IN = Regex("""[¥￥]\s*($NUM)|($NUM)\s*元""")
 
     private val PAID_WORDS = listOf("支付成功", "付款成功", "转账成功", "已转账", "已支付")
+    /** Words of a bill's detail page (an old payment opened again), not of the page right after paying. */
+    private val HISTORY_WORDS = listOf("账单详情", "交易成功", "当前状态", "创建时间", "交易单号", "订单号", "账单分类", "查看往来记录")
     private val DONE_BUTTONS = setOf("完成", "返回", "Done", "确定", "返回商家")
     private val RECEIVED_PAGE = listOf("你已收款", "已收款", "收款成功", "已存入零钱", "已存入余额", "已到账", "转账已到账")
     private val TIME_LABELS = listOf("支付时间", "付款时间", "创建时间", "收款时间", "转账时间", "到账时间", "交易时间", "时间")
@@ -74,11 +78,22 @@ object ScreenParser {
             val amountAt = firstAmountNear(l, paidAt, 8)
             if (amountAt != null) {
                 val (idx, cents) = amountAt
-                val hasButton = l.any { it in DONE_BUTTONS }
                 val who = counterpart(l, paidAt, idx)
                 val kind = if (l[paidAt].contains("转账") || all.contains("确认收款")) "screen_transfer_out" else "screen_paid"
+                // Fresh = the page right after paying. Real sample (Alipay scan-to-pay, 2026-11-13): the page reads
+                // "付款成功￥10.00" and has no readable 完成 button, and Alipay posts no notification while it is open.
+                // So a 完成 button is not required; what rules a page out is looking like history: an old page time,
+                // chat / list time labels, bill-detail words, or many amounts.
+                val why = when {
+                    !recent -> "页面上的时间是以前的"
+                    l.any { chatTime(it, now, zone) != null } -> "像聊天或列表（有时间标签）"
+                    HISTORY_WORDS.any { w -> l.any { it == w || it.startsWith(w) } } -> "像账单详情"
+                    l.count { AMOUNT_IN.containsMatchIn(it) || AMOUNT_LINE.matches(it) } > 4 -> "金额太多，像列表"
+                    paidAt > 8 && l.none { it in DONE_BUTTONS } -> "「付款成功」不在页面顶部"
+                    else -> ""
+                }
                 if (cents > 0) {
-                    out += Seen(TxType.EXPENSE, cents, channel, who, kind, fresh = hasButton && recent, time = pageTime, summary = "${l[paidAt]} ${money(cents)}")
+                    out += Seen(TxType.EXPENSE, cents, channel, who, kind, fresh = why.isEmpty(), time = pageTime, summary = "${l[paidAt]} ${money(cents)}", why = why)
                     return out
                 }
             }

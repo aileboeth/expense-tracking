@@ -51,8 +51,21 @@ class ScreenParserTest {
         assertEquals(at("2026-11-06T08:12:40"), s.time)
     }
 
-    @Test fun successWithoutButtonIsNotFresh() {
-        assertFalse(read(Parser.WECHAT, "支付成功", "¥30.00").single().fresh)
+    @Test fun alipayScanPayWithoutButtonIsFresh() {
+        // Real (2026-11-13): Alipay scan-to-pay showed "付款成功￥10.00" as one line, no readable 完成, and no notification came.
+        val s = read(Parser.ALIPAY, "付款成功￥10.00", "某某小吃店", "支付宝").single()
+        assertEquals(1000L, s.amountCents)
+        assertEquals("某某小吃店", s.counterpart)
+        assertTrue(s.why, s.fresh)
+        assertTrue(read(Parser.WECHAT, "支付成功", "¥30.00").single().fresh)
+    }
+
+    @Test fun cardsInAChatOrListAreNotFresh() {
+        val chat = read(Parser.WECHAT, "微信支付", "下午 6:05", "付款成功￥10.00", "收款方", "某店").single()
+        assertFalse(chat.fresh)
+        assertEquals("像聊天或列表（有时间标签）", chat.why)
+        val list = read(Parser.ALIPAY, "账单", "付款成功", "-10.00", "-25.00", "-3.50", "+100.00", "-8.00").single()
+        assertFalse(list.fresh)
     }
 
     @Test fun redPacketOpened() {
