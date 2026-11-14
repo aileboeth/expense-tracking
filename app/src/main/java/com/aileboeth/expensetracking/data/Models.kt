@@ -116,6 +116,7 @@ object Kinds {
         "wechat_voucher" -> "手表/凭证付款"
         "wechat_paid" -> "微信付款"
         "wechat_transfer_out" -> "微信转账"
+        "wechat_transfer_in" -> "微信转账收款"
         "wechat_income", "wechat_income_no_amount" -> "微信收款"
         "alipay_expense" -> "支付宝付款"
         "alipay_autopay" -> "支付宝免密支付"

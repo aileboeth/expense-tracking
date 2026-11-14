@@ -117,7 +117,21 @@ class ScreenService : AccessibilityService() {
             recentEvents.addLast("$who $type $cls 窗口${e.windowId} 文字[$text]" + if (desc.isNotEmpty()) " 描述[$desc]" else "")
             while (recentEvents.size > 12) recentEvents.removeFirst()
         }
+        // WeChat empties its pages for the service, but events still carry their own text ("塞钱进红包"):
+        // while paying, keep every event that carries any, to see whether amounts come through this way.
+        val rawText = e.text.joinToString(" / ") { it?.toString().orEmpty() }.trim()
+        val rawDesc = e.contentDescription?.toString()?.trim().orEmpty()
+        val before = e.beforeText?.toString()?.trim().orEmpty()
+        if (inPayContext() && (rawText.isNotEmpty() || rawDesc.isNotEmpty() || before.isNotEmpty())) synchronized(payEvents) {
+            payEvents.addLast("事件 $type $cls 文字[${ScreenSamples.keep(rawText)}]" +
+                (if (rawDesc.isNotEmpty()) " 描述[${ScreenSamples.keep(rawDesc)}]" else "") +
+                (if (before.isNotEmpty()) " 之前[${ScreenSamples.keep(before)}]" else ""))
+            while (payEvents.size > 40) payEvents.removeFirst()
+        }
     }
+
+    /** Events with text seen while paying, written out with the next kept read. */
+    private val payEvents = ArrayDeque<String>()
 
     override fun onAccessibilityEvent(e: AccessibilityEvent?) {
         val pkg = e?.packageName?.toString() ?: return
@@ -201,7 +215,8 @@ class ScreenService : AccessibilityService() {
             val head = "【读到】页面=${lastStateClass.ifEmpty { "?" }} 窗口${root.windowId} ${lines.size} 行"
             // Nothing readable: describe the tree, to see whether the text is hidden, drawn, or marked invisible.
             val extra = if (lines.isEmpty()) runCatching { treeStats(root) }.getOrElse { listOf("结构出错：${it.javaClass.simpleName}") } else emptyList()
-            runCatching { ScreenSamples.addDiag(this, pkg, listOf(head) + extra + lines.map(ScreenSamples::keep), now) }
+            val evs = synchronized(payEvents) { payEvents.toList().also { payEvents.clear() } }
+            runCatching { ScreenSamples.addDiag(this, pkg, listOf(head) + extra + evs + lines.map(ScreenSamples::keep), now) }
         } else if (inPayContext() && Prefs(this).screenSamples && !rereadScheduled) {
             // Too soon after the last kept read: look again shortly so the page the events settle on is kept.
             rereadScheduled = true

@@ -137,18 +137,20 @@ object Parser {
         n.bigText.trim().ifEmpty { n.text.trim() }.ifEmpty { n.ticker.trim() }
 
     /**
-     * A chat says the other side took the money: "[转账] 已被接收" (single chat, title = the person), or with a
-     * count / sender prefix when more messages are waiting: "[2条]张三: [转账] 已被接收".
+     * A chat about a transfer (real samples 2026-11-14, no amount in either): "[转账] 已被接收" = the other side
+     * took the money you sent; "[转账] 请收款" = someone sent you money. Single chat: title = the person; with
+     * more messages waiting a count / sender prefix comes first: "[2条]张三: [转账] 已被接收".
      */
-    private val WX_TRANSFER_ACCEPTED = Regex("""^(?:\[\d+条]\s*)?(?:([^:：]{1,40})[:：]\s*)?\[转账]\s*已被接收\s*$""")
+    private val WX_TRANSFER_CHAT = Regex("""^(?:\[\d+条]\s*)?(?:([^:：]{1,40})[:：]\s*)?\[转账]\s*(已被接收|请收款)\s*$""")
 
     private fun wechat(n: NoticeInput): ParseResult {
         val title = n.title.trim()
         if (title !in WECHAT_TITLES) {
-            // The only payment news WeChat posts for a transfer you sent; it carries no amount.
-            WX_TRANSFER_ACCEPTED.find(body(n))?.let {
+            // The only payment news WeChat posts for a transfer; nothing more comes once you accept one.
+            WX_TRANSFER_CHAT.find(body(n))?.let {
                 val who = it.groupValues[1].trim().ifEmpty { title }.take(40)
-                return ParseResult.Tx(TxType.EXPENSE, null, CH_WECHAT, who, "[转账] 已被接收", "wechat_transfer_out")
+                return if (it.groupValues[2] == "已被接收") ParseResult.Tx(TxType.EXPENSE, null, CH_WECHAT, who, "[转账] 已被接收", "wechat_transfer_out")
+                else ParseResult.Tx(TxType.INCOME, null, CH_WECHAT, who, "[转账] 请收款", "wechat_transfer_in")
             }
             return ParseResult.NotPayment
         }

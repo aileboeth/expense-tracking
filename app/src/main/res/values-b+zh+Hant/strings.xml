@@ -62,6 +62,7 @@
     <string name="ch_manual">手動</string>
     <string name="kind_wechat_voucher">手錶/憑證付款</string>
     <string name="kind_wechat_transfer_out">微信轉帳</string>
+    <string name="kind_wechat_transfer_in">微信轉帳收款</string>
     <string name="kind_wechat_paid">微信付款</string>
     <string name="kind_wechat_income">微信收款</string>
     <string name="kind_alipay_expense">支付寶付款</string>

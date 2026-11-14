@@ -157,8 +157,9 @@ object Ingest {
                 val id = Repo.insert(tx)
                 Repo.log(n.pkg, n.title, text, if (pending) "待补金额/待确认 #$id" else "已记账 #$id")
                 main.post { Bubble.show(ctx, id) }
-                // A transfer's chat card can't be read (WeChat shows no text to the service), so don't open it.
-                if (result.amountCents == null && result.kind != "wechat_transfer_out") AutoFetch.offer(ctx, id, n.pkg, open)
+                // WeChat shows the service no text at all (every page is one empty node, 2026-11-14), so opening it
+                // to read an amount only flashes it: auto-fetch is for Alipay only.
+                if (result.amountCents == null && n.pkg != Parser.WECHAT) AutoFetch.offer(ctx, id, n.pkg, open)
             }
         }
     }

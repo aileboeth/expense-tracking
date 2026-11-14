@@ -74,8 +74,14 @@ class ParserTest {
         assertEquals("wechat_transfer_out", t.kind)
         val more = tx(Parser.parse(wx("[2条]张三: [转账] 已被接收", title = "张三", user = 0)))
         assertEquals("张三", more.counterpart)
+        // Someone sent you money (real sample): pending income, the person is the chat.
+        val incoming = tx(Parser.parse(wx("[转账] 请收款", title = "李四", user = 0)))
+        assertEquals(TxType.INCOME, incoming.type)
+        assertNull(incoming.amountCents)
+        assertEquals("李四", incoming.counterpart)
+        assertEquals("wechat_transfer_in", incoming.kind)
         // Anything else about a transfer in a chat stays a chat.
-        assertEquals(ParseResult.NotPayment, Parser.parse(wx("[转账] 请收款", title = "张三", user = 0)))
+        assertEquals(ParseResult.NotPayment, Parser.parse(wx("[转账] 已退还", title = "张三", user = 0)))
         assertEquals(ParseResult.NotPayment, Parser.parse(wx("张三: 我说的[转账] 已被接收了吗", title = "群聊", user = 0)))
     }
 
