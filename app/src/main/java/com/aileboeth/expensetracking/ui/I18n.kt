@@ -106,6 +106,7 @@ object Labels {
         when (kind) {
             "wechat_voucher" -> R.string.kind_wechat_voucher
             "wechat_paid" -> R.string.kind_wechat_paid
+            "wechat_transfer_out" -> R.string.kind_wechat_transfer_out
             "wechat_income", "wechat_income_no_amount" -> R.string.kind_wechat_income
             "alipay_expense" -> R.string.kind_alipay_expense
             "alipay_autopay" -> R.string.kind_alipay_autopay

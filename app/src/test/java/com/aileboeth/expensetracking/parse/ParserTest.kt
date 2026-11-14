@@ -65,6 +65,20 @@ class ParserTest {
         assertEquals("wechat_voucher", t.kind)
     }
 
+    @Test fun wechatTransferAcceptedIsPendingExpense() {
+        // Real sample 2026-11-14 (main WeChat, user 0): the chat notification when the other side takes the money.
+        val t = tx(Parser.parse(wx("[转账] 已被接收", title = "张三", user = 0)))
+        assertEquals(TxType.EXPENSE, t.type)
+        assertNull(t.amountCents)
+        assertEquals("张三", t.counterpart)
+        assertEquals("wechat_transfer_out", t.kind)
+        val more = tx(Parser.parse(wx("[2条]张三: [转账] 已被接收", title = "张三", user = 0)))
+        assertEquals("张三", more.counterpart)
+        // Anything else about a transfer in a chat stays a chat.
+        assertEquals(ParseResult.NotPayment, Parser.parse(wx("[转账] 请收款", title = "张三", user = 0)))
+        assertEquals(ParseResult.NotPayment, Parser.parse(wx("张三: 我说的[转账] 已被接收了吗", title = "群聊", user = 0)))
+    }
+
     @Test fun wechatChatsAreIgnored() {
         assertEquals(ParseResult.NotPayment, Parser.parse(wx("[5条]张三: 然后退款不到账", title = "张三", user = 0)))
         assertEquals(ParseResult.NotPayment, Parser.parse(wx("我给你转了¥50", title = "李四", user = 0)))

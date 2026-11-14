@@ -199,7 +199,9 @@ class ScreenService : AccessibilityService() {
         if (inPayContext() && Prefs(this).screenSamples && now - lastPayRead > 1_000) {
             lastPayRead = now
             val head = "【读到】页面=${lastStateClass.ifEmpty { "?" }} 窗口${root.windowId} ${lines.size} 行"
-            runCatching { ScreenSamples.addDiag(this, pkg, listOf(head) + lines.map(ScreenSamples::keep), now) }
+            // Nothing readable: describe the tree, to see whether the text is hidden, drawn, or marked invisible.
+            val extra = if (lines.isEmpty()) runCatching { treeStats(root) }.getOrElse { listOf("结构出错：${it.javaClass.simpleName}") } else emptyList()
+            runCatching { ScreenSamples.addDiag(this, pkg, listOf(head) + extra + lines.map(ScreenSamples::keep), now) }
         } else if (inPayContext() && Prefs(this).screenSamples && !rereadScheduled) {
             // Too soon after the last kept read: look again shortly so the page the events settle on is kept.
             rereadScheduled = true
@@ -234,6 +236,49 @@ class ScreenService : AccessibilityService() {
         }
         synchronized(recentEvents) { recentEvents.forEach { out += "事件 $it" } }
         return out
+    }
+
+    /**
+     * For a window that gave no text: how many nodes it has, how many are visible, which classes, and whether
+     * any node holds text / description / hint / state text / tooltip / extras anyway (filtered like samples).
+     */
+    private fun treeStats(root: AccessibilityNodeInfo): List<String> {
+        var total = 0; var visible = 0; var maxDepth = 0; var withId = 0; var important = 0
+        val classes = LinkedHashMap<String, Int>()
+        val hidden = ArrayList<String>()
+        val stack = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
+        stack.addLast(root to 0)
+        while (stack.isNotEmpty() && total < 3000) {
+            val (n, d) = stack.removeLast()
+            total++
+            if (d > maxDepth) maxDepth = d
+            if (n.isVisibleToUser) visible++
+            if (n.isImportantForAccessibility) important++
+            if (n.viewIdResourceName != null) withId++
+            val cls = n.className?.toString()?.substringAfterLast('.') ?: "?"
+            classes[cls] = (classes[cls] ?: 0) + 1
+            if (hidden.size < 15) {
+                val bits = buildList {
+                    n.text?.toString()?.takeIf { it.isNotBlank() }?.let { add("文字") }
+                    n.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let { add("描述") }
+                    n.hintText?.toString()?.takeIf { it.isNotBlank() }?.let { add("提示") }
+                    n.stateDescription?.toString()?.takeIf { it.isNotBlank() }?.let { add("状态") }
+                    n.tooltipText?.toString()?.takeIf { it.isNotBlank() }?.let { add("气泡") }
+                    if (!n.extras.isEmpty) add("附加${n.extras.keySet().take(3)}")
+                }
+                if (bits.isNotEmpty()) {
+                    val t = listOfNotNull(n.text, n.contentDescription, n.hintText, n.stateDescription, n.tooltipText)
+                        .joinToString(" / ").let(ScreenSamples::keep)
+                    hidden += "节点 $cls 可见=${n.isVisibleToUser} ${bits.joinToString(",")} [$t]"
+                }
+            }
+            for (i in n.childCount - 1 downTo 0) n.getChild(i)?.let { stack.addLast(it to d + 1) }
+        }
+        val top = classes.entries.sortedByDescending { it.value }.take(8).joinToString(" ") { "${it.key}×${it.value}" }
+        return listOf(
+            "结构：节点$total 可见$visible 重要$important 有ID$withId 最深$maxDepth 根子节点${root.childCount}",
+            "类：$top",
+        ) + hidden.ifEmpty { listOf("没有任何节点带文字/描述/提示") }
     }
 
     /** All visible text in reading order (text, else the content description), at most 600 lines. */

@@ -62,6 +62,7 @@
     <string name="ch_alipay">Alipay</string>
     <string name="ch_manual">Manual</string>
     <string name="kind_wechat_voucher">Watch payment</string>
+    <string name="kind_wechat_transfer_out">WeChat transfer</string>
     <string name="kind_wechat_paid">WeChat payment</string>
     <string name="kind_wechat_income">WeChat received</string>
     <string name="kind_alipay_expense">Alipay payment</string>
