@@ -123,6 +123,57 @@ object ScreenLink {
         }
     }
 
+    /** What [WxPayFlow] made of WeChat's events: a red packet / transfer you sent, or a red packet you opened. */
+    fun onWx(ctx: Context, out: WxPayFlow.Out) {
+        val app = ctx.applicationContext
+        worker.execute { runCatching { recordWx(app, out) }.onFailure { note("出错：$it") } }
+    }
+
+    private fun recordWx(ctx: Context, out: WxPayFlow.Out) {
+        Repo.init(ctx)
+        val now = System.currentTimeMillis()
+        val wx = com.aileboeth.expensetracking.parse.Parser.WECHAT
+        val tx = when (out) {
+            is WxPayFlow.Out.Sent -> {
+                val what = if (out.redPacket) "发红包" else "转账"
+                Tx(
+                    type = com.aileboeth.expensetracking.parse.TxType.EXPENSE, amountCents = out.cents,
+                    category = Categorizer.builtIn(com.aileboeth.expensetracking.parse.TxType.EXPENSE, if (out.redPacket) "红包" else "").ifBlank { Bubble.OTHER },
+                    channel = com.aileboeth.expensetracking.parse.Parser.CH_WECHAT, counterpart = "", time = now,
+                    status = Status.OK, source = "auto",
+                    kind = if (out.redPacket) "screen_wx_redpacket_out" else "screen_wx_transfer_sent",
+                    raw = "$what ${com.aileboeth.expensetracking.data.Money.money(out.cents)}（按输入的金额）",
+                )
+            }
+            WxPayFlow.Out.Opened -> Tx(
+                type = com.aileboeth.expensetracking.parse.TxType.INCOME, amountCents = null,
+                category = Categorizer.builtIn(com.aileboeth.expensetracking.parse.TxType.INCOME, "红包"),
+                channel = com.aileboeth.expensetracking.parse.Parser.CH_WECHAT, counterpart = "", time = now,
+                status = Status.PENDING, source = "auto", kind = "wechat_redpacket_in", raw = "领红包",
+            )
+        }
+        if (Prefs(ctx).blacklistHit("", tx.raw) != null) { note("黑名单，不记：${tx.raw}"); return }
+        val id = Repo.insert(tx)
+        claimed[id] = now
+        Repo.log(wx, "微信", tx.raw, (if (tx.status == Status.PENDING) "待补金额 #$id" else "已记账 #$id") + "（从微信的操作看出来的）")
+        note("微信：${tx.raw} → #$id")
+        main.post { Bubble.show(ctx, id) }
+    }
+
+    /**
+     * Called by [Ingest] for "[转账] 已被接收": the transfer recorded when it was sent (amount typed, no
+     * name yet) is the same money. Pairs with the oldest such entry of the last day that has no name; returns its id.
+     */
+    fun pairAcceptedTransfer(counterpart: String, at: Long): Long? {
+        val hit = Repo.listAll(at - 24 * 3600_000L, at + 60_000L)
+            .filter { it.kind == "screen_wx_transfer_sent" && it.counterpart.isBlank() }
+            .minByOrNull { it.time } ?: return null
+        val cat = if (hit.category.isBlank() || hit.category == Bubble.OTHER) Categorizer.auto(hit.type, counterpart, hit.kind).ifBlank { hit.category } else hit.category
+        Repo.update(hit.copy(counterpart = counterpart, category = cat))
+        main.post { Bubble.refresh() }
+        return hit.id
+    }
+
     private fun fill(ctx: Context, id: Long, cents: Long, counterpart: String, from: String) {
         val tx = Repo.get(id) ?: return
         if (tx.amountCents != null) return

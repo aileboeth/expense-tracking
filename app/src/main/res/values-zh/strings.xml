@@ -63,6 +63,8 @@
     <string name="kind_wechat_voucher">手表/凭证付款</string>
     <string name="kind_wechat_transfer_out">微信转账</string>
     <string name="kind_wechat_transfer_in">微信转账收款</string>
+    <string name="kind_wx_redpacket_out">发微信红包</string>
+    <string name="kind_wx_redpacket_in">领微信红包</string>
     <string name="kind_wechat_paid">微信付款</string>
     <string name="kind_wechat_income">微信收款</string>
     <string name="kind_alipay_expense">支付宝付款</string>

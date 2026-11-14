@@ -141,6 +141,13 @@ object Ingest {
                         return
                     }
                 }
+                // "[转账] 已被接收": the transfer was already recorded when it was sent, with the amount typed in.
+                if (result.kind == "wechat_transfer_out") {
+                    ScreenLink.pairAcceptedTransfer(result.counterpart, at)?.let { id ->
+                        Repo.log(n.pkg, n.title, text, "转账已被接收，就是发出时记的 #$id")
+                        return
+                    }
+                }
                 val pending = result.amountCents == null || result.needsConfirm
                 val tx = Tx(
                     type = result.type,

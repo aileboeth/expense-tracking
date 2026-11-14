@@ -96,8 +96,10 @@ class ScreenService : AccessibilityService() {
         // Only WeChat / Alipay, unless auto-fetch needs to know when the home screen is in front.
         info.packageNames = if (prefs.autoFetch) null else watched.toTypedArray()
         // Screen samples on: every kind of event, to find out what still comes through when a window can't be read.
+        // WeChat's pages are empty for us, but typing and focus events still carry the amount (see WxPayFlow).
         info.eventTypes = if (prefs.screenSamples) AccessibilityEvent.TYPES_ALL_MASK
-            else AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+            else AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
+                AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or AccessibilityEvent.TYPE_VIEW_FOCUSED
         serviceInfo = info
     }
 
@@ -151,6 +153,7 @@ class ScreenService : AccessibilityService() {
         }
         if (pkg !in watched) return
         lastEventPkg = pkg
+        if (pkg == Parser.WECHAT) runCatching { wxEvent(e) }
         if (e.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val cls = e.className?.toString().orEmpty()
             if (cls.isNotEmpty() && !cls.startsWith("android.widget") && !cls.startsWith("android.view")) lastStateClass = cls.substringAfterLast('.')
@@ -160,6 +163,19 @@ class ScreenService : AccessibilityService() {
         if (!readScheduled) {
             readScheduled = true
             handler.postDelayed({ readScheduled = false; readNow() }, 400)
+        }
+    }
+
+    private val wxFlow = WxPayFlow()
+
+    private fun wxEvent(e: AccessibilityEvent) {
+        val cls = e.className?.toString().orEmpty()
+        val text = e.text.joinToString(" / ") { it?.toString().orEmpty() }
+        when (e.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> wxFlow.onPage(cls, text, System.currentTimeMillis())?.let { ScreenLink.onWx(this, it) }
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> e.contentDescription?.toString()?.let(wxFlow::onDescription)
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> wxFlow.onFocus(cls, text)
+            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> wxFlow.onTyped(cls, text)
         }
     }
 
