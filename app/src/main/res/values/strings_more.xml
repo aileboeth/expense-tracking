@@ -11,6 +11,7 @@
     <string name="bub_more">More</string>
     <string name="bub_flip">Switch income/expense</string>
     <string name="bub_not_this">Not a payment</string>
+    <string name="bub_cancel">Cancel</string>
     <string name="bub_deleted">Deleted</string>
     <string name="bub_note_hint">Note (optional)</string>
     <string name="bub_saved">Saved: %1$s %2$s</string>

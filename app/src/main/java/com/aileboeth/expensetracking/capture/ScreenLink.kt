@@ -155,23 +155,31 @@ object ScreenLink {
         if (Prefs(ctx).blacklistHit("", tx.raw) != null) { note("黑名单，不记：${tx.raw}"); return }
         val id = Repo.insert(tx)
         claimed[id] = now
+        if (tx.kind == "screen_wx_transfer_sent") Prefs(ctx).addSentTransfer(id, now)
         Repo.log(wx, "微信", tx.raw, (if (tx.status == Status.PENDING) "待补金额 #$id" else "已记账 #$id") + "（从微信的操作看出来的）")
         note("微信：${tx.raw} → #$id")
         main.post { Bubble.show(ctx, id) }
     }
 
     /**
-     * Called by [Ingest] for "[转账] 已被接收": the transfer recorded when it was sent (amount typed, no
-     * name yet) is the same money. Pairs with the oldest such entry of the last day that has no name; returns its id.
+     * Called by [Ingest] for "[转账] 已被接收". One transfer, one entry: if it was recorded when it was sent
+     * (with the amount typed in), the acceptance only adds the person's name — and adds nothing at all when
+     * that entry was deleted meanwhile. Returns a log line, or null when the transfer was not seen being sent.
      */
-    fun pairAcceptedTransfer(counterpart: String, at: Long): Long? {
-        val hit = Repo.listAll(at - 24 * 3600_000L, at + 60_000L)
-            .filter { it.kind == "screen_wx_transfer_sent" && it.counterpart.isBlank() }
-            .minByOrNull { it.time } ?: return null
-        val cat = if (hit.category.isBlank() || hit.category == Bubble.OTHER) Categorizer.auto(hit.type, counterpart, hit.kind).ifBlank { hit.category } else hit.category
-        Repo.update(hit.copy(counterpart = counterpart, category = cat))
-        main.post { Bubble.refresh() }
-        return hit.id
+    fun pairAcceptedTransfer(ctx: Context, counterpart: String, at: Long): String? {
+        val id = Prefs(ctx).takeSentTransfer(at)
+            // Sent before this list existed (or the list was lost): any nameless one of the last day.
+            ?: Repo.listAll(at - 24 * 3600_000L, at + 60_000L)
+                .filter { it.kind == "screen_wx_transfer_sent" && it.counterpart.isBlank() }
+                .minByOrNull { it.time }?.id
+            ?: return null
+        val hit = Repo.get(id) ?: return "转账已被接收：发出时记的 #$id 已经删了，不再记"
+        if (hit.counterpart.isBlank() && counterpart.isNotBlank()) {
+            val cat = if (hit.category.isBlank() || hit.category == Bubble.OTHER) Categorizer.auto(hit.type, counterpart, hit.kind).ifBlank { hit.category } else hit.category
+            Repo.update(hit.copy(counterpart = counterpart, category = cat))
+            main.post { Bubble.refresh() }
+        }
+        return "转账已被接收，就是发出时记的 #$id"
     }
 
     private fun fill(ctx: Context, id: Long, cents: Long, counterpart: String, from: String) {

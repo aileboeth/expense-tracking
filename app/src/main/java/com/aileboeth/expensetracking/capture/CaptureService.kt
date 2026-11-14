@@ -143,8 +143,8 @@ object Ingest {
                 }
                 // "[转账] 已被接收": the transfer was already recorded when it was sent, with the amount typed in.
                 if (result.kind == "wechat_transfer_out") {
-                    ScreenLink.pairAcceptedTransfer(result.counterpart, at)?.let { id ->
-                        Repo.log(n.pkg, n.title, text, "转账已被接收，就是发出时记的 #$id")
+                    ScreenLink.pairAcceptedTransfer(ctx, result.counterpart, at)?.let { line ->
+                        Repo.log(n.pkg, n.title, text, line)
                         return
                     }
                 }

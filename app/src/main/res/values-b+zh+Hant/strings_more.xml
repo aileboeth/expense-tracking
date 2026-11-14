@@ -11,6 +11,7 @@
     <string name="bub_more">更多</string>
     <string name="bub_flip">改成收入/支出</string>
     <string name="bub_not_this">不是這筆</string>
+    <string name="bub_cancel">取消</string>
     <string name="bub_deleted">已刪除</string>
     <string name="bub_note_hint">備註（可不填）</string>
     <string name="bub_saved">已記好：%1$s %2$s</string>

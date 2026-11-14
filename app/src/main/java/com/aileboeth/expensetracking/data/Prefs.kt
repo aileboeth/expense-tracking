@@ -142,6 +142,30 @@ class Prefs(ctx: Context) {
         get() = p.getBoolean("screenSamples", false)
         set(v) = p.edit().putBoolean("screenSamples", v).apply()
 
+    /**
+     * WeChat transfers recorded when they were sent ("id:time", oldest first, last 24 h). When the other side
+     * accepts, "[转账] 已被接收" belongs to one of these — even if that entry was deleted meanwhile — so the
+     * acceptance never adds a second entry for the same money.
+     */
+    fun addSentTransfer(id: Long, at: Long) {
+        val list = sentTransfers(at) + (id to at)
+        p.edit().putString("sentTransfers", list.joinToString(",") { "${it.first}:${it.second}" }).apply()
+    }
+
+    /** Takes the oldest transfer sent in the last 24 h off the list; null when there is none. */
+    fun takeSentTransfer(now: Long): Long? {
+        val list = sentTransfers(now)
+        val first = list.firstOrNull()
+        p.edit().putString("sentTransfers", list.drop(1).joinToString(",") { "${it.first}:${it.second}" }).apply()
+        return first?.first
+    }
+
+    private fun sentTransfers(now: Long): List<Pair<Long, Long>> =
+        p.getString("sentTransfers", "").orEmpty().split(',').mapNotNull { s ->
+            val (id, t) = s.split(':').takeIf { it.size == 2 } ?: return@mapNotNull null
+            (id.toLongOrNull() ?: return@mapNotNull null) to (t.toLongOrNull() ?: return@mapNotNull null)
+        }.filter { now - it.second < 24 * 3600_000L }.sortedBy { it.second }
+
     /** The first-run guide was finished or skipped. */
     var guideDone: Boolean
         get() = p.getBoolean("guideDone", false)

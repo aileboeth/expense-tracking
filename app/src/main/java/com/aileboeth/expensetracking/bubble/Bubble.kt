@@ -381,8 +381,8 @@ object Bubble {
             amount.setTextColor(if (type == TxType.INCOME) INCOME else INK)
         }
         paintAmount()
-        val more = moreRow(ctx, t, canFlip = true) { type = if (type == TxType.EXPENSE) TxType.INCOME else TxType.EXPENSE; paintAmount() }
-        sheet.addView(headRow(ctx, amount, meta(t)) { more.visibility = if (more.visibility == View.VISIBLE) View.GONE else View.VISIBLE })
+        val more = moreRow(ctx) { type = if (type == TxType.EXPENSE) TxType.INCOME else TxType.EXPENSE; paintAmount() }
+        sheet.addView(headRow(ctx, amount, meta(t), t) { more.visibility = if (more.visibility == View.VISIBLE) View.GONE else View.VISIBLE })
         sheet.addView(more)
         val note = noteField(ctx, t.note)
         val cats = categoryRow(ctx, type) { cat -> save(t.copy(type = type), cat, note.text.toString()) }
@@ -448,7 +448,6 @@ object Bubble {
         }
         val save = saveButton(ctx) {}
         val chips = FlowLayout(ctx, dp(6f))
-        val more = moreRow(ctx, t, canFlip = false) {}
         val yuan = TextView(ctx).apply { text = Money.sym; textSize = 24f; typeface = Typeface.DEFAULT_BOLD; setTextColor(INK); visibility = View.GONE }
         val amountBox = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -457,8 +456,7 @@ object Bubble {
             addView(yuan)
             addView(amount, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
-        sheet.addView(headRow(ctx, amountBox, meta(t)) { more.visibility = if (more.visibility == View.VISIBLE) View.GONE else View.VISIBLE })
-        sheet.addView(more)
+        sheet.addView(headRow(ctx, amountBox, meta(t), t, onMore = null))
 
         fun amountCents() = Money.parse(amount.text.toString())
         fun paintChips() {
@@ -523,7 +521,16 @@ object Bubble {
             if (left > 0) s(R.string.bub_more_left, left) else ""
     }
 
-    private fun headRow(ctx: Context, amount: View, meta: String, onMore: () -> Unit) = LinearLayout(ctx).apply {
+    /** Not a payment / not wanted: delete it and show the next one. Right on the card, no menu. */
+    private fun cancelChip(ctx: Context, t: Tx) = chip(ctx, s(R.string.bub_cancel), danger = true) {
+        Thread { Repo.delete(t.id) }.start()
+        queue.remove(t.id)
+        toast(s(R.string.bub_deleted))
+        next()
+    }
+
+    /** Amount, what/when, 取消, and "⋯" only when there is something behind it ([onMore] = income/expense switch). */
+    private fun headRow(ctx: Context, amount: View, meta: String, t: Tx, onMore: (() -> Unit)?) = LinearLayout(ctx).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
         addView(amount, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
@@ -534,27 +541,24 @@ object Bubble {
             setPadding(dp(8f), 0, dp(8f), 0)
         }, if (amount.tag == "amountBox") LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         else LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        addView(TextView(ctx).apply {
-            text = "⋯"; textSize = 16f; setTextColor(INK); gravity = Gravity.CENTER
-            background = round(CHIP, 12f)
-            setOnClickListener { onMore() }
-            contentDescription = s(R.string.bub_more)
-        }, LinearLayout.LayoutParams(dp(36f), dp(30f)))
+        addView(cancelChip(ctx, t), LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        if (onMore != null) {
+            addView(View(ctx), LinearLayout.LayoutParams(dp(6f), 1))
+            addView(TextView(ctx).apply {
+                text = "⋯"; textSize = 16f; setTextColor(INK); gravity = Gravity.CENTER
+                background = round(CHIP, 12f)
+                setOnClickListener { onMore() }
+                contentDescription = s(R.string.bub_more)
+            }, LinearLayout.LayoutParams(dp(36f), dp(30f)))
+        }
     }
 
-    /** Hidden row behind "⋯": switch expense/income, delete. */
-    private fun moreRow(ctx: Context, t: Tx, canFlip: Boolean, onFlip: () -> Unit) = LinearLayout(ctx).apply {
+    /** Hidden row behind "⋯": switch expense/income. */
+    private fun moreRow(ctx: Context, onFlip: () -> Unit) = LinearLayout(ctx).apply {
         orientation = LinearLayout.HORIZONTAL
         visibility = View.GONE
         setPadding(0, dp(10f), 0, 0)
-        if (canFlip) addView(chip(ctx, s(R.string.bub_flip)) { onFlip() })
-        addView(View(ctx), LinearLayout.LayoutParams(dp(6f), 1))
-        addView(chip(ctx, s(R.string.bub_not_this), danger = true) {
-            Thread { Repo.delete(t.id) }.start()
-            queue.remove(t.id)
-            toast(s(R.string.bub_deleted))
-            next()
-        })
+        addView(chip(ctx, s(R.string.bub_flip)) { onFlip() })
     }
 
     private fun categoryRow(ctx: Context, type: TxType, onPick: (String) -> Unit): View {
