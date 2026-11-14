@@ -26,7 +26,7 @@
     <string name="fa_fetch">自動去讀金額</string>
     <string name="fa_fetch_sub">沒金額的帳：手機解鎖停在桌面時，自動開啟那條訊息幾秒，讀到金額就回桌面。每筆只試一次，不會蓋住你正在用的 App。</string>
     <string name="fa_samples">記錄螢幕樣本</string>
-    <string name="fa_samples_sub">幫忙改進識別：只存在這臺手機裡，3 天后自動刪；只留帶數字或付款字樣的行，其他行變成「·」。</string>
+    <string name="fa_samples_sub">幫忙改進識別：只存在這臺手機裡，3 天后自動刪；只留帶數字或付款字樣的行，其他行變成「·」。也會記下讀不到畫面時的診斷資訊，以及微信/支付寶跟付款有關的通知（聊天只留轉帳、紅包類，不留人名）。</string>
     <string name="fa_samples_send">傳送螢幕樣本</string>
     <string name="fa_samples_send_sub">%d 條，傳送前可以先開啟看看</string>
     <string name="fa_samples_clear">清空螢幕樣本</string>

@@ -26,7 +26,7 @@
     <string name="fa_fetch">自动去读金额</string>
     <string name="fa_fetch_sub">没金额的账：手机解锁停在桌面时，自动打开那条消息几秒，读到金额就回桌面。每笔只试一次，不会盖住你正在用的 App。</string>
     <string name="fa_samples">记录屏幕样本</string>
-    <string name="fa_samples_sub">帮忙改进识别：只存在这台手机里，3 天后自动删；只留带数字或付款字样的行，其他行变成「·」。</string>
+    <string name="fa_samples_sub">帮忙改进识别：只存在这台手机里，3 天后自动删；只留带数字或付款字样的行，其他行变成「·」。也会记下读不到画面时的诊断信息，以及微信/支付宝跟付款有关的通知（聊天只留转账、红包类，不留人名）。</string>
     <string name="fa_samples_send">发送屏幕样本</string>
     <string name="fa_samples_send_sub">%d 条，发送前可以先打开看看</string>
     <string name="fa_samples_clear">清空屏幕样本</string>

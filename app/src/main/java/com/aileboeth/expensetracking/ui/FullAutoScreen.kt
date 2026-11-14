@@ -86,7 +86,7 @@ fun FullAutoScreen(onBack: () -> Unit) {
         text = { Text(stringResource(R.string.fa_samples_clear_body, sampleCount)) },
         confirmButton = {
             androidx.compose.material3.TextButton({
-                if (confirm == "off") { samples = false; prefs.screenSamples = false }
+                if (confirm == "off") { samples = false; prefs.screenSamples = false; ScreenService.reconfigure() }
                 ScreenSamples.clear(ctx); confirm = ""; tick++
                 Toast.makeText(ctx, ctx.getString(R.string.fa_samples_cleared), Toast.LENGTH_SHORT).show()
             }) { Text(stringResource(R.string.fa_samples_clear_ok), color = ExpenseRed) }
@@ -165,7 +165,7 @@ fun FullAutoScreen(onBack: () -> Unit) {
                     {
                         SettingSwitch(Icons.Filled.Science, Tint.Teal, stringResource(R.string.fa_samples), stringResource(R.string.fa_samples_sub), samples) {
                             // Turning it off deletes the samples: ask first when there are some.
-                            if (!it && sampleCount > 0) confirm = "off" else { samples = it; prefs.screenSamples = it }
+                            if (!it && sampleCount > 0) confirm = "off" else { samples = it; prefs.screenSamples = it; ScreenService.reconfigure() }
                         }
                     },
                     if (samples || sampleCount > 0) {

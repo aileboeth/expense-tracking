@@ -79,13 +79,41 @@ class ScreenService : AccessibilityService() {
 
     fun configure() {
         val info = serviceInfo ?: return
+        val prefs = Prefs(this)
         // Only WeChat / Alipay, unless auto-fetch needs to know when the home screen is in front.
-        info.packageNames = if (Prefs(this).autoFetch) null else watched.toTypedArray()
+        info.packageNames = if (prefs.autoFetch) null else watched.toTypedArray()
+        // Screen samples on: every kind of event, to find out what still comes through when a window can't be read.
+        info.eventTypes = if (prefs.screenSamples) AccessibilityEvent.TYPES_ALL_MASK
+            else AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
         serviceInfo = info
+    }
+
+    /** Recent WeChat / Alipay events (type, class, the text the event itself carries), for the diagnostics sample. */
+    private val recentEvents = ArrayDeque<String>()
+    /** The last read found no readable window: try the event's own source node next time. */
+    @Volatile private var lastReadFailed = false
+    private var pendingSource: AccessibilityNodeInfo? = null
+
+    private fun track(e: AccessibilityEvent, pkg: String) {
+        val type = AccessibilityEvent.eventTypeToString(e.eventType).removePrefix("TYPE_")
+        val cls = e.className?.toString()?.substringAfterLast('.').orEmpty()
+        val text = e.text.joinToString(" / ") { it?.toString().orEmpty() }.let(ScreenSamples::keep)
+        val desc = e.contentDescription?.toString()?.let(ScreenSamples::keep).orEmpty()
+        val who = if (pkg == Parser.ALIPAY) "支付宝" else "微信"
+        synchronized(recentEvents) {
+            recentEvents.addLast("$who $type $cls 窗口${e.windowId} 文字[$text]" + if (desc.isNotEmpty()) " 描述[$desc]" else "")
+            while (recentEvents.size > 12) recentEvents.removeFirst()
+        }
     }
 
     override fun onAccessibilityEvent(e: AccessibilityEvent?) {
         val pkg = e?.packageName?.toString() ?: return
+        if (pkg in watched && Prefs(this).screenSamples) {
+            runCatching { track(e, pkg) }
+            // Notification events carry the notification itself; the listener handles those.
+            if (e.eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) return
+        }
+        if (pkg in watched && lastReadFailed && pendingSource == null) pendingSource = try { e.source } catch (_: Throwable) { null }
         if (e.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) rawForeground = pkg
         if (e.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && pkg !in ignoredForeground &&
             e.className?.toString()?.contains("Toast") != true
@@ -109,17 +137,30 @@ class ScreenService : AccessibilityService() {
     private fun readNow() {
         // The active window first; else any window on screen from WeChat / Alipay (an app clone, a pop-up on top).
         val active = try { rootInActiveWindow } catch (_: Throwable) { null }
-        val root = active?.takeIf { it.packageName?.toString() in watched }
+        var root = active?.takeIf { it.packageName?.toString() in watched }
             ?: try { windows.mapNotNull { it.root }.firstOrNull { it.packageName?.toString() in watched } } catch (_: Throwable) { null }
         if (root == null) {
+            // Last resort: the node the event came from, climbed up to its top.
+            val src = pendingSource
+            pendingSource = null
+            root = src?.let(::topOf)?.takeIf { it.packageName?.toString() in watched }
+            if (root != null && lastReadFailed) ScreenLink.note("窗口读不到，改从事件来源读到了内容")
+        }
+        if (root == null) {
+            lastReadFailed = true
             // Events come from WeChat / Alipay but no window content can be read (e.g. an app clone in another user).
             val now = System.currentTimeMillis()
             if (now - lastUnreadableNote > 30_000) {
                 lastUnreadableNote = now
                 ScreenLink.note("收到${if (lastEventPkg == Parser.ALIPAY) "支付宝" else "微信"}的画面变化，但读不到内容（前台窗口：${active?.packageName ?: "读不到"}）")
             }
+            if (Prefs(this).screenSamples && now - lastDiag > 8_000) {
+                lastDiag = now
+                runCatching { ScreenSamples.addDiag(this, lastEventPkg, diagLines(active), now) }
+            }
             return
         }
+        lastReadFailed = false
         var pkg = root.packageName?.toString() ?: return
         var lines = collect(root)
         if (pkg == packageName) {
@@ -131,6 +172,31 @@ class ScreenService : AccessibilityService() {
         }
         if (lines.isEmpty()) return
         ScreenLink.onScreen(this, pkg, lines)
+    }
+
+    private var lastDiag = 0L
+
+    private fun topOf(n: AccessibilityNodeInfo): AccessibilityNodeInfo {
+        var cur = n
+        repeat(60) { cur = (try { cur.parent } catch (_: Throwable) { null }) ?: return cur }
+        return cur
+    }
+
+    /** What can be seen when no WeChat / Alipay window is readable: the windows on screen and the recent events. */
+    private fun diagLines(active: AccessibilityNodeInfo?): List<String> {
+        val out = ArrayList<String>()
+        out += "【诊断】读不到窗口内容 前台=${active?.packageName ?: "读不到"} 前台窗口=${active?.windowId ?: "-"}"
+        try {
+            for (w in windows) {
+                val r = try { w.root } catch (_: Throwable) { null }
+                out += "窗口${w.id} 类型${w.type} 层${w.layer} 活动=${w.isActive} 标题[${w.title?.toString()?.let(ScreenSamples::keepTitle).orEmpty()}] " +
+                    "内容=${r?.packageName ?: "读不到"} 子节点${r?.childCount ?: 0}"
+            }
+        } catch (e: Throwable) {
+            out += "窗口列表出错：${e.javaClass.simpleName}"
+        }
+        synchronized(recentEvents) { recentEvents.forEach { out += "事件 $it" } }
+        return out
     }
 
     /** All visible text in reading order (text, else the content description), at most 600 lines. */

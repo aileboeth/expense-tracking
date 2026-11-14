@@ -26,7 +26,7 @@
     <string name="fa_fetch">Fetch amounts by itself</string>
     <string name="fa_fetch_sub">For entries without an amount: when the phone is unlocked on the home screen, opens that message for a few seconds, reads the amount and goes back home. One try per entry, never over the app you are using.</string>
     <string name="fa_samples">Keep screen samples</string>
-    <string name="fa_samples_sub">Helps improve recognition: kept only on this phone and deleted after 3 days; only lines with digits or payment words are kept, the rest become \"·\".</string>
+    <string name="fa_samples_sub">Helps improve recognition: kept only on this phone and deleted after 3 days; only lines with digits or payment words are kept, the rest become \"·\". It also notes what it can see when a screen cannot be read, and WeChat/Alipay payment notifications (from chats only transfers and red packets, without names).</string>
     <string name="fa_samples_send">Send screen samples</string>
     <string name="fa_samples_send_sub">Screens kept: %d. You can open the file before sending</string>
     <string name="fa_samples_clear">Clear screen samples</string>

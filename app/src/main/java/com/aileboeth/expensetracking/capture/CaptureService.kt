@@ -103,6 +103,11 @@ object Ingest {
         val payApp = if (known) null else PaymentApps.find(n.pkg)?.takeIf { it.pkg in prefs.payApps() }
         if (!known && payApp == null && !prefs.otherApps) return
         val text = n.bigText.ifBlank { n.text }
+        if (known && prefs.screenSamples) {
+            val service = if (n.pkg == Parser.WECHAT) isServiceTitle(n)
+                else listOf("提醒", "到账", "支付", "交易", "收款", "转账", "账单", "余额", "通知").any { n.title.contains(it) }
+            runCatching { ScreenSamples.addNotice(ctx, n.pkg, n.userId, n.title, text, service, System.currentTimeMillis()) }
+        }
 
         if (n.pkg in prefs.blacklistApps) {
             if (known || Parser.looksLikeMoney(n)) Repo.log(n.pkg, n.title, text, "黑名单 App，不记")
