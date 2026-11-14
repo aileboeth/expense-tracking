@@ -107,6 +107,8 @@ object Ingest {
             val service = if (n.pkg == Parser.WECHAT) isServiceTitle(n)
                 else listOf("提醒", "到账", "支付", "交易", "收款", "转账", "账单", "余额", "通知").any { n.title.contains(it) }
             runCatching { ScreenSamples.addNotice(ctx, n.pkg, n.userId, n.title, text, service, System.currentTimeMillis()) }
+            // "[转账] 已被接收" and the like: whatever WeChat / Alipay shows next is worth keeping.
+            if (listOf("[转账]", "[红包]", "转账", "收款").any { text.contains(it) }) ScreenService.markPayContext()
         }
 
         if (n.pkg in prefs.blacklistApps) {

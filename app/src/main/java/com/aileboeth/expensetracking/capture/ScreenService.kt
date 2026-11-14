@@ -51,7 +51,20 @@ class ScreenService : AccessibilityService() {
 
         /** Re-apply which apps the service listens to (after the 自动去读金额 switch changed). */
         fun reconfigure() { instance?.configure() }
+
+        /**
+         * Screen samples: for 2 minutes after a sign of paying (a payment page, the fingerprint prompt,
+         * a 转账/红包 chat notification) every WeChat / Alipay screen read is kept, not only ones with money.
+         */
+        @Volatile private var payContextUntil = 0L
+        fun markPayContext() { payContextUntil = System.currentTimeMillis() + 120_000L }
+        fun inPayContext() = System.currentTimeMillis() < payContextUntil
+
+        private val PAY_PAGES = listOf("Remittance", "Wallet", "Pay", "UIPageFragment", "LuckyMoney", "Collect", "Cashier", "Bill")
     }
+
+    /** The last WeChat / Alipay page (activity class) that came to the front. */
+    @Volatile private var lastStateClass = ""
 
     private val handler = Handler(Looper.getMainLooper())
     private val debugPose by lazy { packageName.endsWith(".debug") }
@@ -124,6 +137,11 @@ class ScreenService : AccessibilityService() {
         }
         if (pkg !in watched) return
         lastEventPkg = pkg
+        if (e.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            val cls = e.className?.toString().orEmpty()
+            if (cls.isNotEmpty() && !cls.startsWith("android.widget") && !cls.startsWith("android.view")) lastStateClass = cls.substringAfterLast('.')
+            if (PAY_PAGES.any { cls.contains(it) }) markPayContext()
+        }
         // Pages fire many change events; read at most every 400 ms.
         if (!readScheduled) {
             readScheduled = true
@@ -148,11 +166,18 @@ class ScreenService : AccessibilityService() {
         }
         if (root == null) {
             lastReadFailed = true
-            // Events come from WeChat / Alipay but no window content can be read (e.g. an app clone in another user).
             val now = System.currentTimeMillis()
+            // A system pop-up (fingerprint / password prompt) covers the app: nothing under it can be read, and
+            // that is expected — the page after it is what counts.
+            val systemOnTop = active?.packageName?.toString() == "com.android.systemui"
+            if (systemOnTop) markPayContext()
             if (now - lastUnreadableNote > 30_000) {
                 lastUnreadableNote = now
-                ScreenLink.note("收到${if (lastEventPkg == Parser.ALIPAY) "支付宝" else "微信"}的画面变化，但读不到内容（前台窗口：${active?.packageName ?: "读不到"}）")
+                val app = if (lastEventPkg == Parser.ALIPAY) "支付宝" else "微信"
+                ScreenLink.note(
+                    if (systemOnTop) "系统弹窗（如指纹验证）挡住了$app，等它关掉再读"
+                    else "收到${app}的画面变化，但读不到内容（前台窗口：${active?.packageName ?: "读不到"}）",
+                )
             }
             if (Prefs(this).screenSamples && now - lastDiag > 8_000) {
                 lastDiag = now
@@ -170,11 +195,23 @@ class ScreenService : AccessibilityService() {
             pkg = first.removePrefix(POSE).removeSuffix("]").trim()
             lines = lines.drop(1)
         }
+        val now = System.currentTimeMillis()
+        if (inPayContext() && Prefs(this).screenSamples && now - lastPayRead > 1_000) {
+            lastPayRead = now
+            val head = "【读到】页面=${lastStateClass.ifEmpty { "?" }} 窗口${root.windowId} ${lines.size} 行"
+            runCatching { ScreenSamples.addDiag(this, pkg, listOf(head) + lines.map(ScreenSamples::keep), now) }
+        } else if (inPayContext() && Prefs(this).screenSamples && !rereadScheduled) {
+            // Too soon after the last kept read: look again shortly so the page the events settle on is kept.
+            rereadScheduled = true
+            handler.postDelayed({ rereadScheduled = false; readNow() }, 1_100)
+        }
         if (lines.isEmpty()) return
         ScreenLink.onScreen(this, pkg, lines)
     }
 
     private var lastDiag = 0L
+    private var lastPayRead = 0L
+    private var rereadScheduled = false
 
     private fun topOf(n: AccessibilityNodeInfo): AccessibilityNodeInfo {
         var cur = n

@@ -65,7 +65,8 @@ object ScreenLink {
         Repo.init(ctx)
         val now = System.currentTimeMillis()
         trim(now)
-        if (Prefs(ctx).screenSamples && ScreenParser.looksLikeMoney(lines)) ScreenSamples.add(ctx, pkg, lines, now)
+        // While paying, the service already keeps every read (see ScreenService.inPayContext).
+        if (Prefs(ctx).screenSamples && !ScreenService.inPayContext() && ScreenParser.looksLikeMoney(lines)) ScreenSamples.add(ctx, pkg, lines, now)
         val seen = ScreenParser.read(pkg, lines, now)
         val moneyLines = lines.count { ScreenParser.looksLikeMoney(listOf(it)) }
         lastScan = "${if (pkg == com.aileboeth.expensetracking.parse.Parser.ALIPAY) "支付宝" else "微信"}画面 ${lines.size} 行，像金额的 $moneyLines 行，认出 ${seen.size} 笔" +

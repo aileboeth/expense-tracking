@@ -13,7 +13,7 @@ import java.util.Locale
  * screens, only in this app's own storage, cleared when the switch goes off or after 3 days.
  */
 object ScreenSamples {
-    private const val MAX = 120
+    private const val MAX = 300
     private const val KEEP_MS = 3 * 24 * 3600_000L
     private val WORDS = listOf(
         "支付", "付款", "收款", "转账", "到账", "红包", "零钱", "余额", "账单", "金额", "凭证", "完成", "成功", "收入", "支出",
