@@ -58,6 +58,9 @@ object Diagnostics {
         line("黑名单关键词", prefs.blacklistWords.size)
         line("账单条数", Repo.all().size)
         line("待补金额", Repo.pending().size)
+        exitReasons(ctx, fmt).let { sb.append("\n最近几次进程退出（系统记录，新的在前）：\n").append(it.ifEmpty { listOf("（没有记录）") }.joinToString("\n")).append('\n') }
+        sb.append("\n运行记录（新的在前）：\n").append(Life.lines(ctx).ifEmpty { listOf("（没有）") }.joinToString("\n")).append('\n')
+        Life.crashes(ctx).takeIf { it.isNotEmpty() }?.let { sb.append("\n崩溃记录：\n").append(it).append('\n') }
         sb.append("\n最近的识别记录（最多 80 条，新的在前）")
         sb.append(if (withText) "：\n" else "，通知原文已隐藏：\n")
         val logs = Repo.logs().take(80)
@@ -70,6 +73,38 @@ object Diagnostics {
                 .append("：").append(text).append("  → ").append(l.result).append('\n')
         }
         return sb.toString()
+    }
+
+    /** Why the app's process ended lately (Android 11+ keeps this): crash, low memory, killed by the system, … */
+    private fun exitReasons(ctx: Context, fmt: SimpleDateFormat): List<String> {
+        if (Build.VERSION.SDK_INT < 30) return listOf("（Android 11 以下没有这项）")
+        return try {
+            val am = ctx.getSystemService(android.app.ActivityManager::class.java)
+            am.getHistoricalProcessExitReasons(ctx.packageName, 0, 12).map { e ->
+                val reason = when (e.reason) {
+                    android.app.ApplicationExitInfo.REASON_CRASH -> "崩溃"
+                    android.app.ApplicationExitInfo.REASON_CRASH_NATIVE -> "崩溃(native)"
+                    android.app.ApplicationExitInfo.REASON_ANR -> "无响应(ANR)"
+                    android.app.ApplicationExitInfo.REASON_LOW_MEMORY -> "内存不足"
+                    android.app.ApplicationExitInfo.REASON_EXIT_SELF -> "自己退出"
+                    android.app.ApplicationExitInfo.REASON_SIGNALED -> "被信号杀掉"
+                    android.app.ApplicationExitInfo.REASON_USER_REQUESTED -> "用户/系统强行停止"
+                    android.app.ApplicationExitInfo.REASON_USER_STOPPED -> "用户停止"
+                    android.app.ApplicationExitInfo.REASON_DEPENDENCY_DIED -> "依赖的进程没了"
+                    android.app.ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> "耗电/资源过多"
+                    android.app.ApplicationExitInfo.REASON_PERMISSION_CHANGE -> "权限变了"
+                    android.app.ApplicationExitInfo.REASON_FREEZER -> "被冻结后清掉"
+                    android.app.ApplicationExitInfo.REASON_PACKAGE_UPDATED -> "App 更新"
+                    android.app.ApplicationExitInfo.REASON_PACKAGE_STATE_CHANGE -> "App 状态变了"
+                    android.app.ApplicationExitInfo.REASON_INITIALIZATION_FAILURE -> "启动失败"
+                    android.app.ApplicationExitInfo.REASON_OTHER -> "其他"
+                    else -> "未知"
+                }
+                "${fmt.format(Date(e.timestamp))}  $reason (${e.reason}/${e.status}) 重要度${e.importance} 内存${e.pss / 1024}MB  ${e.description.orEmpty().take(120)}"
+            }
+        } catch (t: Throwable) {
+            listOf("读不到：${t.javaClass.simpleName}")
+        }
     }
 
     private fun fileName() = "记账诊断-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".txt"

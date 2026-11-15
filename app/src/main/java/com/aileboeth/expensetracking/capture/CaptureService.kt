@@ -31,6 +31,7 @@ class CaptureService : NotificationListenerService() {
         connected = true
         Repo.init(this)
         Prefs(this).listenerConnectedAt = System.currentTimeMillis()
+        Life.mark(this, "通知监听已连接" + if (ScreenService.enabled(this) && !ScreenService.connected) "（全自动开着但没运行）" else "")
         // Payments posted while we were not connected: the signature check drops ones already recorded.
         try {
             activeNotifications?.forEach { sbn -> if (sbn.packageName in Parser.KNOWN_APPS) Ingest.post(this, toInput(sbn)) }
@@ -40,6 +41,7 @@ class CaptureService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         connected = false
+        Life.mark(this, "通知监听断开")
         try {
             requestRebind(ComponentName(this, CaptureService::class.java))
         } catch (_: Throwable) {

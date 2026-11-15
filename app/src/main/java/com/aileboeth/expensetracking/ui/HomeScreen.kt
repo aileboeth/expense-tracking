@@ -142,6 +142,14 @@ fun HomeScreen(
     var permTick by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) { permTick++; onPauseOrDispose { } }
     val setupMissing = remember(permTick) { !Perms.listener(ctx) || !Perms.overlay(ctx) }
+    // Full auto switched on but the system stopped it (vivo shows 无法运行): it only comes back after off + on.
+    // Checked a few seconds after opening, so a service that is just being started again is not flagged.
+    var fullAutoStuck by remember { mutableStateOf(false) }
+    LaunchedEffect(permTick) {
+        fullAutoStuck = false
+        kotlinx.coroutines.delay(4000)
+        fullAutoStuck = fullAutoState(ctx) == 2
+    }
 
     val expense = txs.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
     val income = txs.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
@@ -176,6 +184,11 @@ fun HomeScreen(
             }
             if (setupMissing) item {
                 NoticeCard(stringResource(R.string.home_setup_title), stringResource(R.string.home_setup_body), stringResource(R.string.go_set), onClick = openSettings)
+            }
+            if (fullAutoStuck && !setupMissing) item {
+                NoticeCard(stringResource(R.string.home_fa_stuck_title), stringResource(R.string.home_fa_stuck_body), stringResource(R.string.go_set)) {
+                    com.aileboeth.expensetracking.capture.ScreenService.open(ctx)
+                }
             }
             val shownPending = pending.filter { it.id !in actions.hidden }
             if (shownPending.isNotEmpty()) item {

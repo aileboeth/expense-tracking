@@ -88,6 +88,7 @@ class ScreenService : AccessibilityService() {
         Repo.init(this)
         configure()
         ScreenLink.note("全自动已连接")
+        Life.mark(this, "全自动已连接")
     }
 
     fun configure() {
@@ -333,12 +334,14 @@ class ScreenService : AccessibilityService() {
 
     override fun onDestroy() {
         if (instance === this) instance = null
+        Life.mark(this, "全自动停止(onDestroy)")
         AutoFetch.cancel()
         super.onDestroy()
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
         if (instance === this) instance = null
+        Life.mark(this, "全自动被解绑(onUnbind)")
         return super.onUnbind(intent)
     }
 }
