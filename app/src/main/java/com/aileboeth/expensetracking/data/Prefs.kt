@@ -142,6 +142,11 @@ class Prefs(ctx: Context) {
         get() = p.getBoolean("screenSamples", false)
         set(v) = p.edit().putBoolean("screenSamples", v).apply()
 
+    /** 0.2.12: samples made before then could hold chat text; they were cleared (and sampling turned off) once. */
+    var samplesPurged: Boolean
+        get() = p.getBoolean("samplesPurged212", false)
+        set(v) = p.edit().putBoolean("samplesPurged212", v).apply()
+
     /**
      * WeChat transfers recorded when they were sent ("id:time", oldest first, last 24 h). When the other side
      * accepts, "[转账] 已被接收" belongs to one of these — even if that entry was deleted meanwhile — so the

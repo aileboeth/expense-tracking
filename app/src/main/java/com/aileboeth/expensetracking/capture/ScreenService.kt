@@ -110,11 +110,17 @@ class ScreenService : AccessibilityService() {
     @Volatile private var lastReadFailed = false
     private var pendingSource: AccessibilityNodeInfo? = null
 
+    /** The page in front is a payment page (red packet / transfer input, pay sheet check, wallet …), not a chat. */
+    private fun onPayPage() = PAY_PAGES.any { lastStateClass.contains(it) }
+
     private fun track(e: AccessibilityEvent, pkg: String) {
         val type = AccessibilityEvent.eventTypeToString(e.eventType).removePrefix("TYPE_")
         val cls = e.className?.toString()?.substringAfterLast('.').orEmpty()
-        val text = e.text.joinToString(" / ") { it?.toString().orEmpty() }.let(ScreenSamples::keep)
-        val desc = e.contentDescription?.toString()?.let(ScreenSamples::keep).orEmpty()
+        // Chats are private: what is typed there, who a message is from, what was long-pressed. Event text is
+        // only kept on payment pages, and never from notification events (they carry the sender's name).
+        val hide = e.eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED || !onPayPage()
+        val text = if (hide) "·" else e.text.joinToString(" / ") { it?.toString().orEmpty() }.let(ScreenSamples::keep)
+        val desc = if (hide) "" else e.contentDescription?.toString()?.let(ScreenSamples::keep).orEmpty()
         val who = if (pkg == Parser.ALIPAY) "支付宝" else "微信"
         synchronized(recentEvents) {
             recentEvents.addLast("$who $type $cls 窗口${e.windowId} 文字[$text]" + if (desc.isNotEmpty()) " 描述[$desc]" else "")
@@ -125,7 +131,7 @@ class ScreenService : AccessibilityService() {
         val rawText = e.text.joinToString(" / ") { it?.toString().orEmpty() }.trim()
         val rawDesc = e.contentDescription?.toString()?.trim().orEmpty()
         val before = e.beforeText?.toString()?.trim().orEmpty()
-        if (inPayContext() && (rawText.isNotEmpty() || rawDesc.isNotEmpty() || before.isNotEmpty())) synchronized(payEvents) {
+        if (!hide && inPayContext() && (rawText.isNotEmpty() || rawDesc.isNotEmpty() || before.isNotEmpty())) synchronized(payEvents) {
             payEvents.addLast("事件 $type $cls 文字[${ScreenSamples.keep(rawText)}]" +
                 (if (rawDesc.isNotEmpty()) " 描述[${ScreenSamples.keep(rawDesc)}]" else "") +
                 (if (before.isNotEmpty()) " 之前[${ScreenSamples.keep(before)}]" else ""))
@@ -201,7 +207,8 @@ class ScreenService : AccessibilityService() {
             // A system pop-up (fingerprint / password prompt) covers the app: nothing under it can be read, and
             // that is expected — the page after it is what counts.
             val systemOnTop = active?.packageName?.toString() == "com.android.systemui"
-            if (systemOnTop) markPayContext()
+            // Only a prompt over a payment page counts (fingerprint check), not the notification shade over a chat.
+            if (systemOnTop && onPayPage()) markPayContext()
             if (now - lastUnreadableNote > 30_000) {
                 lastUnreadableNote = now
                 val app = if (lastEventPkg == Parser.ALIPAY) "支付宝" else "微信"

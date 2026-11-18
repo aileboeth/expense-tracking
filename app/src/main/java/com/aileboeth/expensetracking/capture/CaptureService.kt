@@ -97,6 +97,14 @@ object Ingest {
         }
     }
 
+    private val SMS_APPS = setOf(
+        "com.android.mms", "com.android.mms.service", "com.android.messaging", "com.google.android.apps.messaging",
+        "com.samsung.android.messaging", "com.vivo.message", "com.oplus.message", "com.coloros.mms", "com.huawei.message", "com.android.contacts",
+    )
+
+    private fun isSmsApp(ctx: Context, pkg: String): Boolean =
+        pkg in SMS_APPS || runCatching { android.provider.Telephony.Sms.getDefaultSmsPackage(ctx) == pkg }.getOrDefault(false)
+
     private fun handle(ctx: Context, n: NoticeInput, open: android.app.PendingIntent?) {
         Repo.init(ctx)
         val prefs = Prefs(ctx)
@@ -109,8 +117,12 @@ object Ingest {
             val service = if (n.pkg == Parser.WECHAT) isServiceTitle(n)
                 else listOf("提醒", "到账", "支付", "交易", "收款", "转账", "账单", "余额", "通知").any { n.title.contains(it) }
             runCatching { ScreenSamples.addNotice(ctx, n.pkg, n.userId, n.title, text, service, System.currentTimeMillis()) }
-            // "[转账] 已被接收" and the like: whatever WeChat / Alipay shows next is worth keeping.
-            if (listOf("[转账]", "[红包]", "转账", "收款").any { text.contains(it) }) ScreenService.markPayContext()
+        }
+
+        // Text messages: the user's bank sends none, so money in an SMS is ads / spam ("送你10元红包") — never recorded.
+        if (!known && payApp == null && isSmsApp(ctx, n.pkg)) {
+            if (Parser.looksLikeMoney(n) && Repo.markSeen(n.signature)) Repo.log(n.pkg, n.title, text, "短信，不记")
+            return
         }
 
         if (n.pkg in prefs.blacklistApps) {
