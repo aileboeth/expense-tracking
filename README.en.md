@@ -121,6 +121,22 @@ Each Release carries three files with fixed names, read by the in-app updater:
 
 Tag as `v<version>`, e.g. `v0.2.0`.
 
+## Disclaimer
+
+Expense Tracking is free, open-source software made by one person. It is provided "as is", without any warranty, express or implied.
+
+1. Automatic recording works by reading notifications and (optionally) screens through accessibility. It can miss, misread or double-record payments. The official bills of your payment apps are what count; this app does not replace them.
+2. Bills, notes and attachments are kept only on your phone and are never uploaded. The network is used only to check for and download updates (GitHub or the mirror you set). Uninstalling the app or clearing its data deletes your bills, so export a backup of anything important.
+3. The accessibility service only reads the payment screens of WeChat and Alipay (with "Fetch amounts by itself" on, it also notes which app is in front); it does not read other apps, and you can turn it off in the system settings at any time.
+4. This app is not affiliated with Tencent (WeChat), Ant Group (Alipay) or any other company. Their names and trademarks belong to their owners.
+5. The author is not liable for any loss arising from using or being unable to use this app, including wrong records or lost data.
+
+The app shows the same text under Settings → General → About → Disclaimer.
+
+## Author
+
+aile (GitHub [@aileboeth](https://github.com/aileboeth))
+
 ## License
 
 [MIT](LICENSE)
