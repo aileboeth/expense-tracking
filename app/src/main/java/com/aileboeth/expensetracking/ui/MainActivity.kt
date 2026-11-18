@@ -162,6 +162,13 @@ private fun AppRoot(req: Requests) {
         }
     }
 
+    // The disclaimer, once (new installs after the guide, people updating at their next start).
+    var disclaimer by remember { mutableStateOf(!com.aileboeth.expensetracking.data.Prefs(ctx).disclaimerSeen) }
+    if (disclaimer && overlay != Overlay.Guide) DisclaimerDialog(androidx.compose.ui.res.stringResource(R.string.disclaimer_ok)) {
+        com.aileboeth.expensetracking.data.Prefs(ctx).disclaimerSeen = true
+        disclaimer = false
+    }
+
     when (val o = overlay) {
         Overlay.Achievements -> AchievementsScreen(onBack = ::back)
         Overlay.Wish -> WishJarScreen(onBack = ::back)

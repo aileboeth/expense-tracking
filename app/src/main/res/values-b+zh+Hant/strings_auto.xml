@@ -49,7 +49,7 @@
     <string name="guide_start">開始記帳</string>
     <string name="guide_back">上一步</string>
     <string name="guide_1_title">付款後，自動記上</string>
-    <string name="guide_1_body">讀微信、支付寶的付款通知，金額、時間自動記好。帳單隻存在這臺手機裡。</string>
+    <string name="guide_1_body">讀微信、支付寶的付款通知，金額、時間自動記好。帳單只存在這臺手機裡。</string>
     <string name="guide_1_a">不用開啟 App，付完就記</string>
     <string name="guide_1_b">分類會按你的習慣越猜越準</string>
     <string name="guide_1_c">統計、預算、月度回顧都有</string>

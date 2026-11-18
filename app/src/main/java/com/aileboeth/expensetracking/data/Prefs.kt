@@ -142,6 +142,10 @@ class Prefs(ctx: Context) {
         get() = p.getBoolean("screenSamples", false)
         set(v) = p.edit().putBoolean("screenSamples", v).apply()
 
+    var disclaimerSeen: Boolean
+        get() = p.getBoolean("disclaimerSeen", false)
+        set(v) = p.edit().putBoolean("disclaimerSeen", v).apply()
+
     /** 0.2.12: samples made before then could hold chat text; they were cleared (and sampling turned off) once. */
     var samplesPurged: Boolean
         get() = p.getBoolean("samplesPurged212", false)

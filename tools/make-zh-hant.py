@@ -23,6 +23,10 @@ FIX = {
     "賬": "帳",
     "後臺": "背景",
     "後台": "背景",
+    # OpenCC picks the measure-word 隻 for 只 ("only") here.
+    "隻存在": "只存在",
+    "隻保存在": "只保存在",
+    "隻用來": "只用來",
 }
 
 for f in sorted(src.glob("*.xml")):

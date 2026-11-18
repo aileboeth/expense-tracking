@@ -63,7 +63,17 @@
     <string name="set_mirror_none">不使用，直連 GitHub</string>
     <string name="set_mirror_body">手機連 GitHub 很慢或連不上時，填一個 GitHub 下載加速地址，它會加在 github.com 連結前面，例如填 https://某加速站/ 。留空 = 直連。\n安裝包會校驗 SHA-256，系統也會校驗簽名，被改過的包裝不上。</string>
     <string name="set_mirror_placeholder">留空 = 直連</string>
-    <string name="set_footer">帳單隻存在這臺手機裡，不會上傳。</string>
+    <string name="set_footer">帳單只存在這臺手機裡，不會上傳。</string>
+    <string name="set_sec_about">關於</string>
+    <string name="set_author">作者</string>
+    <string name="set_author_sub">GitHub @aileboeth</string>
+    <string name="set_source">開原始碼</string>
+    <string name="set_source_sub">MIT 許可，在 GitHub 上公開</string>
+    <string name="set_disclaimer">免責宣告</string>
+    <string name="set_disclaimer_sub">使用前請看一下</string>
+    <string name="disclaimer_title">免責宣告</string>
+    <string name="disclaimer_ok">我知道了</string>
+    <string name="disclaimer_body">Expense Tracking 是 %1$s 個人開發的免費開源軟體（MIT 許可），按「現狀」提供，不附帶任何明示或暗示的保證。\n\n1. 自動記帳靠讀取通知和（可選的）無障礙畫面，可能漏記、記錯或重複記。金額請以微信、支付寶等官方帳單為準，本軟體不能代替它們。\n\n2. 帳單、備註和附件只儲存在這臺手機上，App 不會上傳。聯網只用於檢查和下載更新（GitHub 或你設定的映象）。解除安裝 App 或清除資料會刪掉帳單，重要的資料請自己匯出備份。\n\n3. 無障礙服務只用來讀取微信、支付寶的付款畫面（「自動去讀金額」開啟時，還會看現在哪個 App 在前臺），不讀其他 App 的內容，可以隨時在系統設定裡關掉。\n\n4. 本軟體與騰訊（微信）、螞蟻集團（支付寶）及其他相關公司沒有任何關係，相關名稱和商標歸各自的所有者。\n\n5. 因使用或無法使用本軟體造成的任何損失（包括記帳錯誤、資料丟失），作者不承擔責任。繼續使用即表示你同意以上內容。</string>
     <string name="set_status_ok">自動記帳執行中</string>
     <string name="set_status_ok_sub">付款後會自動記上</string>
     <string name="set_status_missing_sub">開啟下面標紅的幾項，付款才會自動記</string>

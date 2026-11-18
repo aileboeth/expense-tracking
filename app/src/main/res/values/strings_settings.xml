@@ -64,6 +64,16 @@
     <string name="set_mirror_body">If GitHub is slow or blocked, enter a GitHub download mirror; it is put in front of github.com links, e.g. https://some-mirror/ . Empty = direct.\nThe app checks the SHA-256 and Android checks the signature, so a changed file won\'t install.</string>
     <string name="set_mirror_placeholder">Empty = direct</string>
     <string name="set_footer">Your bills stay on this phone and are never uploaded.</string>
+    <string name="set_sec_about">About</string>
+    <string name="set_author">Author</string>
+    <string name="set_author_sub">GitHub @aileboeth</string>
+    <string name="set_source">Source code</string>
+    <string name="set_source_sub">MIT licence, public on GitHub</string>
+    <string name="set_disclaimer">Disclaimer</string>
+    <string name="set_disclaimer_sub">Please read before use</string>
+    <string name="disclaimer_title">Disclaimer</string>
+    <string name="disclaimer_ok">Got it</string>
+    <string name="disclaimer_body">Expense Tracking is free, open-source software made by %1$s (MIT licence). It is provided \"as is\", without any warranty, express or implied.\n\n1. Automatic recording works by reading notifications and (optionally) screens through accessibility. It can miss, misread or double-record payments. The official bills of your payment apps are what count; this app does not replace them.\n\n2. Bills, notes and attachments are kept only on this phone and are never uploaded. The network is used only to check for and download updates (GitHub or the mirror you set). Uninstalling the app or clearing its data deletes your bills, so export a backup of anything important.\n\n3. The accessibility service only reads the payment screens of WeChat and Alipay (with \"Fetch amounts by itself\" on, it also notes which app is in front); it does not read other apps, and you can turn it off in the system settings at any time.\n\n4. This app is not affiliated with Tencent (WeChat), Ant Group (Alipay) or any other company. Their names and trademarks belong to their owners.\n\n5. The author is not liable for any loss arising from using or being unable to use this app, including wrong records or lost data. By continuing to use it you agree to the above.</string>
     <string name="set_status_ok">Automatic recording is on</string>
     <string name="set_status_ok_sub">Payments are recorded as they happen</string>
     <string name="set_status_missing_sub">Turn on the items marked red below</string>

@@ -52,6 +52,11 @@ import androidx.compose.material.icons.filled.PendingActions
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Settings
@@ -418,8 +423,14 @@ private fun GeneralSection(nav: SettingsNav) {
             { SettingSwitch(Icons.Filled.Autorenew, Tint.Blue, stringResource(R.string.set_auto_update), stringResource(R.string.set_auto_update_sub), autoUpdate) { autoUpdate = it; prefs.autoUpdate = it } },
             { SettingRow(Icons.Filled.Public, Tint.Grey, stringResource(R.string.set_mirror), mirror.ifBlank { stringResource(R.string.set_mirror_none) }) { dialog = "mirror" } },
         )
+        GroupLabel(stringResource(R.string.set_sec_about))
+        SettingGroup(
+            { SettingRow(Icons.Filled.Person, Tint.Pink, stringResource(R.string.set_author), stringResource(R.string.set_author_sub), { ValueChevron(AUTHOR) }) { openUrl(ctx, AUTHOR_URL) } },
+            { SettingRow(Icons.Filled.Code, Tint.Grey, stringResource(R.string.set_source), stringResource(R.string.set_source_sub)) { openUrl(ctx, REPO_URL) } },
+            { SettingRow(Icons.Filled.Gavel, Tint.Blue, stringResource(R.string.set_disclaimer), stringResource(R.string.set_disclaimer_sub)) { dialog = "disclaimer" } },
+        )
         Text(
-            "Expense Tracking $versionName\n" + stringResource(R.string.set_footer),
+            "Expense Tracking $versionName · © 2026 $AUTHOR\n" + stringResource(R.string.set_footer),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
         )
@@ -427,7 +438,33 @@ private fun GeneralSection(nav: SettingsNav) {
     when (dialog) {
         "mirror" -> MirrorDialog(prefs) { dialog = "" }
         "language" -> LanguageDialog { dialog = "" }
+        "disclaimer" -> DisclaimerDialog { dialog = "" }
     }
+}
+
+private const val AUTHOR = "aile"
+private const val AUTHOR_URL = "https://github.com/aileboeth"
+private const val REPO_URL = "https://github.com/aileboeth/expense-tracking"
+
+private fun openUrl(ctx: android.content.Context, url: String) {
+    runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+}
+
+/** The disclaimer, also shown once at first start (see [DisclaimerGate]). */
+@Composable
+fun DisclaimerDialog(confirmLabel: String? = null, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.disclaimer_title)) },
+        text = {
+            Text(
+                stringResource(R.string.disclaimer_body, AUTHOR),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.heightIn(max = 420.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()),
+            )
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onDismiss) { Text(confirmLabel ?: stringResource(R.string.close)) } },
+    )
 }
 
 /** Gradient card on top: is automatic recording ready? */
