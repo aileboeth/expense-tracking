@@ -2,124 +2,141 @@
 
 # Expense Tracking
 
-简体中文 | [English](README.en.md)
+English | [简体中文](README.zh-CN.md)
 
-一个读付款通知自动记账的 Android App：微信、支付宝付款后自动入账，屏幕边上弹出一个紫色小胶囊，
-点开就能补金额、选分类、写备注。账单只存在手机里，不联网上传。
+An Android expense tracker that records payments from their notifications. After you pay, a small purple
+capsule appears at the edge of the screen; tap it to fix the amount, pick a category or add a note.
+Your ledger stays on the phone — nothing is uploaded.
 
-界面有简体中文、繁體中文、English 三种语言；货币可以在「设置 → 货币」里改（¥、$、€、HK$、NT$……，只改显示的符号，不换算汇率）。
+UI in English, Simplified Chinese and Traditional Chinese. The currency is a setting
+(Settings → Currency: $, €, £, ¥, HK$, NT$ …); it only changes the symbol, there is no conversion.
 
 <p align="center">
-  <img src="docs/screen-home.png" width="250" alt="首页">
-  <img src="docs/screen-stats.png" width="250" alt="统计">
-  <img src="docs/screen-settings.png" width="250" alt="设置">
+  <img src="docs/screen-home-en.png" width="250" alt="Home">
+  <img src="docs/screen-stats-en.png" width="250" alt="Stats">
+  <img src="docs/screen-settings-en.png" width="250" alt="Settings">
 </p>
 
-<sub>截图里是示例数据。</sub>
+<sub>Screenshots show sample data.</sub>
 
-## 功能
+## What it reads
 
-- **自动记账**：微信「已支付¥30.00」、支付宝「你有一笔10.00元的支出」等直接入账；
-  同一条通知被刷新不会重复记，金额相同的两笔连续消费也不会被并成一笔。
-- **没有金额的通知不丢**：手表付款（微信只显示「微信支付凭证」）、支付宝「某某给你转了1笔钱」
-  会记成「待补金额」，胶囊一直留着，填了金额才算进统计。
-- **全自动（实验，可选）**：在系统无障碍里打开「Expense Tracking 全自动记账」后，会读微信、支付宝的付款页面和
-  「微信支付」消息：在 App 里付款没有通知时，从「支付成功」页面记上（带商户名）；打开手表付款、「转了1笔钱」那条消息或详情时，
-  金额自动补上；屏幕和通知看到的同一笔只记一次。可选「自动去读金额」：手机解锁停在桌面时，自动打开那条消息几秒读金额再回桌面。
-  只读这两个 App 的画面，内容不离开手机。付款页面是按常见版本写的，可以打开「记录屏幕样本」帮忙改进。
-- **新手教程**：第一次打开有 5 页教程（自动记账、胶囊、三个权限、全自动、小技巧），权限页实时显示开没开；之后在「设置 → 通用 → 新手教程」能再看。
-- **其他地区的支付 App**：按手机的语言和地区列出常用的支付 App（Google Wallet、Samsung Wallet、PayPal、
-  PayPay、八達通、街口支付等），打开后用通用规则识别通知里的金额，识别到的账要你确认一下才记。
-  在「设置 → 支付 App」里选。
-- **贴边胶囊**：付款后屏幕边上出现紫色胶囊（待补金额时是浅紫色），不抢焦点、不跳转；可以上下拖、拖到另一边，长按收起；超预算时描红边。点开后，有金额的账在顶部抽屉里点分类就记好；没写金额的账在底部卡片里点常用金额（可自定义）。分类可不选，直接保存记到「其他」。
-- **按备注分类**：卡片里列出常写的备注，点一下就填好；写了备注没选分类，按你的规则 → 你以前给这个备注选的分类 → 内置常用词（奶茶、打车、话费、coffee、uber……）自动归类，都对不上才记到「其他」。规则在「设置 → 分类规则」里加。
-- **复盘图表**：本月洞察（比上月同期、日均、涨得最多的分类、最大一笔、最常写的备注）、本月每日走势（叠上月对比）、消费日历热力图、分类环形图和排行（点开看按备注的明细）、近 6/12 个月收支趋势。
-- **凭证**：每笔账可以加收据照片、发票 PDF（拍照 / 相册 / 文件），存在 App 自己的目录里，不上传；照片会转正并压缩。
-- **月度预算**：首页显示还剩多少、每天还能花多少。
-- **搜索和筛选**：按备注、对方、分类、金额区间、渠道、时间找账。
-- **导入账单对账**：导入微信（.xlsx）/ 支付宝（.csv）官方导出的账单，找出漏记的一键补上，
-  还能给手表付款这类“待补金额”的账自动补上金额；同一笔不会导入两次。
-- **桌面小组件（三种）**：4×2「本月」（预算环 + 小羽毛、近 7 天柱状、常用金额一点就记、待补金额一点就补）、2×2「今日」（小羽毛 + 今天花了多少 + 打卡天数）、4×1「一键记账」；会按组件实际大小排版（窄的放两个金额按钮，宽的放三个），选组件时能看到预览图；颜色跟着预算变化（快超是橙、超了是红、深夜是夜色）。
-- **顺手的操作**：账单左滑删除（可撤销）、右滑改分类、长按出菜单（再记一笔一样的 / 改分类 / 改日期 / 删除）；首页头部左右滑切换月份；常用金额和分类长按拖动排序；保存时有对勾动画和震动，金额数字会滚动；长按桌面图标有「记一笔支出 / 收入 / 搜索」。
-- **小羽毛**：首页的紫色小羽毛会随预算和时间换表情（开心 / 平静 / 紧张 / 难过 / 深夜犯困），点它会说一句今天的小结。
-- **打卡和徽章**：每天打开看一眼或亲手记一笔就算打卡；19 枚徽章（连续 7 天、无消费日、守住预算、夜猫子……），解锁时撒花。
-- **心愿罐**：给想买的东西设个目标，存入 / 取出，罐子里的液体会跟着手机倾斜晃动；上个月有结余会提醒存进去。只是记个数，不动真钱。
-- **月度回顾**：每月初首页出现上个月的回顾，像故事一样一页页点：花了多少、哪天最能花、钱去哪了、小习惯；每页可保存图片或分享。
-- **详细分析**：统计页先给概览（本月支出 / 收入 / 结余、月底预计、预算进度），点进去有四页可以左右滑：**预测**（按现在的速度月底大约花多少、每天还能花多少、预算哪天花完、下个月估计、心愿还要攒几个月）、**习惯**（星期几最能花、一天里几点花得多、单笔金额分布、无消费日）、**分类**（近 6 个月走势，比平时多很多或少很多会提醒）、**年度**（全年每一天的热力图、每个月收支、存钱比例、「照这样一年奶茶要花多少」之类的趣味推算）。
-- **设置分类**：设置页按自动记账、悬浮胶囊、识别、账本、趣味与动效、通用分成几类；「趣味与动效」里可以分别关掉小羽毛、打卡卡片、回顾提醒、震动、动画和徽章弹窗。
-- **黑名单**：拉黑的 App 不记；付款方/商户/内容含黑名单关键词的不记。
-- **后台保活向导**：「设置 → 自检和后台设置」按手机品牌（小米/红米、华为、荣耀、OPPO/一加/realme、vivo/iQOO、三星、魅族等）
-  列出要打开的开关，能直接跳到对应的系统页面；「自检」会发一条测试通知，看 App 是否真的收到。
-  遇到问题可以导出诊断信息（不含账单金额和备注，通知原文默认隐藏）。
-- 0 元免密/自动扣款提示、聊天消息、其他 App 的「收益已入账」等不记（其他 App 可在设置里打开识别，需确认才记）。
-- 手动记账、导出 CSV、识别记录（看每条通知记了没有、为什么）。
-- **自动更新**：从本仓库最新 Release 下载，校验 SHA-256 后安装；可以填下载加速前缀。
+- **WeChat Pay and Alipay** (China): full support, built from real notifications. Payments are recorded
+  directly; notifications without an amount (smartwatch payments, Alipay "someone sent you money") become
+  "needs amount" entries and stay in the capsule until you fill them in.
+- **Full auto (experimental, optional)**: turn on "Expense Tracking full auto" under the system's
+  accessibility settings and the app also reads WeChat / Alipay payment pages and the "WeChat Pay" chat:
+  payments made inside those apps without a notification are recorded from the "payment successful" page
+  (with the shop name), opening a watch payment's or "sent you money" message fills in its amount, and the
+  same payment seen on screen and in a notification is recorded once. Optional "Fetch amounts by itself":
+  when the phone is unlocked on the home screen, it opens that message for a few seconds, reads the amount
+  and goes back home. Only those two apps are read; nothing leaves the phone.
+- **Payment apps in other regions**: the app lists the ones common where you live — Google Wallet,
+  Samsung Wallet, PayPal, Wise, Revolut, Monzo, Venmo, Cash App, PayPay, KakaoPay, Toss, Octopus, JKOPAY,
+  GCash, Grab, PhonePe, Paytm, Mercado Pago … Turn them on in **Settings → Payment apps**. Their
+  notifications are read with a general amount detector, so each entry asks you to confirm it.
+  Formats differ by country and bank; if one isn't recognised, see "Help us add formats" below.
 
-## 安装后要打开的权限
+## Features
 
-1. 通知使用权（必需）。如果提示「受限设置」：应用详情 → 右上角 ⋮ → 允许受限设置。
-2. 悬浮窗。
-3. 后台运行：按「设置 → 自检和后台设置」里的步骤做（忽略电池优化、自启动等，不同品牌不一样），做完点「自检」。
-4. 可选：无障碍里的「Expense Tracking 全自动记账」（见上面「全自动」）。同样可能提示「受限设置」，处理方法同第 1 条。
+- **Getting started guide**: five pages on first start (what it does, the capsule, the three permissions
+  with live status, full auto, tips); open it again under **Settings → General → Getting started**.
+- **No duplicates, no merging**: a notification that gets updated is recorded once, but two real payments
+  of the same amount right after each other stay two entries.
+- **Edge capsule**: no focus stealing, no app switch. Drag it up/down or to the other side, long-press to
+  hide; red outline when you're over budget. Entries with an amount: tap a category in the top drawer and
+  it's saved. Entries without one: tap one of your usual amounts (editable) in the bottom card.
+  Category is optional — saving without one files it under "Other".
+- **Categories from notes**: your recent notes are one tap away. A note without a category is filed by
+  your rules → the category you picked for that note before → built-in words (coffee, uber, rent, …).
+  Add rules in **Settings → Category rules**.
+- **Charts**: monthly insights (vs. the same days last month, daily average, fastest-growing category,
+  biggest expense, most-used note), daily trend with last month overlaid, spending calendar heatmap,
+  category donut and ranking (tap for a per-note breakdown), 6/12-month income/expense trend.
+- **Receipts**: attach photos or invoice PDFs (camera / gallery / files) to any entry; stored in the
+  app's own folder, never uploaded.
+- **Monthly budget**: what's left and how much you can spend per day.
+- **Search and filters**: by note, counterpart, category, amount range, channel and date.
+- **Bill import** (WeChat .xlsx / Alipay .csv): finds missed payments and fills in amounts for
+  "needs amount" entries; the same payment is never imported twice.
+- **Home-screen widgets (three)**: 4×2 "This month" (budget ring with the feather, last 7 days, usual amounts you tap to record, pending entries you tap to fill), 2×2 "Today" (the feather, today's spending, your streak) and 4×1 "One-tap entry". They lay themselves out for their real size (two amount buttons when narrow, three when wide) and show a preview in the widget picker. Colours follow the budget (orange when close, red when over, dusk at night).
+- **Handy gestures**: swipe an entry left to delete (with undo), right to change its category; long-press for Same again / Category / Change date / Delete; swipe the header to change month; long-press and drag usual amounts and categories into order; a check mark and a light buzz on save, rolling numbers; launcher shortcuts for Add expense / Add income / Search.
+- **The feather**: the little purple feather on the home screen changes its face with your budget and the time of day (happy / calm / worried / sad / sleepy). Tap it for a one-line summary.
+- **Streak & badges**: opening the app or recording something yourself counts as a check-in; 19 badges (7-day streak, no-spend day, on budget, night owl…) with confetti when you unlock one.
+- **Wish jar**: set a goal for something you want, put money in or take it out, and watch the liquid slosh when you tilt the phone; last month's surplus is offered to the jar. It only keeps count; no money moves.
+- **Monthly recap**: early each month the home screen offers last month's recap as story cards: total, biggest day, where it went, little habits. Save or share any card as an image.
+- **Analysis**: the stats page starts with an overview (spent / income / balance, month-end forecast, budget bar); tap through to four swipeable pages: **Forecast** (where the month is heading, what is left per day, when the budget would run out, next month, how long your wish will take), **Habits** (weekdays, hours, amount sizes, no-spend days), **Categories** (6-month trends, alerts when a category is far above or below usual) and **Year** (a heatmap of every day, month by month, saving rate, and just-for-fun projections like what your bubble tea costs per year).
+- **Settings by topic**: automatic recording, capsule, recognition, ledger, fun & motion, general. Under fun & motion you can switch off the feather, the tiles, the recap banner, vibration, animations and the badge pop-up one by one.
+- **Blacklist**: apps, and keywords in the payer / merchant / text.
+- **Keeping it running**: **Settings → Self-test & background settings** lists the switches to turn on for
+  your phone's brand (Xiaomi/Redmi, Huawei, Honor, OPPO/OnePlus/realme, vivo/iQOO, Samsung, Meizu, others)
+  with shortcuts to each system page. **Self-test** posts a test notification and checks the app received it.
+- Manual entries, CSV export, and a **recognition log** showing every notification and why it was or
+  wasn't recorded.
+- **Auto-update** from this repository's latest Release, verified by SHA-256.
 
-## 导出账单（用于对账）
+## Permissions to grant after installing
 
-- 微信：我 → 服务 → 钱包 → 账单 → 右上角 ⋯ → 下载账单 → 用于个人对账。
-- 支付宝：我的 → 账单 → 右上角 ⋯ → 开具交易流水证明 → 用于个人对账。
+1. Notification access (required). If Android says "Restricted setting": App info → ⋮ (top right) →
+   Allow restricted settings.
+2. Display over other apps (for the capsule).
+3. Background running: follow **Settings → Self-test & background settings** for your brand, then run the self-test.
+4. Optional: "Expense Tracking full auto" under accessibility (see Full auto above). It may also say
+   "Restricted setting"; handle it as in step 1.
 
-文件会发到邮箱，是加密压缩包（密码在微信/支付宝的消息里）。解压后在「设置 → 导入账单对账」里选 .xlsx / .csv。
+## Help us add formats
 
-## 编译
+Open **Settings → Self-test & background settings → Export diagnostics**. The report contains your phone
+model, Android version, permission state and the last 80 recognition-log lines — no ledger amounts or
+notes. Notification texts are hidden unless you choose to include them. Remove anything personal and
+open an Issue with it.
 
-需要 JDK 17+、Android SDK（compileSdk 37、build-tools 36.1.0）。
+## Build
+
+Needs JDK 17+ and the Android SDK (compileSdk 37, build-tools 36.1.0).
 
 ```bash
-./gradlew :app:testDebugUnitTest   # 通知解析、账单导入、自动分类的单元测试
+./gradlew :app:testDebugUnitTest   # unit tests: notification parsing, bill import, auto-categories
 ./gradlew :app:assembleRelease
-# 界面截图（Robolectric，需要 JDK 17/21 跑测试）：
+# UI screenshots on the PC (Robolectric; tests need JDK 17/21):
 ./gradlew :app:testDebugUnitTest -Pscreenshots=true -PtestJavaHome=/path/to/jdk17 --tests "*ScreenshotTest*"
 ```
 
-依赖优先走阿里云 Maven 镜像（见 `settings.gradle.kts`）。正式签名读取仓库外的
-`../keys/keystore.properties`；没有这个文件时 release 用 debug 密钥签名。
+Dependencies are fetched from Aliyun Maven mirrors first (see `settings.gradle.kts`). Release signing
+reads `../keys/keystore.properties` outside the repository; without it, release builds use the debug key.
 
-翻译：`res/values/` 是英文（默认），`res/values-zh/` 是简体中文；繁體中文 `res/values-b+zh+Hant/`
-由 `python tools/make-zh-hant.py` 从简体生成（OpenCC，台湾用词），改了简体后重新跑一次。
+Translations: `res/values/` is English (default), `res/values-zh/` Simplified Chinese.
+Traditional Chinese (`res/values-b+zh+Hant/`) is generated from Simplified by
+`python tools/make-zh-hant.py` (OpenCC, Taiwan wording) — rerun it after editing the Simplified strings.
 
-## 发版
+## Releases
 
-Release 需要三个固定名字的文件，App 的自动更新会读它们：
+Each Release carries three files with fixed names, read by the in-app updater:
 
-| 文件 | 内容 |
+| File | Contents |
 |---|---|
 | `version.json` | `{"version","versionCode","apk","sha256","notes"}` |
-| `ExpenseTracking-<版本>.apk` | 安装包 |
-| `SHA256SUMS.txt` | 校验值 |
+| `ExpenseTracking-<version>.apk` | the app |
+| `SHA256SUMS.txt` | checksums |
 
-Tag 写成 `v<版本>`，例如 `v0.2.0`。
+Tag as `v<version>`, e.g. `v0.2.0`.
 
-## 识别规则从哪来
+## Disclaimer
 
-微信、支付宝的规则来自作者手机（vivo，Android 16，微信 8.0.76，支付宝 12.12.6）上真实收到的通知，
-测试样例在 `app/src/test/.../ParserTest.kt`。其他支付 App 用通用规则，格式各地不同，可能认不全。
-遇到没认出的格式，在「设置 → 识别记录」里能看到原文，欢迎提 Issue（请先去掉个人信息）。
+Expense Tracking is free, open-source software made by one person. It is provided "as is", without any warranty, express or implied.
 
-## 免责声明
+1. Automatic recording works by reading notifications and (optionally) screens through accessibility. It can miss, misread or double-record payments. The official bills of your payment apps are what count; this app does not replace them.
+2. Bills, notes and attachments are kept only on your phone and are never uploaded. The network is used only to check for and download updates (GitHub or the mirror you set). Uninstalling the app or clearing its data deletes your bills, so export a backup of anything important.
+3. The accessibility service only reads the payment screens of WeChat and Alipay (with "Fetch amounts by itself" on, it also notes which app is in front); it does not read other apps, and you can turn it off in the system settings at any time.
+4. This app is not affiliated with Tencent (WeChat), Ant Group (Alipay) or any other company. Their names and trademarks belong to their owners.
+5. The author is not liable for any loss arising from using or being unable to use this app, including wrong records or lost data.
 
-Expense Tracking 是个人开发的免费开源软件，按「现状」提供，不附带任何明示或暗示的保证。
+The app shows the same text under Settings → General → About → Disclaimer.
 
-1. 自动记账靠读取通知和（可选的）无障碍画面，可能漏记、记错或重复记。金额请以微信、支付宝等官方账单为准，本软件不能代替它们。
-2. 账单、备注和附件只保存在手机上，App 不会上传。联网只用于检查和下载更新（GitHub 或你设置的镜像）。卸载 App 或清除数据会删掉账单，重要的数据请自己导出备份。
-3. 无障碍服务只用来读取微信、支付宝的付款画面（「自动去读金额」打开时，还会看现在哪个 App 在前台），不读其他 App 的内容，可以随时在系统设置里关掉。
-4. 本软件与腾讯（微信）、蚂蚁集团（支付宝）及其他相关公司没有任何关系，相关名称和商标归各自的所有者。
-5. 因使用或无法使用本软件造成的任何损失（包括记账错误、数据丢失），作者不承担责任。
+## Author
 
-App 里也能看到这份声明：设置 → 通用 → 关于 → 免责声明。
+aile (GitHub [@aileboeth](https://github.com/aileboeth))
 
-## 作者
-
-aile（GitHub [@aileboeth](https://github.com/aileboeth)）
-
-## 许可证
+## License
 
 [MIT](LICENSE)
