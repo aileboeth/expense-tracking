@@ -116,6 +116,6 @@
     <string name="payday_why_body">發錢日是每月 %1$d 號。%2$s 記了一筆「%3$s」%4$s，在發錢日前後 %5$d 天內，就當成這個月發的錢，從這天開始算。\n\n如果這筆不是工資或生活費，點「這筆不算發錢」，這個月就回到 %1$d 號開始；也可以去改這筆的分類。</string>
     <string name="payday_ignore">這筆不算發錢</string>
     <string name="payday_got_it">知道了</string>
-    <string name="payday_ignored">有 %d 筆收入設成了不算發錢。</string>
+    <string name="payday_ignored">設成不算發錢的收入：%d 筆</string>
     <string name="payday_restore">恢復</string>
 </resources>

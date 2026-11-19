@@ -384,7 +384,7 @@ object Bubble {
         sheet.addView(headRow(ctx, amount, meta(t), t) { more.visibility = if (more.visibility == View.VISIBLE) View.GONE else View.VISIBLE })
         sheet.addView(more)
         val note = noteField(ctx, t.note)
-        val cats = categoryRow(ctx, type) { cat -> save(t.copy(type = type), cat, note.text.toString()) }
+        val cats = categoryRow(ctx, type, t.category.takeIf { t.type == type }.orEmpty()) { cat -> save(t.copy(type = type), cat, note.text.toString()) }
         sheet.addView(cats, spaced())
         noteHelpers(ctx, sheet, note, { type }, t.counterpart, defaultHint = null) { guess ->
             sheet.addView(noteRow(ctx, note, saveButton(ctx) {
@@ -500,8 +500,10 @@ object Bubble {
             if (cents == null) { toast(s(R.string.bub_pick_amount)); return }
             save(t.copy(amountCents = cents), cat, note.text.toString())
         }
-        sheet.addView(categoryRow(ctx, t.type) { cat -> commit(cat) }, spaced())
-        noteHelpers(ctx, sheet, note, { t.type }, t.counterpart, defaultHint = s(R.string.bub_hint)) { guess ->
+        sheet.addView(categoryRow(ctx, t.type, t.category) { cat -> commit(cat) }, spaced())
+        val keep = t.category.takeUnless { it.isBlank() || it == OTHER }
+        noteHelpers(ctx, sheet, note, { t.type }, t.counterpart,
+            defaultHint = if (keep != null) s(R.string.bub_hint_keep, Labels.category(ctx, keep)) else s(R.string.bub_hint)) { guess ->
             save.setOnClickListener { commit(guess() ?: t.category.takeUnless { it.isBlank() || it == OTHER } ?: OTHER) }
             save.isEnabled = false; save.alpha = 0.4f
             sheet.addView(noteRow(ctx, note, save), spaced(8f))
@@ -560,10 +562,14 @@ object Bubble {
         addView(chip(ctx, s(R.string.bub_flip)) { onFlip() })
     }
 
-    private fun categoryRow(ctx: Context, type: TxType, onPick: (String) -> Unit): View {
+    /** Categories by use; the entry's own category ([first], e.g. 红包 for an opened red packet) leads, so a quick tap keeps it. */
+    private fun categoryRow(ctx: Context, type: TxType, first: String = "", onPick: (String) -> Unit): View {
         val since = System.currentTimeMillis() - 90L * 24 * 3600 * 1000
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
-        for (name in Repo.categoriesByUse(type, since)) {
+        val names = Repo.categoriesByUse(type, since).let { all ->
+            if (first.isNotBlank() && first != OTHER && first in all) listOf(first) + (all - first) else all
+        }
+        for (name in names) {
             val st = CategoryStyle.of(name)
             row.addView(LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL

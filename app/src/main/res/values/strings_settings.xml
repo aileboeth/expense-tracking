@@ -116,6 +116,6 @@
     <string name="payday_why_body">Your pay day is day %1$d. On %2$s you recorded %4$s under \"%3$s\", within %5$d days of it, so it counts as this month\'s pay and the month starts that day.\n\nIf it is not salary or allowance, tap \"This isn\'t pay\" and the month goes back to day %1$d; or change the entry\'s category.</string>
     <string name="payday_ignore">This isn\'t pay</string>
     <string name="payday_got_it">Got it</string>
-    <string name="payday_ignored">%d incomes are set as not pay.</string>
+    <string name="payday_ignored">Left out as not pay: %d</string>
     <string name="payday_restore">Count again</string>
 </resources>

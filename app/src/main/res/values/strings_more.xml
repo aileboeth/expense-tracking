@@ -7,6 +7,7 @@
     <string name="bub_note_guess">Save files it under \"%s\" because of the note</string>
     <string name="bub_pick_amount">Pick an amount first</string>
     <string name="bub_hint">Tap a category to save; or tap Save to file it under \"Other\"</string>
+    <string name="bub_hint_keep">Tap a category to save; or tap Save to keep it under \"%s\"</string>
     <string name="bub_more_left"> · %d more</string>
     <string name="bub_more">More</string>
     <string name="bub_flip">Switch income/expense</string>

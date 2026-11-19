@@ -7,6 +7,7 @@
     <string name="bub_note_guess">点保存按备注记到「%s」</string>
     <string name="bub_pick_amount">先选一个金额</string>
     <string name="bub_hint">点分类直接记好；不选分类点保存，记到「其他」</string>
+    <string name="bub_hint_keep">点分类直接记好；不选分类点保存，记到「%s」</string>
     <string name="bub_more_left"> · 还有 %d 笔</string>
     <string name="bub_more">更多</string>
     <string name="bub_flip">改成收入/支出</string>
