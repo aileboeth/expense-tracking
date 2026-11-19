@@ -102,7 +102,7 @@
     <string name="set_payday">Pay day</string>
     <string name="set_payday_sub">Months run from the day money comes in</string>
     <string name="payday_value">Day %d</string>
-    <string name="payday_natural_short">1st (calendar month)</string>
+    <string name="payday_natural_short">Calendar month</string>
     <string name="payday_title">Pay day</string>
     <string name="payday_body">Pick the day your salary or allowance comes in. Every \"month\" then runs from that day to the day before the next one: home, stats, budget and recaps all count this way.</string>
     <string name="payday_example">For example, %1$s runs %2$s.</string>
