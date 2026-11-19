@@ -104,6 +104,20 @@ class ScreenshotTest {
         compose.onRoot().captureRoboImage("build/screens/30-payday-home.png")
     }
 
+    /** Pay came in two days before the pay day: the home card says which entry opened the month; tap = why. */
+    @Config(qualifiers = "zh-rCN-w393dp-h873dp-xxhdpi")
+    @Test fun payDayOpenedBy() = withPayDay {
+        val at = LocalDate.now().minusDays(7).atTime(10, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val id = Repo.insert(Tx(type = TxType.INCOME, amountCents = 350000, category = "工资", channel = "手动", time = at))
+        try {
+            compose.setContent { AppTheme { HomeScreen(PaddingValues(0.dp), {}, {}, null, {}) } }
+            compose.onRoot().captureRoboImage("build/screens/33-payday-opened.png")
+            compose.onNodeWithText("起算", substring = true).performClick()
+            compose.waitForIdle()
+            com.github.takahirom.roborazzi.captureScreenRoboImage("build/screens/34-payday-why.png")
+        } finally { Repo.delete(id) }
+    }
+
     @Config(qualifiers = "zh-rCN-w393dp-h1500dp-xxhdpi")
     @Test fun payDayStats() = withPayDay {
         compose.setContent { AppTheme { StatsScreen(PaddingValues(0.dp)) } }

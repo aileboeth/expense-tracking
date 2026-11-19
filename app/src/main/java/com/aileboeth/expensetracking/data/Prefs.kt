@@ -86,6 +86,11 @@ class Prefs(ctx: Context) {
         get() = p.getStringSet("payCategories", null)?.toSet() ?: DEFAULT_PAY_CATEGORIES
         set(v) = p.edit().putStringSet("payCategories", v).apply()
 
+    /** Entries the user said are not pay: they never open a period. */
+    var payIgnored: Set<Long>
+        get() = p.getStringSet("payIgnored", null)?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet()
+        set(v) = p.edit().putStringSet("payIgnored", v.map { it.toString() }.toSet()).apply()
+
     /** Usual amounts the user set for the quick-pick chips (cents). Empty = pick them from the history. */
     fun usualAmounts(type: com.aileboeth.expensetracking.parse.TxType): List<Long> =
         (p.getString("usual_" + type.name, "") ?: "").split(',').mapNotNull { it.trim().toLongOrNull() }.filter { it > 0 }

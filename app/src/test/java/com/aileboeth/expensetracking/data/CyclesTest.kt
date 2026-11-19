@@ -13,6 +13,7 @@ class CyclesTest {
     private val zone = ZoneId.of("Asia/Shanghai")
     private fun d(m: Int, day: Int, y: Int = 2026) = LocalDate.of(y, m, day)
     private fun ym(m: Int, y: Int = 2026) = YearMonth.of(y, m)
+    private fun pays(vararg ds: LocalDate) = ds.map { PayIn(it, 150000) }
 
     @Test fun withoutAPayDayPeriodsAreCalendarMonths() {
         val c = PayCalendar()
@@ -50,7 +51,7 @@ class CyclesTest {
     }
 
     @Test fun earlyPayOpensThePeriodThatDay() {
-        val c = PayCalendar(15, listOf(d(11, 13)))
+        val c = PayCalendar(15, pays(d(11, 13)))
         assertEquals(d(11, 13), c.start(ym(11)))
         assertEquals(ym(10), c.monthOf(d(11, 12)))
         assertEquals(ym(11), c.monthOf(d(11, 13)))
@@ -60,28 +61,46 @@ class CyclesTest {
     }
 
     @Test fun latePayKeepsThePreviousPeriodGoing() {
-        val c = PayCalendar(15, listOf(d(11, 18)))
+        val c = PayCalendar(15, pays(d(11, 18)))
         assertEquals(ym(10), c.monthOf(d(11, 16)))
         assertEquals(ym(11), c.monthOf(d(11, 18)))
     }
 
     @Test fun payFarFromThePayDayIsIgnored() {
-        val c = PayCalendar(15, listOf(d(11, 1), d(11, 30)))
+        val c = PayCalendar(15, pays(d(11, 1), d(11, 30)))
         assertEquals(d(11, 15), c.start(ym(11)))
         assertEquals(d(12, 15), c.start(ym(12)))
     }
 
     @Test fun payDayOneWithPayAtTheEndOfTheMonth() {
-        val c = PayCalendar(1, listOf(d(10, 28)))
+        val c = PayCalendar(1, pays(d(10, 28)))
         assertFalse(c.natural)
         assertEquals(d(10, 28), c.start(ym(11)))
         assertEquals(ym(11), c.monthOf(d(10, 29)))
         assertEquals(ym(10), c.monthOf(d(10, 27)))
     }
 
-    @Test fun theFirstPayInTheWindowCounts() {
-        val c = PayCalendar(15, listOf(d(11, 12), d(11, 20)))
-        assertEquals(d(11, 12), c.start(ym(11)))
+    @Test fun theBiggestPayInTheWindowCounts() {
+        val c = PayCalendar(15, listOf(PayIn(d(11, 12), 50000, 1), PayIn(d(11, 20), 150000, 2), PayIn(d(10, 15), 150000, 3)))
+        assertEquals(d(11, 20), c.start(ym(11)))
+        assertEquals(2L, c.openedBy(ym(11))?.id)
+        assertEquals(null, c.openedBy(ym(10)))   // paid on the day itself: nothing to explain
+    }
+
+    @Test fun aSmallIncomeFiledAsPayDoesNotMoveTheMonth() {
+        // pay day 20; a 300 red packet filed under 工资 on the 15th, the real allowance is 1500
+        val c = PayCalendar(20, listOf(PayIn(d(10, 20), 150000, 1), PayIn(d(11, 15), 30000, 2), PayIn(d(12, 19), 150000, 3)))
+        assertEquals(d(11, 20), c.start(ym(11)))
+        assertEquals(null, c.openedBy(ym(11)))
+        assertEquals(d(12, 19), c.start(ym(12)))
+    }
+
+    @Test fun aLoneIncomeStillCountsAndSaysWhy() {
+        val c = PayCalendar(20, listOf(PayIn(d(11, 15), 30000, 7, "工资")))
+        assertEquals(d(11, 15), c.start(ym(11)))
+        assertEquals(PayIn(d(11, 15), 30000, 7, "工资"), c.openedBy(ym(11)))
+        // once the user says it is not pay (it is left out), the month is back on the 20th
+        assertEquals(d(11, 20), PayCalendar(20, emptyList()).start(ym(11)))
     }
 
     @Test fun forecastFollowsThePeriod() {

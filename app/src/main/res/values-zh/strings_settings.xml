@@ -108,7 +108,14 @@
     <string name="payday_example">比如%1$s就是 %2$s。</string>
     <string name="payday_short_month">没有 %d 号的月份，从当月最后一天算起。</string>
     <string name="payday_adjust">按实际到账调整</string>
-    <string name="payday_adjust_sub">发钱日前后 %d 天内记到一笔下面这些分类的收入，新的一个月就从那天算起，提前发、晚发都对得上。</string>
+    <string name="payday_adjust_sub">发钱日前后 %d 天内记到一笔下面这些分类的收入，新的一个月就从那天算起，提前发、晚发都对得上。有好几笔时按最大的那笔，比平时少一半以上的不算。</string>
     <string name="payday_no_cats">至少选一个分类，或者把这项关掉。</string>
     <string name="payday_natural">按自然月</string>
+    <string name="payday_opened_by">从 %1$s 的「%2$s」%3$s 起算 ›</string>
+    <string name="payday_why_title">这个月为什么从 %s 开始</string>
+    <string name="payday_why_body">发钱日是每月 %1$d 号。%2$s 记了一笔「%3$s」%4$s，在发钱日前后 %5$d 天内，就当成这个月发的钱，从这天开始算。\n\n如果这笔不是工资或生活费，点「这笔不算发钱」，这个月就回到 %1$d 号开始；也可以去改这笔的分类。</string>
+    <string name="payday_ignore">这笔不算发钱</string>
+    <string name="payday_got_it">知道了</string>
+    <string name="payday_ignored">有 %d 笔收入设成了不算发钱。</string>
+    <string name="payday_restore">恢复</string>
 </resources>

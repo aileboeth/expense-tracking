@@ -12,26 +12,43 @@ import java.time.temporal.ChronoUnit
  * month its pay day is set in (pay day 15 → "November" runs Nov 15 – Dec 14), so the rest of the app keeps
  * using [YearMonth] as the key. Without a pay day the periods are plain calendar months.
  *
- * With [payDates] (days money in a pay category came in) a period starts on the day the pay really arrived,
- * when that is within [WINDOW] days of the set day — early or late pay still opens the right period.
+ * With [pays] (incomes in a pay category) a period starts on the day the pay really arrived, when that is
+ * within [WINDOW] days of the set day — early or late pay still opens the right period. Several in the
+ * window: the biggest one wins. An income under half of the usual pay (the median of the other pays) is
+ * not pay, so a small entry filed under 工资 by mistake does not move the month.
  */
-class PayCalendar(payDay: Int = 0, payDates: Collection<LocalDate> = emptyList()) {
+class PayCalendar(payDay: Int = 0, pays: Collection<PayIn> = emptyList()) {
     /** 0 = not set (calendar months), else 1..31. */
     val payDay: Int = payDay.coerceIn(0, 31)
-    private val dates: List<LocalDate> = payDates.distinct().sorted()
-    private val starts = java.util.concurrent.ConcurrentHashMap<YearMonth, LocalDate>()
+    private val pays: List<PayIn> = pays.toList().let { all ->
+        all.filter { p ->
+            val others = all.filter { it !== p }.map { it.cents }
+            others.isEmpty() || p.cents * 2 >= Analysis.median(others)
+        }.sortedBy { it.date }
+    }
+    private val starts = java.util.concurrent.ConcurrentHashMap<YearMonth, Pair<LocalDate, PayIn?>>()
 
     /** Periods are exactly the calendar months. */
-    val natural: Boolean get() = payDay <= 1 && dates.isEmpty()
+    val natural: Boolean get() = payDay <= 1 && pays.isEmpty()
 
     /** The set pay day in [m]; months without that day use their last day. */
     fun nominal(m: YearMonth): LocalDate = m.atDay(payDay.coerceIn(1, m.lengthOfMonth()))
 
-    /** First day of period [m]. */
-    fun start(m: YearMonth): LocalDate = starts.getOrPut(m) {
+    private fun opening(m: YearMonth): Pair<LocalDate, PayIn?> = starts.getOrPut(m) {
         val n = nominal(m)
-        dates.firstOrNull { kotlin.math.abs(ChronoUnit.DAYS.between(n, it)) <= WINDOW } ?: n
+        val p = pays.filter { kotlin.math.abs(ChronoUnit.DAYS.between(n, it.date)) <= WINDOW }
+            .sortedWith(compareByDescending<PayIn> { it.cents }
+                .thenBy { kotlin.math.abs(ChronoUnit.DAYS.between(n, it.date)) }
+                .thenBy { it.date })
+            .firstOrNull()
+        (p?.date ?: n) to p
     }
+
+    /** First day of period [m]. */
+    fun start(m: YearMonth): LocalDate = opening(m).first
+
+    /** The income that moved the start of [m] off the set day; null when it starts on the set day. */
+    fun openedBy(m: YearMonth): PayIn? = opening(m).second?.takeIf { it.date != nominal(m) }
 
     /** First day after period [m]. */
     fun end(m: YearMonth): LocalDate = start(m.plusMonths(1))
@@ -84,6 +101,9 @@ class PayCalendar(payDay: Int = 0, payDates: Collection<LocalDate> = emptyList()
     }
 }
 
+/** A confirmed income in a pay category: the day it came in, how much, which entry. */
+data class PayIn(val date: LocalDate, val cents: Long, val id: Long = 0, val category: String = "")
+
 /** The app-wide calendar, rebuilt after every ledger write and settings change. */
 object Cycles {
     @Volatile var cal: PayCalendar = PayCalendar()
@@ -103,7 +123,10 @@ object Cycles {
         val day = p.payDay
         cal = if (day == 0) PayCalendar() else PayCalendar(
             day,
-            if (p.payAdjust) runCatching { Repo.incomeDays(p.payCategories) }.getOrDefault(emptyList()) else emptyList(),
+            if (p.payAdjust) {
+                val ignored = p.payIgnored
+                runCatching { Repo.payIncomes(p.payCategories) }.getOrDefault(emptyList()).filter { it.id !in ignored }
+            } else emptyList(),
         )
     }
 }

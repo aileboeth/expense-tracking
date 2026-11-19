@@ -56,7 +56,7 @@ UI in English, Simplified Chinese and Traditional Chinese. The currency is a set
 - **Receipts**: attach photos or invoice PDFs (camera / gallery / files) to any entry; stored in the
   app's own folder, never uploaded.
 - **Monthly budget**: what's left and how much you can spend per day.
-- **Pay day**: if your salary or allowance doesn't come on the 1st, set the day it comes (Settings → Ledger → Pay day). Every "month" then runs from that day to the day before the next one, everywhere in the app: home, stats, budget, recaps and widgets. When pay comes in a few days early or late (an income in Salary or Allowance within 7 days of the day), that month starts the day it arrived.
+- **Pay day**: if your salary or allowance doesn't come on the 1st, set the day it comes (Settings → Ledger → Pay day). Every "month" then runs from that day to the day before the next one, everywhere in the app: home, stats, budget, recaps and widgets. When pay comes in a few days early or late (an income in Salary or Allowance within 7 days of the day), that month starts the day it arrived. With several such incomes the biggest counts, and one under half of your usual pay is not counted. The home page then says which entry started the month; tap it to mark it "not pay".
 - **Search and filters**: by note, counterpart, category, amount range, channel and date.
 - **Bill import** (WeChat .xlsx / Alipay .csv): finds missed payments and fills in amounts for
   "needs amount" entries; the same payment is never imported twice.

@@ -54,15 +54,21 @@ object Repo {
     /** Tells every screen to reload (after a settings change that alters the numbers). */
     fun touch() = changed()
 
-    /** Days on which a confirmed income in one of [categories] came in, oldest first. */
-    fun incomeDays(categories: Set<String>): List<java.time.LocalDate> {
+    /** Confirmed incomes in one of [categories] (the pay that may open a period), oldest first. */
+    fun payIncomes(categories: Set<String>): List<PayIn> {
         if (categories.isEmpty()) return emptyList()
         val marks = categories.joinToString(",") { "?" }
         val z = java.time.ZoneId.systemDefault()
         return db.rawQuery(
-            "SELECT time FROM tx WHERE status='OK' AND type='INCOME' AND category IN ($marks) ORDER BY time",
+            "SELECT id, time, amount, category FROM tx WHERE status='OK' AND type='INCOME' AND amount IS NOT NULL AND category IN ($marks) ORDER BY time",
             categories.toTypedArray(),
-        ).use { c -> buildList { while (c.moveToNext()) add(java.time.Instant.ofEpochMilli(c.getLong(0)).atZone(z).toLocalDate()) } }.distinct()
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) add(PayIn(
+                    java.time.Instant.ofEpochMilli(c.getLong(1)).atZone(z).toLocalDate(), c.getLong(2), c.getLong(0), c.getString(3),
+                ))
+            }
+        }
     }
 
     // ---- transactions -------------------------------------------------------------------

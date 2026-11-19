@@ -343,6 +343,38 @@ private fun RecapBanner(month: YearMonth, onOpen: () -> Unit, onClose: () -> Uni
     }
 }
 
+/** "从 11.15 的「工资」¥300.00 起算 ›": why this period does not start on the pay day; tap to say it is not pay. */
+@Composable
+private fun PayOpenedLine(p: com.aileboeth.expensetracking.data.PayIn, color: Color) {
+    val ctx = LocalContext.current
+    var open by remember { mutableStateOf(false) }
+    val day = java.time.format.DateTimeFormatter.ofPattern(stringResource(R.string.fmt_cycle_day), AppLocale.locale(ctx)).format(p.date)
+    val cat = catName(p.category)
+    val money = Money.money(p.cents)
+    Text(
+        stringResource(R.string.payday_opened_by, day, cat, money), color = color, style = MaterialTheme.typography.labelSmall,
+        modifier = Modifier.padding(horizontal = 8.dp).clip(RoundedCornerShape(8.dp)).clickable { open = true }.padding(horizontal = 4.dp, vertical = 2.dp),
+    )
+    if (open) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { open = false },
+        title = { Text(stringResource(R.string.payday_why_title, day)) },
+        text = {
+            Text(stringResource(R.string.payday_why_body, Prefs(ctx).payDay, day, cat, money,
+                com.aileboeth.expensetracking.data.PayCalendar.WINDOW.toInt()))
+        },
+        confirmButton = {
+            TextButton({
+                val prefs = Prefs(ctx)
+                prefs.payIgnored = prefs.payIgnored + p.id
+                open = false
+                Repo.touch()
+                com.aileboeth.expensetracking.widget.Widgets.scheduleUpdate(ctx)
+            }) { Text(stringResource(R.string.payday_ignore)) }
+        },
+        dismissButton = { TextButton({ open = false }) { Text(stringResource(R.string.payday_got_it)) } },
+    )
+}
+
 @Composable
 private fun HeaderCard(
     month: YearMonth,
@@ -401,6 +433,7 @@ private fun HeaderCard(
                 Spacer(Modifier.weight(1f))
                 IconButton(openSearch) { Icon(Icons.Filled.Search, stringResource(R.string.search), tint = white) }
             }
+            Cycles.cal.openedBy(month)?.let { PayOpenedLine(it, soft) }
             Column(Modifier.padding(horizontal = 12.dp).graphicsLayer {
                 translationX = drag.value * 0.35f
                 alpha = 1f - (kotlin.math.abs(drag.value) / (swipe * 4)).coerceIn(0f, 0.5f)

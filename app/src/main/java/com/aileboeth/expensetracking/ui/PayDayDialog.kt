@@ -53,6 +53,7 @@ fun PayDayDialog(prefs: Prefs, onDone: () -> Unit) {
     var day by remember { mutableIntStateOf(prefs.payDay) }
     var adjust by remember { mutableStateOf(prefs.payAdjust) }
     var cats by remember { mutableStateOf(prefs.payCategories) }
+    var ignored by remember { mutableStateOf(prefs.payIgnored) }
     // income categories (其他 never means pay); 生活费 is offered even when an older ledger lacks it
     val incomeCats = remember {
         Repo.categories(TxType.INCOME).filter { it != "其他" }.let { if ("生活费" in it) it else it + "生活费" }
@@ -62,6 +63,7 @@ fun PayDayDialog(prefs: Prefs, onDone: () -> Unit) {
         prefs.payDay = newDay
         prefs.payAdjust = adjust
         prefs.payCategories = cats
+        prefs.payIgnored = ignored
         if ("生活费" in cats && newDay > 0 && "生活费" !in Repo.categories(TxType.INCOME)) Repo.addCategory(TxType.INCOME, "生活费")
         Repo.touch()
         Widgets.scheduleUpdate(ctx)
@@ -132,6 +134,11 @@ fun PayDayDialog(prefs: Prefs, onDone: () -> Unit) {
                         }
                     }
                     if (cats.isEmpty()) Text(stringResource(R.string.payday_no_cats), style = MaterialTheme.typography.bodySmall, color = ExpenseRed)
+                    if (ignored.isNotEmpty()) Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.payday_ignored, ignored.size), style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        TextButton({ ignored = emptySet() }) { Text(stringResource(R.string.payday_restore)) }
+                    }
                 }
             }
         },
