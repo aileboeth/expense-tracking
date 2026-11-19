@@ -61,6 +61,7 @@ import com.aileboeth.expensetracking.R
 import com.aileboeth.expensetracking.data.Analysis
 import com.aileboeth.expensetracking.data.CategoryStyle
 import com.aileboeth.expensetracking.data.CategoryTrend
+import com.aileboeth.expensetracking.data.Cycles
 import com.aileboeth.expensetracking.data.Forecast
 import com.aileboeth.expensetracking.data.Money
 import com.aileboeth.expensetracking.data.Mood
@@ -83,11 +84,10 @@ const val TAB_YEAR = 3
 
 private val TABS = listOf(R.string.an_tab_forecast, R.string.an_tab_habits, R.string.an_tab_categories, R.string.an_tab_year)
 
-/** The last day a month's numbers run to: today for the running month. */
-private fun endOf(month: YearMonth): LocalDate =
-    if (month == YearMonth.now()) LocalDate.now() else month.atEndOfMonth()
+/** The last day a period's numbers run to: today for the running period. */
+private fun endOf(month: YearMonth): LocalDate = Cycles.cal.lastDay(month)
 
-private fun inMonth(t: Tx, m: YearMonth) = YearMonth.from(localDate(t.time)) == m
+private fun inMonth(t: Tx, m: YearMonth) = Cycles.cal.monthOf(localDate(t.time)) == m
 
 private fun spentIn(txs: List<Tx>, m: YearMonth, type: TxType = TxType.EXPENSE) =
     txs.filter { it.type == type && it.status == Status.OK && inMonth(it, m) }.sumOf { it.amountCents ?: 0 }
@@ -117,10 +117,14 @@ fun AnalysisScreen(
                 IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
                 Text(stringResource(R.string.an_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 IconButton({ month = month.minusMonths(1) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.prev_month)) }
-                Text(Labels.monthShort(ctx, month), fontWeight = FontWeight.SemiBold)
-                IconButton({ if (month < YearMonth.now()) month = month.plusMonths(1) }) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(Labels.monthShort(ctx, month), fontWeight = FontWeight.SemiBold)
+                    if (!Cycles.cal.natural) Text(Labels.cycleRange(ctx, month), style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
+                IconButton({ if (month < thisMonth()) month = month.plusMonths(1) }) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.next_month),
-                        tint = if (month < YearMonth.now()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant)
+                        tint = if (month < thisMonth()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant)
                 }
             }
             // pill tabs; the pages below can also be swiped
@@ -230,9 +234,9 @@ private fun ForecastBody(month: YearMonth, hist: List<Tx>, openWish: () -> Unit)
     val prefs = remember { Prefs(ctx) }
     var budget by remember { mutableStateOf(prefs.budgetCents) }
     var budgetDialog by remember { mutableStateOf(false) }
-    val running = month == YearMonth.now()
+    val running = month == thisMonth()
     val fc = remember(hist, month, budget) {
-        val prev = hist.filter { val m = YearMonth.from(localDate(it.time)); m >= month.minusMonths(3) && m < month }
+        val prev = hist.filter { val m = Cycles.cal.monthOf(localDate(it.time)); m >= month.minusMonths(3) && m < month }
         Analysis.forecast(hist.filter { inMonth(it, month) }, prev, month, budget)
     }
     var sel by remember(month) { mutableStateOf<Int?>(null) }
@@ -273,7 +277,7 @@ private fun ForecastBody(month: YearMonth, hist: List<Tx>, openWish: () -> Unit)
         SoftCard {
             SectionTitle(stringResource(R.string.an_fc_pace))
             Spacer(Modifier.height(4.dp))
-            PaceChart(fc.cumulative, fc.projected, budget, sel, { sel = it })
+            PaceChart(fc.cumulative, fc.projected, budget, sel, { sel = it }, start = Cycles.cal.start(month))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 LegendDot(Brand, stringResource(R.string.an_fc_actual))
                 if (running) LegendDot(Brand.copy(alpha = 0.5f), stringResource(R.string.an_fc_projected))
@@ -349,7 +353,7 @@ private fun BudgetLines(fc: Forecast, running: Boolean) {
         if (safe > 0 && left > 0) Line("🗓️", stringResource(R.string.an_fc_safe, Money.money(safe)), pluralStringResource(R.plurals.an_fc_days_left, left, left))
         else if (fc.spent >= b) Line("🫣", stringResource(R.string.an_fc_used_up))
         fc.runOutDay?.takeIf { fc.spent < b }?.let { d ->
-            Line("⏳", stringResource(R.string.an_fc_run_out, Labels.monthDay(ctx, YearMonth.now().atDay(d))), stringResource(R.string.an_fc_run_out_sub, Money.money(fc.rate)))
+            Line("⏳", stringResource(R.string.an_fc_run_out, Labels.monthDay(ctx, Cycles.cal.date(thisMonth(), d - 1))), stringResource(R.string.an_fc_run_out_sub, Money.money(fc.rate)))
         }
     }
 }
@@ -503,7 +507,7 @@ private fun CategoriesBody(month: YearMonth, hist: List<Tx>) {
         if (trends.isEmpty()) { Empty(stringResource(R.string.an_ct_empty)); return@Column }
         SoftCard {
             SectionTitle(stringResource(R.string.an_ct_alerts))
-            if (month == YearMonth.now()) Muted(stringResource(R.string.an_ct_paced_note), Modifier.padding(top = 2.dp))
+            if (month == thisMonth()) Muted(stringResource(R.string.an_ct_paced_note), Modifier.padding(top = 2.dp))
             Spacer(Modifier.height(6.dp))
             when {
                 trends.all { it.usual == 0L } -> Line("🌱", stringResource(R.string.an_ct_no_history))
@@ -585,9 +589,11 @@ private fun YearBody(month: YearMonth, hist: List<Tx>, openRecap: (YearMonth) ->
     var year by remember(month) { mutableIntStateOf(month.year) }
     val zone = ZoneId.systemDefault()
     val view = repoQuery(year, initial = null as com.aileboeth.expensetracking.data.YearView?) {
-        val a = LocalDate.of(year, 1, 1).atStartOfDay(zone).toInstant().toEpochMilli()
-        val b = LocalDate.of(year + 1, 1, 1).atStartOfDay(zone).toInstant().toEpochMilli()
-        Analysis.year(Repo.listRange(a, b), year)
+        // the calendar year plus the periods January..December (they may start in December or end in January)
+        val cal = Cycles.cal
+        val a = minOf(LocalDate.of(year, 1, 1), cal.start(YearMonth.of(year, 1))).atStartOfDay(zone).toInstant().toEpochMilli()
+        val b = maxOf(LocalDate.of(year + 1, 1, 1), cal.end(YearMonth.of(year, 12))).atStartOfDay(zone).toInstant().toEpochMilli()
+        Analysis.year(Repo.listRange(a, b), year, zone, cal)
     }
     var day by remember(year) { mutableStateOf<LocalDate?>(null) }
     var mSel by remember(year) { mutableStateOf<Int?>(null) }
@@ -651,13 +657,13 @@ private fun YearBody(month: YearMonth, hist: List<Tx>, openRecap: (YearMonth) ->
                         Text(Labels.yearMonth(ctx, s.month), fontWeight = FontWeight.SemiBold)
                         Muted(stringResource(R.string.an_yr_month_line, Money.money(s.expense), Money.money(s.income), Money.money(s.balance)))
                     }
-                    if (s.expense > 0 && s.month <= YearMonth.now()) TextButton({ openRecap(s.month) }) { Text(stringResource(R.string.an_yr_recap)) }
+                    if (s.expense > 0 && s.month <= thisMonth()) TextButton({ openRecap(s.month) }) { Text(stringResource(R.string.an_yr_recap)) }
                 }
             } else {
                 val used = v.months.filter { it.expense > 0 }
                 if (used.size >= 2) {
                     val most = used.maxBy { it.expense }
-                    val least = used.filter { it.month < YearMonth.now() }.minByOrNull { it.expense }
+                    val least = used.filter { it.month < thisMonth() }.minByOrNull { it.expense }
                     Line("📈", stringResource(R.string.an_yr_most, Labels.monthShort(ctx, most.month), Money.money(most.expense)))
                     if (least != null && least != most) Line("🍃", stringResource(R.string.an_yr_least, Labels.monthShort(ctx, least.month), Money.money(least.expense)))
                 }

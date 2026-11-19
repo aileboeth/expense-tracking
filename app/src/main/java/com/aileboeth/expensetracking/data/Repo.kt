@@ -45,8 +45,24 @@ object Repo {
 
     private val db: SQLiteDatabase get() = helper.writableDatabase
     private fun changed() {
+        // An income may have moved where a period starts: rebuild the calendar before screens reload.
+        Cycles.reload()
         _version.value = _version.value + 1
         onChanged?.invoke()
+    }
+
+    /** Tells every screen to reload (after a settings change that alters the numbers). */
+    fun touch() = changed()
+
+    /** Days on which a confirmed income in one of [categories] came in, oldest first. */
+    fun incomeDays(categories: Set<String>): List<java.time.LocalDate> {
+        if (categories.isEmpty()) return emptyList()
+        val marks = categories.joinToString(",") { "?" }
+        val z = java.time.ZoneId.systemDefault()
+        return db.rawQuery(
+            "SELECT time FROM tx WHERE status='OK' AND type='INCOME' AND category IN ($marks) ORDER BY time",
+            categories.toTypedArray(),
+        ).use { c -> buildList { while (c.moveToNext()) add(java.time.Instant.ofEpochMilli(c.getLong(0)).atZone(z).toLocalDate()) } }.distinct()
     }
 
     // ---- transactions -------------------------------------------------------------------
@@ -426,13 +442,14 @@ object Repo {
         )
     }
 
-    /** Sum of expenses per month (yyyy-MM -> cents) for months that have any. */
+    /** Sum of expenses per period (yyyy-MM -> cents, see [Cycles]) for periods that have any. */
     fun monthlyExpense(): Map<String, Long> {
         val z = java.time.ZoneId.systemDefault()
+        val cal = Cycles.cal
         val out = HashMap<String, Long>()
         db.rawQuery("SELECT time, amount FROM tx WHERE status='OK' AND type='EXPENSE' AND amount IS NOT NULL", null).use { c ->
             while (c.moveToNext()) {
-                val ym = java.time.YearMonth.from(java.time.Instant.ofEpochMilli(c.getLong(0)).atZone(z)).toString()
+                val ym = cal.monthOf(c.getLong(0), z).toString()
                 out[ym] = (out[ym] ?: 0L) + c.getLong(1)
             }
         }
@@ -554,5 +571,5 @@ object Repo {
     }
 
     val DEFAULT_EXPENSE = listOf("餐饮", "零食饮料", "交通", "购物", "日用", "娱乐", "生活缴费", "通讯", "学习", "医疗", "人情", "其他")
-    val DEFAULT_INCOME = listOf("工资", "兼职", "转账", "红包", "退款", "其他")
+    val DEFAULT_INCOME = listOf("工资", "生活费", "兼职", "转账", "红包", "退款", "其他")
 }

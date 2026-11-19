@@ -187,7 +187,7 @@ fun WishJarScreen(onBack: () -> Unit) {
     var selected by remember { mutableLongStateOf(prefs.focusWish) }
     val w = wishes.firstOrNull { it.id == selected } ?: wishes.firstOrNull { it.done == 0L } ?: wishes.firstOrNull()
     val log = repoQuery(w?.id, initial = emptyList<WishLog>()) { w?.let { Repo.wishLog(it.id) } ?: emptyList() }
-    val lastMonth = YearMonth.now().minusMonths(1)
+    val lastMonth = thisMonth().minusMonths(1)
     val surplus = repoQuery(initial = 0L) {
         val r = monthRange(lastMonth)
         Repo.sum(TxType.INCOME, r.first, r.second) - Repo.sum(TxType.EXPENSE, r.first, r.second)

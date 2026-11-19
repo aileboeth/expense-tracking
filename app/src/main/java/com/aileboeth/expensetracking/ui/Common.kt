@@ -33,6 +33,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.aileboeth.expensetracking.capture.CaptureService
+import com.aileboeth.expensetracking.data.Cycles
 import com.aileboeth.expensetracking.data.Repo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -98,22 +99,21 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
     }
 }
 
-/** Sum per day of the month (index 0 = day 1); days after today are null for the current month. */
+/** Sum per day of the period (index 0 = its first day); days after today are null for the running period. */
 fun dailyTotals(txs: List<com.aileboeth.expensetracking.data.Tx>, month: YearMonth, type: com.aileboeth.expensetracking.parse.TxType): List<Long?> {
-    val days = month.lengthOfMonth()
+    val cal = Cycles.cal
+    val days = cal.days(month)
     val sums = LongArray(days)
     for (t in txs) if (t.type == type) {
-        val d = localDate(t.time)
-        if (d.year == month.year && d.monthValue == month.monthValue) sums[d.dayOfMonth - 1] += t.amountCents ?: 0
+        val i = cal.index(month, localDate(t.time))
+        if (i in 0 until days) sums[i] += t.amountCents ?: 0
     }
-    val now = YearMonth.now()
-    val lastDay = when {
-        month == now -> java.time.LocalDate.now().dayOfMonth
-        month.isAfter(now) -> 0
-        else -> days
-    }
+    val lastDay = cal.passed(month)
     return List(days) { i -> if (i < lastDay) sums[i] else null }
 }
+
+/** The running ledger period (from the last pay day, or the calendar month when none is set). */
+fun thisMonth(): YearMonth = Cycles.cal.current()
 
 /** Runs [query] on a background thread and again after every database write. */
 @Composable
@@ -123,12 +123,8 @@ fun <T> repoQuery(vararg keys: Any?, initial: T, query: () -> T): T {
     return state.value
 }
 
-fun monthRange(ym: YearMonth): Pair<Long, Long> {
-    val zone = ZoneId.systemDefault()
-    val start = ym.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-    val end = ym.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-    return start to end
-}
+/** [start, end) of the ledger period [ym] in epoch milliseconds. */
+fun monthRange(ym: YearMonth): Pair<Long, Long> = Cycles.cal.range(ym, ZoneId.systemDefault())
 
 fun localDate(ms: Long) = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDate()
 

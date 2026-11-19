@@ -144,11 +144,12 @@ object Widgets {
                 val zone = ZoneId.systemDefault()
                 fun ms(d: LocalDate) = d.atStartOfDay(zone).toInstant().toEpochMilli()
                 val today = LocalDate.now()
-                val month = YearMonth.now()
+                val cal = com.aileboeth.expensetracking.data.Cycles.cal
+                val month = cal.current(today)
                 val prefs = Prefs(ctx)
                 return Data(
                     month = month,
-                    monthSpent = Repo.sum(TxType.EXPENSE, ms(month.atDay(1)), ms(month.plusMonths(1).atDay(1))),
+                    monthSpent = Repo.sum(TxType.EXPENSE, ms(cal.start(month)), ms(cal.end(month))),
                     todaySpent = Repo.sum(TxType.EXPENSE, ms(today), ms(today.plusDays(1))),
                     budget = prefs.budgetCents,
                     pending = runCatching { Repo.pending() }.getOrDefault(emptyList()),
@@ -368,9 +369,10 @@ object Widgets {
         setImageViewBitmap(R.id.widget_mascot, mascotFor(ctx, d, 60))
         setTextViewText(R.id.widget_label, ctx.getString(R.string.today))
         setTextViewText(R.id.widget_today, Money.money(d.todaySpent))
-        // With a budget: what is left per day for the rest of the month.
+        // With a budget: what is left per day for the rest of the period.
         if (d.budget > 0) {
-            val daysLeft = d.month.lengthOfMonth() - LocalDate.now().dayOfMonth + 1
+            val cal = com.aileboeth.expensetracking.data.Cycles.cal
+            val daysLeft = (cal.days(d.month) - cal.passed(d.month) + 1).coerceAtLeast(1)
             val left = d.budget - d.monthSpent + d.todaySpent
             setViewVisibility(R.id.widget_left, View.VISIBLE)
             setTextViewText(R.id.widget_left, if (left > 0) ctx.getString(R.string.widget_per_day, Money.money(left / daysLeft))

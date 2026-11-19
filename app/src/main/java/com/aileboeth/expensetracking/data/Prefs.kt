@@ -71,6 +71,21 @@ class Prefs(ctx: Context) {
         get() = p.getLong("budgetCents", 0L)
         set(v) = p.edit().putLong("budgetCents", v.coerceAtLeast(0)).apply()
 
+    /** Day of the month money comes in (1..31); 0 = not set, the ledger's months are calendar months. */
+    var payDay: Int
+        get() = p.getInt("payDay", 0).coerceIn(0, 31)
+        set(v) = p.edit().putInt("payDay", v.coerceIn(0, 31)).apply()
+
+    /** A period starts on the day pay really came in (an income in [payCategories] near the pay day). */
+    var payAdjust: Boolean
+        get() = p.getBoolean("payAdjust", true)
+        set(v) = p.edit().putBoolean("payAdjust", v).apply()
+
+    /** Income categories that count as pay. */
+    var payCategories: Set<String>
+        get() = p.getStringSet("payCategories", null)?.toSet() ?: DEFAULT_PAY_CATEGORIES
+        set(v) = p.edit().putStringSet("payCategories", v).apply()
+
     /** Usual amounts the user set for the quick-pick chips (cents). Empty = pick them from the history. */
     fun usualAmounts(type: com.aileboeth.expensetracking.parse.TxType): List<Long> =
         (p.getString("usual_" + type.name, "") ?: "").split(',').mapNotNull { it.trim().toLongOrNull() }.filter { it > 0 }
@@ -201,5 +216,9 @@ class Prefs(ctx: Context) {
         val words = blacklistWords
         for (w in words) if (w.isNotBlank() && texts.any { it.contains(w) }) return w
         return null
+    }
+
+    companion object {
+        val DEFAULT_PAY_CATEGORIES = setOf("工资", "生活费")
     }
 }

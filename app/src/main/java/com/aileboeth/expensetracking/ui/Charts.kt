@@ -87,6 +87,8 @@ fun DailyLineChart(
     selected: Int?,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    /** The date of index 0 (the period's first day); null = day numbers 1, 2, 3 … */
+    start: LocalDate? = null,
 ) {
     val tm = rememberTextMeasurer()
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
@@ -96,6 +98,8 @@ fun DailyLineChart(
     val tip = TextStyle(fontSize = 11.sp, color = color, fontWeight = FontWeight.SemiBold)
     val n = current.size
     val ctx = androidx.compose.ui.platform.LocalContext.current
+    fun axis(i: Int) = ctx.getString(R.string.day_n, start?.plusDays(i.toLong())?.dayOfMonth ?: (i + 1))
+    fun tipDay(i: Int) = start?.let { Labels.monthDay(ctx, it.plusDays(i.toLong())) } ?: ctx.getString(R.string.day_n, i + 1)
 
     fun indexAt(x: Float, width: Float, padPx: Float): Int {
         val step = if (n > 1) (width - 2 * padPx) / (n - 1) else 1f
@@ -148,7 +152,7 @@ fun DailyLineChart(
 
         // day labels
         val marks = listOf(0, 7, 14, 21, n - 1).distinct().filter { it < n }
-        for (i in marks) label(tm, ctx.getString(R.string.day_n, i + 1), x(i), size.height - bottom + 5.dp.toPx(), small)
+        for (i in marks) label(tm, axis(i), x(i), size.height - bottom + 5.dp.toPx(), small)
 
         selected?.takeIf { it in 0 until n }?.let { i ->
             val v = current[i]
@@ -157,7 +161,7 @@ fun DailyLineChart(
                 drawCircle(surface, 6.dp.toPx(), Offset(x(i), y(v)))
                 drawCircle(color, 6.dp.toPx(), Offset(x(i), y(v)), style = Stroke(2.5.dp.toPx()))
             }
-            val text = ctx.getString(R.string.day_n, i + 1) + "  " + (v?.let { Money.money(it) } ?: "-")
+            val text = tipDay(i) + "  " + (v?.let { Money.money(it) } ?: "-")
             label(tm, text, x(i), 2.dp.toPx(), tip)
         }
     }
@@ -256,7 +260,10 @@ fun DonutChart(slices: List<Pair<Long, Color>>, title: String, value: String, mo
     }
 }
 
-/** One month as a calendar; darker cells = more money. */
+/**
+ * One ledger period as a calendar; darker cells = more money. Days are numbered from 1 = the period's first
+ * day ([totals] and [selected] use the same numbers); the cells show the real dates.
+ */
 @Composable
 fun CalendarHeatmap(
     month: YearMonth,
@@ -265,9 +272,11 @@ fun CalendarHeatmap(
     selected: Int?,
     onSelect: (Int) -> Unit,
 ) {
+    val cal = com.aileboeth.expensetracking.data.Cycles.cal
     val max = (totals.values.maxOrNull() ?: 0L).coerceAtLeast(1L)
-    val first = month.atDay(1).dayOfWeek.value - 1 // Monday = 0
-    val days = month.lengthOfMonth()
+    val start = cal.start(month)
+    val first = start.dayOfWeek.value - 1 // Monday = 0
+    val days = cal.days(month)
     val today = LocalDate.now()
     val cells = List(first) { 0 } + (1..days).toList()
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -286,13 +295,15 @@ fun CalendarHeatmap(
                     val v = totals[day] ?: 0L
                     val intensity = if (v > 0) (0.18f + 0.82f * sqrt(v.toFloat() / max)) else 0f
                     val bg = if (v > 0) color.copy(alpha = intensity) else MaterialTheme.colorScheme.surfaceVariant
-                    val isToday = month.year == today.year && month.monthValue == today.monthValue && day == today.dayOfMonth
+                    val date = start.plusDays(day - 1L)
+                    val isToday = date == today
                     var m = Modifier.weight(1f).aspectRatio(1f).background(bg, RoundedCornerShape(8.dp))
                     if (selected == day) m = m.border(2.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(8.dp))
                     else if (isToday) m = m.border(1.5.dp, color, RoundedCornerShape(8.dp))
                     Box(m.clickable { onSelect(day) }, contentAlignment = Alignment.Center) {
                         Text(
-                            "$day", fontSize = 11.sp,
+                            // the 1st of a new calendar month inside the period shows its month: "12/1"
+                            if (date.dayOfMonth == 1 && day > 1) "${date.monthValue}/1" else "${date.dayOfMonth}", fontSize = 11.sp,
                             color = if (intensity > 0.55f) Color.White else MaterialTheme.colorScheme.onSurface,
                         )
                     }

@@ -105,4 +105,6 @@
     <string name="widget_over_budget"> · 超預算 %s</string>
     <string name="widget_pending">\n%d 筆待補金額</string>
     <string name="widget_add">+ 記一筆</string>
+    <string name="cat_allowance">生活費</string>
+    <string name="fmt_cycle_day">M.d</string>
 </resources>

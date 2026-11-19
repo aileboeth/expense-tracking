@@ -56,6 +56,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.ui.draw.clip
 import com.aileboeth.expensetracking.data.CategoryStyle
+import com.aileboeth.expensetracking.data.Cycles
 import com.aileboeth.expensetracking.data.InsightCalc
 import com.aileboeth.expensetracking.data.Insights
 import com.aileboeth.expensetracking.data.Money
@@ -69,10 +70,14 @@ import java.time.YearMonth
 fun MonthBar(month: YearMonth, onChange: (YearMonth) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         IconButton({ onChange(month.minusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.prev_month)) }
-        Text(Labels.yearMonth(LocalContext.current, month), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(Labels.yearMonth(LocalContext.current, month), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            if (!Cycles.cal.natural) Text(Labels.cycleRange(LocalContext.current, month), style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         IconButton({ onChange(month.plusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.next_month)) }
         Spacer(Modifier.weight(1f))
-        if (month != YearMonth.now()) TextButton({ onChange(YearMonth.now()) }) { Text(stringResource(R.string.this_month)) }
+        if (month != thisMonth()) TextButton({ onChange(thisMonth()) }) { Text(stringResource(R.string.this_month)) }
     }
 }
 
@@ -104,21 +109,22 @@ private data class Teaser(
 private fun teaser(ctx: android.content.Context, month: YearMonth): Teaser {
     val hist = Repo.listRange(monthRange(month.minusMonths(12)).first, monthRange(month).second)
     val budget = com.aileboeth.expensetracking.data.Prefs(ctx).budgetCents
-    val running = month == YearMonth.now()
+    val cal = Cycles.cal
+    val running = month == cal.current()
     val fc = if (running) {
-        val prev = hist.filter { val m = YearMonth.from(localDate(it.time)); m >= month.minusMonths(3) && m < month }
-        com.aileboeth.expensetracking.data.Analysis.forecast(hist.filter { YearMonth.from(localDate(it.time)) == month }, prev, month, budget)
+        val prev = hist.filter { val m = cal.monthOf(localDate(it.time)); m >= month.minusMonths(3) && m < month }
+        com.aileboeth.expensetracking.data.Analysis.forecast(hist.filter { cal.monthOf(localDate(it.time)) == month }, prev, month, budget, cal = cal)
     } else null
-    val end = if (running) LocalDate.now() else month.atEndOfMonth()
+    val end = cal.lastDay(month)
     val h = com.aileboeth.expensetracking.data.Analysis.habits(hist, end.minusDays(89), end)
-    val trends = com.aileboeth.expensetracking.data.Analysis.categoryTrends(hist, month)
+    val trends = com.aileboeth.expensetracking.data.Analysis.categoryTrends(hist, month, cal = cal)
     return Teaser(
         projected = fc?.takeIf { it.spent > 0 }?.projected,
         budget = budget,
         topWeekday = if (h.count >= 5) h.weekdayAvg.indices.maxBy { h.weekdayAvg[it] } else null,
         anomaly = com.aileboeth.expensetracking.data.Analysis.anomalies(trends).firstOrNull(),
         hasHistory = trends.any { it.usual > 0 },
-        yearSpent = hist.filter { it.type == TxType.EXPENSE && it.status == com.aileboeth.expensetracking.data.Status.OK && localDate(it.time).year == month.year }
+        yearSpent = hist.filter { it.type == TxType.EXPENSE && it.status == com.aileboeth.expensetracking.data.Status.OK && cal.monthOf(localDate(it.time)).year == month.year }
             .sumOf { it.amountCents ?: 0 },
     )
 }
@@ -130,7 +136,9 @@ fun StatsScreen(
     openRecap: (YearMonth) -> Unit = {},
     openAnalysis: (YearMonth, Int) -> Unit = { _, _ -> },
 ) {
-    var month by remember { mutableStateOf(YearMonth.now()) }
+    // null = follow the running period (it moves when pay comes in or the pay day is changed)
+    var picked by remember(Cycles.cal.payDay) { mutableStateOf<YearMonth?>(null) }
+    val month = picked ?: thisMonth()
     var type by remember { mutableStateOf(TxType.EXPENSE) }
     var selectedDay by remember(month) { mutableStateOf<Int?>(null) }
     var editing by remember { mutableStateOf<Tx?>(null) }
@@ -144,14 +152,14 @@ fun StatsScreen(
     val tz = repoQuery(month, initial = Teaser()) { teaser(ctx, month) }
 
     val color = if (type == TxType.EXPENSE) ExpenseRed else IncomeGreen
-    val picked = txs.filter { it.type == type }
-    val total = picked.sumOf { it.amountCents ?: 0 }
+    val pickedTxs = txs.filter { it.type == type }
+    val total = pickedTxs.sumOf { it.amountCents ?: 0 }
     val cur = remember(txs, type, month) { dailyTotals(txs, month, type) }
     val prev = remember(prevTxs, type, month) { dailyTotals(prevTxs, prevMonth, type).map { it ?: 0L } }
     val elapsed = cur.count { it != null }
     val prevSame = prev.take(elapsed).sum()
 
-    val byCategory = picked.groupBy { it.category.ifEmpty { "未分类" } }
+    val byCategory = pickedTxs.groupBy { it.category.ifEmpty { "未分类" } }
     val groups = byCategory
         .map { (name, list) -> Triple(name, list.sumOf { it.amountCents ?: 0 }, list.size) }
         .sortedByDescending { it.second }
@@ -159,14 +167,14 @@ fun StatsScreen(
     val insights = remember(txs, prevTxs, month) { InsightCalc.compute(txs, prevTxs, month) }
     val prevGroups = prevTxs.filter { it.type == type }.groupBy { it.category.ifEmpty { "未分类" } }
         .mapValues { (_, l) -> l.sumOf { it.amountCents ?: 0 } }
-    val heat = picked.groupBy { localDate(it.time).dayOfMonth }.mapValues { (_, l) -> l.sumOf { it.amountCents ?: 0 } }
+    val heat = pickedTxs.groupBy { Cycles.cal.index(month, localDate(it.time)) + 1 }.mapValues { (_, l) -> l.sumOf { it.amountCents ?: 0 } }
 
     LazyColumn(
         Modifier.fillMaxSize().padding(padding),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { MonthBar(month) { month = it } }
+        item { MonthBar(month) { picked = it.takeIf { m -> m != thisMonth() } } }
         item {
             val exp = txs.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
             val inc = txs.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
@@ -210,7 +218,7 @@ fun StatsScreen(
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
-                DailyLineChart(cur, prev, color, selectedDay?.minus(1), { selectedDay = it + 1 })
+                DailyLineChart(cur, prev, color, selectedDay?.minus(1), { selectedDay = it + 1 }, start = Cycles.cal.start(month))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Legend(color, stringResource(R.string.stat_this_month))
                     Spacer(Modifier.width(16.dp))
@@ -232,10 +240,10 @@ fun StatsScreen(
 
         // 3. the picked day
         selectedDay?.let { day ->
-            val list = txs.filter { localDate(it.time).dayOfMonth == day }
+            val d = Cycles.cal.date(month, day - 1)
+            val list = txs.filter { localDate(it.time) == d }
             item {
                 SoftCard(padding = 12.dp) {
-                    val d = month.atDay(day)
                     val ex = list.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 }
                     val inc = list.filter { it.type == TxType.INCOME }.sumOf { it.amountCents ?: 0 }
                     Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -341,7 +349,7 @@ private fun OverviewCard(month: YearMonth, expense: Long, income: Long, tz: Teas
                     }
                 }
             }
-            if (tz.projected != null && month == YearMonth.now()) {
+            if (tz.projected != null && month == thisMonth()) {
                 Spacer(Modifier.height(12.dp))
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(white.copy(alpha = 0.16f)).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -460,7 +468,7 @@ private fun NoteBreakdown(list: List<Tx>, total: Long, color: Color) {
 private fun InsightCard(month: YearMonth, ins: Insights, onOpen: (Tx) -> Unit) {
     SoftCard(padding = 4.dp) {
         Text(
-            if (month == YearMonth.now()) stringResource(R.string.ins_title_now) else stringResource(R.string.ins_title_month, Labels.monthShort(LocalContext.current, month)),
+            if (month == thisMonth()) stringResource(R.string.ins_title_now) else stringResource(R.string.ins_title_month, Labels.monthShort(LocalContext.current, month)),
             style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(start = 14.dp, top = 12.dp, bottom = 4.dp),
         )
@@ -480,7 +488,7 @@ private fun InsightCard(month: YearMonth, ins: Insights, onOpen: (Tx) -> Unit) {
             add {
                 InsightLine(
                     Icons.Filled.Today, Tint.Blue, stringResource(R.string.stat_daily_avg, Money.money(ins.dailyAvg)),
-                    stringResource(if (month == YearMonth.now()) R.string.ins_days_so_far else R.string.ins_days_month, ins.days, Money.money(ins.total)),
+                    stringResource(if (month == thisMonth()) R.string.ins_days_so_far else R.string.ins_days_month, ins.days, Money.money(ins.total)),
                 )
             }
             ins.topGrowth?.let { (cat, now, then) ->
@@ -525,11 +533,6 @@ private fun InsightLine(icon: androidx.compose.ui.graphics.vector.ImageVector, t
             Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-}
-
-private fun sameMonth(t: Tx, m: YearMonth): Boolean {
-    val d: LocalDate = localDate(t.time)
-    return d.year == m.year && d.monthValue == m.monthValue
 }
 
 @Composable

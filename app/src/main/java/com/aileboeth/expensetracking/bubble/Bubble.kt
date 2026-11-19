@@ -249,10 +249,9 @@ object Bubble {
         if (t.type != TxType.EXPENSE) return false
         val budget = Prefs(appCtx!!).budgetCents
         if (budget <= 0) return false
-        val zone = ZoneId.systemDefault()
-        val m = YearMonth.now()
-        val spent = Repo.sum(TxType.EXPENSE, m.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli(),
-            m.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli())
+        val cal = com.aileboeth.expensetracking.data.Cycles.cal
+        val (from, to) = cal.range(cal.current(), ZoneId.systemDefault())
+        val spent = Repo.sum(TxType.EXPENSE, from, to)
         return spent >= budget
     }
 

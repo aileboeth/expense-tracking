@@ -148,8 +148,11 @@ fun RecapScreen(month: YearMonth, onBack: () -> Unit) {
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.recap_title, Labels.monthShort(ctx, month)), color = Color.White, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f).padding(start = 4.dp))
+                Column(Modifier.weight(1f).padding(start = 4.dp)) {
+                    Text(stringResource(R.string.recap_title, Labels.monthShort(ctx, month)), color = Color.White, fontWeight = FontWeight.SemiBold)
+                    if (!com.aileboeth.expensetracking.data.Cycles.cal.natural) Text(Labels.cycleRange(ctx, month),
+                        color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+                }
                 IconButton(onBack) { Icon(Icons.Filled.Close, stringResource(R.string.close), tint = Color.White) }
             }
         }

@@ -22,7 +22,7 @@ data class Forecast(
     val budget: Long,
     /** What can still be spent per day to stay inside the budget (null = no budget, negative = already over). */
     val safeDaily: Long?,
-    /** Day of the month the budget is expected to run out (null = it lasts, or no budget). */
+    /** Day of the period (1 = its first day) the budget is expected to run out (null = it lasts, or no budget). */
     val runOutDay: Int?,
     /** Big one-off expenses left out of the pace (they are not expected to repeat). */
     val oneOffs: Long,
@@ -111,17 +111,14 @@ object Analysis {
         budget: Long,
         today: LocalDate = LocalDate.now(),
         zone: ZoneId = ZoneId.systemDefault(),
+        cal: PayCalendar = Cycles.cal,
     ): Forecast {
-        val len = month.lengthOfMonth()
-        val passed = when {
-            month == YearMonth.from(today) -> today.dayOfMonth
-            month.isAfter(YearMonth.from(today)) -> 0
-            else -> len
-        }
-        val cur = expenses(txs).filter { YearMonth.from(day(it, zone)) == month }
+        val len = cal.days(month)
+        val passed = cal.passed(month, today)
+        val cur = expenses(txs).filter { cal.monthOf(day(it, zone)) == month }
         val spent = cur.sumOf { it.amountCents!! }
         val perDay = LongArray(len)
-        for (t in cur) perDay[day(t, zone).dayOfMonth - 1] += t.amountCents!!
+        for (t in cur) perDay[cal.index(month, day(t, zone))] += t.amountCents!!
         var run = 0L
         val cumulative = List(len) { i -> if (i < passed) { run += perDay[i]; run } else null }
 
@@ -130,7 +127,7 @@ object Analysis {
         val oneOffLimit = maxOf(typical * 6, 20000L)
         val oneOffs = cur.filter { it.amountCents!! >= oneOffLimit }.sumOf { it.amountCents!! }
         val curRate = if (passed > 0) (spent - oneOffs).toDouble() / passed else 0.0
-        val histDays = hist.map { YearMonth.from(day(it, zone)) }.distinct().sumOf { it.lengthOfMonth() }
+        val histDays = hist.map { cal.monthOf(day(it, zone)) }.distinct().sumOf { cal.days(it) }
         val histOneOffs = hist.filter { it.amountCents!! >= oneOffLimit }.sumOf { it.amountCents!! }
         val histRate = if (histDays > 0) (hist.sumOf { it.amountCents!! } - histOneOffs).toDouble() / histDays else null
         // Early in the month the history counts more; by the end only this month matters.
@@ -205,17 +202,18 @@ object Analysis {
         span: Int = 6,
         today: LocalDate = LocalDate.now(),
         zone: ZoneId = ZoneId.systemDefault(),
+        cal: PayCalendar = Cycles.cal,
     ): List<CategoryTrend> {
         val first = month.minusMonths((span - 1).toLong())
         val months = (0 until span).map { first.plusMonths(it.toLong()) }
         val ex = expenses(txs)
         val by = HashMap<String, LongArray>()
         for (t in ex) {
-            val i = months.indexOf(YearMonth.from(day(t, zone)))
+            val i = months.indexOf(cal.monthOf(day(t, zone)))
             if (i < 0) continue
             by.getOrPut(t.category.ifBlank { "其他" }) { LongArray(span) }[i] += t.amountCents!!
         }
-        val factor = if (month == YearMonth.from(today)) month.lengthOfMonth().toDouble() / today.dayOfMonth else 1.0
+        val factor = if (month == cal.current(today)) cal.days(month).toDouble() / cal.passed(month, today) else 1.0
         // Months before the first record don't count as "spent nothing".
         val firstUsed = months.indexOfFirst { m -> by.values.any { it[months.indexOf(m)] > 0 } }.coerceAtLeast(0)
         return by.map { (cat, arr) ->
@@ -230,7 +228,11 @@ object Analysis {
         trends.filter { it.usual > 0 && kotlin.math.abs(it.paced - it.usual) >= minGap && (it.ratio >= 1.5f || it.ratio <= 0.6f) }
             .sortedByDescending { kotlin.math.abs(it.paced - it.usual) }
 
-    fun year(txs: List<Tx>, year: Int, zone: ZoneId = ZoneId.systemDefault()): YearView {
+    /**
+     * The calendar year [year]: the heatmap and active days by calendar day, the twelve months (and the
+     * totals) by ledger period, so [txs] should cover the periods January to December too.
+     */
+    fun year(txs: List<Tx>, year: Int, zone: ZoneId = ZoneId.systemDefault(), cal: PayCalendar = Cycles.cal): YearView {
         val start = LocalDate.of(year, 1, 1)
         val daily = LongArray(start.lengthOfYear())
         val exp = LongArray(12)
@@ -240,12 +242,13 @@ object Analysis {
             if (t.status != Status.OK) continue
             val c = t.amountCents ?: continue
             val d = day(t, zone)
-            if (d.year != year) continue
-            if (t.type == TxType.EXPENSE) {
-                daily[d.dayOfYear - 1] += c
-                exp[d.monthValue - 1] += c
-            } else inc[d.monthValue - 1] += c
-            active += d.dayOfYear
+            if (d.year == year) {
+                if (t.type == TxType.EXPENSE) daily[d.dayOfYear - 1] += c
+                active += d.dayOfYear
+            }
+            val m = cal.monthOf(d)
+            if (m.year != year) continue
+            if (t.type == TxType.EXPENSE) exp[m.monthValue - 1] += c else inc[m.monthValue - 1] += c
         }
         return YearView(
             year = year, daily = daily,

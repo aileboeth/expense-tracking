@@ -17,6 +17,7 @@ object CategoryStyle {
         "医疗" to Style("💊", 0xFFE57373),
         "人情" to Style("🎁", 0xFFFF8A80),
         "工资" to Style("💼", 0xFF66BB6A),
+        "生活费" to Style("🎒", 0xFFFFA726),
         "兼职" to Style("🧑‍💻", 0xFF26A69A),
         "转账" to Style("💸", 0xFF42A5F5),
         "红包" to Style("🧧", 0xFFEF5350),

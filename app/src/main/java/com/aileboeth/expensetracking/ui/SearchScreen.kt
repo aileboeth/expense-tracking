@@ -71,8 +71,8 @@ fun SearchScreen(onBack: () -> Unit) {
 
     val zone = ZoneId.systemDefault()
     val start = when (period) {
-        Period.MONTH -> monthRange(YearMonth.now()).first
-        Period.THREE -> monthRange(YearMonth.now().minusMonths(2)).first
+        Period.MONTH -> monthRange(thisMonth()).first
+        Period.THREE -> monthRange(thisMonth().minusMonths(2)).first
         Period.YEAR -> LocalDate.now().withDayOfYear(1).atStartOfDay(zone).toInstant().toEpochMilli()
         Period.ALL -> null
     }

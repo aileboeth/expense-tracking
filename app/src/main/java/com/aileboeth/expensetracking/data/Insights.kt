@@ -28,16 +28,14 @@ object InsightCalc {
         month: YearMonth,
         today: LocalDate = LocalDate.now(),
         zone: ZoneId = ZoneId.systemDefault(),
+        cal: PayCalendar = Cycles.cal,
     ): Insights? {
         fun day(t: Tx) = Instant.ofEpochMilli(t.time).atZone(zone).toLocalDate()
         val cur = txs.filter { it.type == TxType.EXPENSE && it.status == Status.OK && it.amountCents != null }
         if (cur.isEmpty()) return null
-        val days = when {
-            month == YearMonth.from(today) -> today.dayOfMonth
-            month.isAfter(YearMonth.from(today)) -> 0
-            else -> month.lengthOfMonth()
-        }.coerceAtLeast(1)
-        val prev = prevTxs.filter { it.type == TxType.EXPENSE && it.status == Status.OK && it.amountCents != null && day(it).dayOfMonth <= days }
+        val days = cal.passed(month, today).coerceAtLeast(1)
+        val prevMonth = month.minusMonths(1)
+        val prev = prevTxs.filter { it.type == TxType.EXPENSE && it.status == Status.OK && it.amountCents != null && cal.index(prevMonth, day(it)) < days }
         val total = cur.sumOf { it.amountCents!! }
         val prevSame = prev.sumOf { it.amountCents!! }
 

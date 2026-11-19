@@ -53,6 +53,8 @@ fun PaceChart(
     onSelect: (Int) -> Unit,
     color: Color = Brand,
     modifier: Modifier = Modifier,
+    /** The date of index 0 (the period's first day); null = day numbers 1, 2, 3 … */
+    start: java.time.LocalDate? = null,
 ) {
     val tm = rememberTextMeasurer()
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
@@ -61,6 +63,8 @@ fun PaceChart(
     val small = TextStyle(fontSize = 10.sp, color = muted)
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val n = cumulative.size
+    fun axis(i: Int) = ctx.getString(com.aileboeth.expensetracking.R.string.day_n, start?.plusDays(i.toLong())?.dayOfMonth ?: (i + 1))
+    fun tipDay(i: Int) = start?.let { Labels.monthDay(ctx, it.plusDays(i.toLong())) } ?: ctx.getString(com.aileboeth.expensetracking.R.string.day_n, i + 1)
     fun idx(x: Float, w: Float, pad: Float) = (((x - pad) / ((w - 2 * pad) / (n - 1).coerceAtLeast(1)))).roundToInt().coerceIn(0, n - 1)
     Canvas(
         modifier.fillMaxWidth().height(200.dp)
@@ -101,7 +105,7 @@ fun PaceChart(
                 drawCircle(color, 5.dp.toPx(), pts.last())
             }
         }
-        for (i in listOf(0, 9, 19, n - 1).distinct()) text(tm, ctx.getString(com.aileboeth.expensetracking.R.string.day_n, i + 1), x(i), size.height - bottom + 5.dp.toPx(), small)
+        for (i in listOf(0, 9, 19, n - 1).distinct()) text(tm, axis(i), x(i), size.height - bottom + 5.dp.toPx(), small)
         text(tm, Money.sym + shortYuan((maxV / 1.1f).toLong()), pad, 2.dp.toPx(), small, center = false)
         selected?.takeIf { it in 0 until n }?.let { i ->
             drawLine(color.copy(alpha = 0.3f), Offset(x(i), top), Offset(x(i), top + h), 1.5.dp.toPx())
@@ -113,7 +117,7 @@ fun PaceChart(
             } else 0L
             drawCircle(surface, 5.dp.toPx(), Offset(x(i), y(shown)))
             drawCircle(color, 5.dp.toPx(), Offset(x(i), y(shown)), style = Stroke(2.dp.toPx()))
-            val label = ctx.getString(com.aileboeth.expensetracking.R.string.day_n, i + 1) + "  " +
+            val label = tipDay(i) + "  " +
                 (if (v == null) "≈" else "") + Money.money(shown)
             text(tm, label, x(i), 2.dp.toPx(), TextStyle(fontSize = 11.sp, color = color, fontWeight = FontWeight.SemiBold))
         }

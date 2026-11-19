@@ -89,6 +89,34 @@ class ScreenshotTest {
         compose.onRoot().captureRoboImage("build/screens/1-home.png")
     }
 
+    /** Runs [block] with a pay day five days ago, then back to calendar months. */
+    private fun withPayDay(block: () -> Unit) {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val p = Prefs(ctx)
+        p.payDay = LocalDate.now().minusDays(5).dayOfMonth
+        com.aileboeth.expensetracking.data.Cycles.init(ctx)
+        try { block() } finally { p.payDay = 0; com.aileboeth.expensetracking.data.Cycles.reload() }
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h873dp-xxhdpi")
+    @Test fun payDayHome() = withPayDay {
+        compose.setContent { AppTheme { HomeScreen(PaddingValues(0.dp), {}, {}, null, {}) } }
+        compose.onRoot().captureRoboImage("build/screens/30-payday-home.png")
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h1500dp-xxhdpi")
+    @Test fun payDayStats() = withPayDay {
+        compose.setContent { AppTheme { StatsScreen(PaddingValues(0.dp)) } }
+        compose.onRoot().captureRoboImage("build/screens/31-payday-stats.png")
+    }
+
+    @Config(qualifiers = "zh-rCN-w393dp-h873dp-xxhdpi")
+    @Test fun payDayDialog() = withPayDay {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        compose.setContent { AppTheme { PayDayDialog(Prefs(ctx)) {} } }
+        compose.onRoot().captureRoboImage("build/screens/32-payday-dialog.png")
+    }
+
     @Test fun stats() {
         compose.setContent { AppTheme { StatsScreen(PaddingValues(0.dp)) } }
         compose.onRoot().captureRoboImage("build/screens/2-stats.png")

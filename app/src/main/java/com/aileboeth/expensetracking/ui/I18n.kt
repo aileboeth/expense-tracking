@@ -88,7 +88,7 @@ object Labels {
         "购物" to R.string.cat_shopping, "日用" to R.string.cat_daily, "娱乐" to R.string.cat_fun,
         "生活缴费" to R.string.cat_bills, "通讯" to R.string.cat_phone, "学习" to R.string.cat_study,
         "医疗" to R.string.cat_medical, "人情" to R.string.cat_gifts, "其他" to R.string.cat_other,
-        "工资" to R.string.cat_salary, "兼职" to R.string.cat_sidejob, "转账" to R.string.cat_transfer,
+        "工资" to R.string.cat_salary, "生活费" to R.string.cat_allowance, "兼职" to R.string.cat_sidejob, "转账" to R.string.cat_transfer,
         "红包" to R.string.cat_redpacket, "退款" to R.string.cat_refund, "未分类" to R.string.cat_none,
     )
 
@@ -130,6 +130,13 @@ object Labels {
     fun monthDay(ctx: Context, d: LocalDate): String {
         val pattern = if (d.year == LocalDate.now().year) R.string.fmt_month_day else R.string.fmt_year_month_day
         return DateTimeFormatter.ofPattern(ctx.getString(pattern), AppLocale.locale(ctx)).format(d)
+    }
+
+    /** "11.15 – 12.14": the days of one ledger period. */
+    fun cycleRange(ctx: Context, ym: YearMonth): String {
+        val cal = com.aileboeth.expensetracking.data.Cycles.cal
+        val f = DateTimeFormatter.ofPattern(ctx.getString(R.string.fmt_cycle_day), AppLocale.locale(ctx))
+        return f.format(cal.start(ym)) + " – " + f.format(cal.end(ym).minusDays(1))
     }
 
     fun monthShort(ctx: Context, ym: YearMonth): String =

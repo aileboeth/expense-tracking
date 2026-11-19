@@ -106,8 +106,9 @@ object Achievements {
         val today = LocalDate.now().toEpochDay()
         val best = maxOf(Streak.best(active), Streak.current(active, today)).toLong()
         val noSpend = Streak.noSpendDays(active, s.expenseDays, today)
-        val noSpendBestMonth = noSpend.groupBy { YearMonth.from(LocalDate.ofEpochDay(it)) }.values.maxOfOrNull { it.size }?.toLong() ?: 0L
-        val budgetKept = budgetMonthsKept(prefs.budgetCents, Repo.monthlyExpense(), active, YearMonth.now())
+        val cal = Cycles.cal
+        val noSpendBestMonth = noSpend.groupBy { cal.monthOf(LocalDate.ofEpochDay(it)) }.values.maxOfOrNull { it.size }?.toLong() ?: 0L
+        val budgetKept = budgetMonthsKept(prefs.budgetCents, Repo.monthlyExpense(), active, cal.current(), cal)
         val custom = (Repo.categories(TxType.EXPENSE) + Repo.categories(TxType.INCOME))
             .count { it !in Repo.DEFAULT_EXPENSE && it !in Repo.DEFAULT_INCOME }.toLong()
         val values = mapOf(
@@ -133,9 +134,9 @@ object Achievements {
     }
 
     /** Completed months (before [now]) the user really used the app in (15+ check-in days) and stayed within the budget. */
-    fun budgetMonthsKept(budget: Long, monthly: Map<String, Long>, active: Set<Long>, now: YearMonth): Long {
+    fun budgetMonthsKept(budget: Long, monthly: Map<String, Long>, active: Set<Long>, now: YearMonth, cal: PayCalendar = Cycles.cal): Long {
         if (budget <= 0) return 0
-        val activeByMonth = active.groupingBy { YearMonth.from(LocalDate.ofEpochDay(it)) }.eachCount()
+        val activeByMonth = active.groupingBy { cal.monthOf(LocalDate.ofEpochDay(it)) }.eachCount()
         return activeByMonth.count { (ym, n) -> ym.isBefore(now) && n >= 15 && (monthly[ym.toString()] ?: 0L) in 1..budget }.toLong()
     }
 }
@@ -148,12 +149,12 @@ object MoodCalc {
      * With a budget: compares what is spent with how far the month is. Without one: today against the usual day.
      * Late at night it just sleeps (unless the budget is blown).
      */
-    fun of(hour: Int, budget: Long, monthSpent: Long, dayOfMonth: Int, monthLen: Int, todaySpent: Long, avgDaily: Long): Mood {
+    fun of(hour: Int, budget: Long, monthSpent: Long, daysPassed: Int, monthLen: Int, todaySpent: Long, avgDaily: Long): Mood {
         if (budget > 0 && monthSpent >= budget) return Mood.SAD
         if (hour >= 23 || hour < 6) return Mood.SLEEPY
         if (budget > 0) {
             val ratio = monthSpent.toDouble() / budget
-            val pace = dayOfMonth.toDouble() / monthLen
+            val pace = daysPassed.toDouble() / monthLen
             return when {
                 ratio >= 0.8 || ratio > pace + 0.15 -> Mood.WORRIED
                 ratio < pace - 0.1 -> Mood.HAPPY
@@ -171,15 +172,15 @@ object MoodCalc {
     fun now(ctx: Context): Mood {
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now()
-        val ym = YearMonth.now()
-        val mStart = ym.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-        val mEnd = ym.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val cal = Cycles.cal
+        val ym = cal.current(today)
+        val (mStart, mEnd) = cal.range(ym, zone)
         val dStart = today.atStartOfDay(zone).toInstant().toEpochMilli()
         val dEnd = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
         val last30 = Repo.sum(TxType.EXPENSE, dStart - 30L * 86_400_000, dStart)
         return of(
             java.time.LocalTime.now().hour, Prefs(ctx).budgetCents, Repo.sum(TxType.EXPENSE, mStart, mEnd),
-            today.dayOfMonth, ym.lengthOfMonth(), Repo.sum(TxType.EXPENSE, dStart, dEnd), last30 / 30,
+            cal.passed(ym, today), cal.days(ym), Repo.sum(TxType.EXPENSE, dStart, dEnd), last30 / 30,
         )
     }
 }
@@ -207,27 +208,31 @@ data class RecapData(
 
 object RecapCalc {
     /** null when the month has too little to tell (fewer than 3 expenses). */
-    fun compute(month: YearMonth, txs: List<Tx>, prevTxs: List<Tx>, active: Set<Long>, today: LocalDate = LocalDate.now()): RecapData? {
+    fun compute(
+        month: YearMonth, txs: List<Tx>, prevTxs: List<Tx>, active: Set<Long>, today: LocalDate = LocalDate.now(),
+        cal: PayCalendar = Cycles.cal,
+    ): RecapData? {
         val zone = ZoneId.systemDefault()
         fun day(t: Tx) = Instant.ofEpochMilli(t.time).atZone(zone).toLocalDate()
-        val ex = txs.filter { it.type == TxType.EXPENSE && it.amountCents != null && YearMonth.from(day(it)) == month }
+        fun inMonth(t: Tx) = cal.monthOf(day(t)) == month
+        val ex = txs.filter { it.type == TxType.EXPENSE && it.amountCents != null && inMonth(it) }
         if (ex.size < 3) return null
         val total = ex.sumOf { it.amountCents!! }
         val byDay = ex.groupBy { day(it) }.mapValues { (_, l) -> l.sumOf { it.amountCents!! } }
         val top = byDay.maxByOrNull { it.value }
-        val lastDay = if (YearMonth.from(today) == month) today.dayOfMonth else month.lengthOfMonth()
+        val lastDay = if (cal.current(today) == month) cal.passed(month, today) else cal.days(month)
         val cats = ex.groupBy { it.category.ifBlank { "其他" } }.map { (c, l) -> c to l.sumOf { it.amountCents!! } }
             .sortedByDescending { it.second }.take(4).map { (c, v) -> Triple(c, v, v.toFloat() / total) }
         val notes = ex.filter { it.note.isNotBlank() }.groupingBy { it.note.trim() }.eachCount().maxByOrNull { it.value }
-        val days = (1..lastDay).map { month.atDay(it) }
+        val days = (0 until lastDay).map { cal.date(month, it) }
         val activeIn = days.count { it.toEpochDay() in active }
         val noSpend = days.count { it.isBefore(today) && it.toEpochDay() in active && it !in byDay }
         return RecapData(
             month = month,
             expense = total,
-            income = txs.filter { it.type == TxType.INCOME && YearMonth.from(day(it)) == month }.sumOf { it.amountCents ?: 0 },
+            income = txs.filter { it.type == TxType.INCOME && inMonth(it) }.sumOf { it.amountCents ?: 0 },
             prevExpense = prevTxs.filter { it.type == TxType.EXPENSE }.sumOf { it.amountCents ?: 0 },
-            count = txs.count { YearMonth.from(day(it)) == month },
+            count = txs.count { inMonth(it) },
             dailyAvg = total / lastDay.coerceAtLeast(1),
             topDay = top?.key,
             topDayAmount = top?.value ?: 0,

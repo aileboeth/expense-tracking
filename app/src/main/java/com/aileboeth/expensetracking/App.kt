@@ -13,6 +13,7 @@ class App : Application() {
         com.aileboeth.expensetracking.capture.Life.installCrashLog(this)
         com.aileboeth.expensetracking.capture.Life.mark(this, "进程启动")
         Repo.init(this)
+        com.aileboeth.expensetracking.data.Cycles.init(this)
         val prefs = com.aileboeth.expensetracking.data.Prefs(this)
         // Up to 0.1.x everything was in yuan: an existing ledger stays CNY whatever the phone's region is.
         if (!prefs.hasCurrency && runCatching { Repo.all().isNotEmpty() }.getOrDefault(false)) prefs.currency = "CNY"

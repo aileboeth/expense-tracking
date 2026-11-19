@@ -59,6 +59,7 @@ import com.aileboeth.expensetracking.R
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.aileboeth.expensetracking.data.CategoryStyle
+import com.aileboeth.expensetracking.data.Cycles
 import com.aileboeth.expensetracking.data.Kinds
 import com.aileboeth.expensetracking.data.Money
 import com.aileboeth.expensetracking.data.Prefs
@@ -90,8 +91,10 @@ private fun loadFun(ctx: android.content.Context): FunState {
     val zone = java.time.ZoneId.systemDefault()
     val dStart = today.atStartOfDay(zone).toInstant().toEpochMilli()
     val wishes = Repo.wishes()
-    val prev = YearMonth.now().minusMonths(1)
-    val recap = if (today.dayOfMonth <= 10 && prefs.recapBannerDone != prev.toString()) {
+    val cal = Cycles.cal
+    val prev = cal.current(today).minusMonths(1)
+    // the first ten days of a new period
+    val recap = if (cal.passed(cal.current(today), today) <= 10 && prefs.recapBannerDone != prev.toString()) {
         val r = monthRange(prev)
         if (Repo.listRange(r.first, r.second).count { it.type == TxType.EXPENSE } >= 3) prev else null
     } else null
@@ -120,7 +123,9 @@ fun HomeScreen(
 ) {
     val ctx = LocalContext.current
     val prefs = remember { Prefs(ctx) }
-    var month by remember { mutableStateOf(YearMonth.now()) }
+    // null = follow the running period (it moves when pay comes in or the pay day is changed)
+    var picked by remember(Cycles.cal.payDay) { mutableStateOf<YearMonth?>(null) }
+    val month = picked ?: thisMonth()
     val range = monthRange(month)
     val txs = repoQuery(month, initial = emptyList<Tx>()) { Repo.listRange(range.first, range.second) }
     val pending = repoQuery(initial = emptyList<Tx>()) { Repo.pending() }
@@ -156,8 +161,8 @@ fun HomeScreen(
     val daily = remember(txs, month) { dailyTotals(txs, month, TxType.EXPENSE) }
     val days = txs.groupBy { localDate(it.time) }.toSortedMap(compareByDescending { it })
 
-    val mood = if (month == YearMonth.now()) com.aileboeth.expensetracking.data.MoodCalc.of(
-        java.time.LocalTime.now().hour, budget, expense, LocalDate.now().dayOfMonth, month.lengthOfMonth(), fun_.todaySpent, fun_.avgDaily,
+    val mood = if (month == thisMonth()) com.aileboeth.expensetracking.data.MoodCalc.of(
+        java.time.LocalTime.now().hour, budget, expense, Cycles.cal.passed(month), Cycles.cal.days(month), fun_.todaySpent, fun_.avgDaily,
     ) else when {
         budget > 0 && expense > budget -> com.aileboeth.expensetracking.data.Mood.SAD
         budget > 0 -> com.aileboeth.expensetracking.data.Mood.HAPPY
@@ -171,7 +176,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                HeaderCard(month, { month = it }, expense, income, budget, daily, mood, lines, openSearch) { budgetDialog = true }
+                HeaderCard(month, { picked = it.takeIf { m -> m != thisMonth() } }, expense, income, budget, daily, mood, lines, openSearch) { budgetDialog = true }
             }
             val fx = Fx.state.value
             if (fx.funRow) item { FunRow(fun_, openAchievements, openWish) }
@@ -248,7 +253,7 @@ fun HomeScreen(
 
 /** What the feather says when tapped, most useful first. */
 private fun mascotLines(ctx: android.content.Context, month: YearMonth, expense: Long, budget: Long, f: FunState, pending: Int): List<String> = buildList {
-    val now = YearMonth.now()
+    val now = thisMonth()
     if (month != now) {
         add(ctx.getString(R.string.m_past, Labels.monthShort(ctx, month), Money.money(expense)))
         if (budget > 0) add(ctx.getString(if (expense <= budget) R.string.m_past_kept else R.string.m_past_over))
@@ -264,7 +269,7 @@ private fun mascotLines(ctx: android.content.Context, month: YearMonth, expense:
     if (budget > 0) {
         val left = budget - expense
         if (left >= 0) {
-            val daysLeft = now.lengthOfMonth() - LocalDate.now().dayOfMonth + 1
+            val daysLeft = Cycles.cal.days(now) - Cycles.cal.passed(now) + 1
             add(ctx.getString(R.string.m_budget_left, Money.money(left), Money.money(left / daysLeft)))
         } else add(ctx.getString(R.string.m_budget_over, Money.money(-left)))
     }
@@ -366,7 +371,7 @@ private fun HeaderCard(
                         val d = drag.value
                         val target = when {
                             d > swipe -> month.minusMonths(1)
-                            d < -swipe && month < YearMonth.now() -> month.plusMonths(1)
+                            d < -swipe && month < thisMonth() -> month.plusMonths(1)
                             else -> null
                         }
                         if (target != null) {
@@ -387,9 +392,12 @@ private fun HeaderCard(
         Column(Modifier.padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton({ onMonth(month.minusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.prev_month), tint = white) }
-                Text(Labels.yearMonth(LocalContext.current, month), color = white, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(Labels.yearMonth(LocalContext.current, month), color = white, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    if (!Cycles.cal.natural) Text(Labels.cycleRange(LocalContext.current, month), color = soft, style = MaterialTheme.typography.labelSmall)
+                }
                 IconButton({ onMonth(month.plusMonths(1)) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.next_month), tint = white) }
-                if (month != YearMonth.now()) TextButton({ onMonth(YearMonth.now()) }) { Text(stringResource(R.string.this_month), color = white) }
+                if (month != thisMonth()) TextButton({ onMonth(thisMonth()) }) { Text(stringResource(R.string.this_month), color = white) }
                 Spacer(Modifier.weight(1f))
                 IconButton(openSearch) { Icon(Icons.Filled.Search, stringResource(R.string.search), tint = white) }
             }
@@ -439,9 +447,9 @@ private fun HeaderCard(
 fun budgetLine(ctx: android.content.Context, month: YearMonth, expense: Long, budget: Long): String {
     val left = budget - expense
     if (left < 0) return ctx.getString(R.string.budget_over, Money.money(budget), Money.money(-left))
-    val now = YearMonth.now()
+    val now = thisMonth()
     return if (month == now) {
-        val daysLeft = month.lengthOfMonth() - LocalDate.now().dayOfMonth + 1
+        val daysLeft = Cycles.cal.days(month) - Cycles.cal.passed(month) + 1
         ctx.getString(R.string.budget_left, Money.money(budget), Money.money(left), Money.money(left / daysLeft))
     } else {
         ctx.getString(R.string.budget_used, Money.money(budget), (expense * 100 / budget).toInt())

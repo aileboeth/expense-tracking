@@ -98,4 +98,17 @@
     <string name="pay_on_sub">已開：金額會彈出來讓你確認</string>
     <string name="pay_off_sub">沒開</string>
     <string name="pay_footer">認不準的話：開啟識別記錄，匯出診斷資訊（附帶通知原文）發過來，就能加上這種格式。</string>
+    <!-- 發錢日（每個月從發錢日算到下一個發錢日的前一天） -->
+    <string name="set_payday">發錢日</string>
+    <string name="set_payday_sub">每個月從發錢那天算起</string>
+    <string name="payday_value">每月 %d 號</string>
+    <string name="payday_natural_short">1 號（自然月）</string>
+    <string name="payday_title">發錢日</string>
+    <string name="payday_body">選工資或生活費到帳的日子。之後每個「月」都從這一天算到下一個發錢日的前一天，首頁、統計、預算和月度回顧都按這個算。</string>
+    <string name="payday_example">比如%1$s就是 %2$s。</string>
+    <string name="payday_short_month">沒有 %d 號的月份，從當月最後一天算起。</string>
+    <string name="payday_adjust">按實際到帳調整</string>
+    <string name="payday_adjust_sub">發錢日前後 %d 天內記到一筆下面這些分類的收入，新的一個月就從那天算起，提前發、晚發都對得上。</string>
+    <string name="payday_no_cats">至少選一個分類，或者把這項關掉。</string>
+    <string name="payday_natural">按自然月</string>
 </resources>

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Movie
@@ -342,11 +343,13 @@ private fun LedgerSection(nav: SettingsNav) {
     var dialog by remember { mutableStateOf("") }
     val budget = remember(dialog) { prefs.budgetCents }
     val currency = remember(dialog) { prefs.currency }
+    val payDay = remember(dialog) { prefs.payDay }
     val pickBill = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) nav.import(uri) }
     Column {
         GroupLabel(stringResource(R.string.set_group_money))
         SettingGroup(
             { SettingRow(Icons.Filled.Savings, Tint.Green, stringResource(R.string.set_budget), stringResource(R.string.set_budget_sub), { ValueChevron(if (budget > 0) Money.sym + Money.short(budget) else stringResource(R.string.not_set)) }) { dialog = "budget" } },
+            { SettingRow(Icons.Filled.Event, Tint.Blue, stringResource(R.string.set_payday), stringResource(R.string.set_payday_sub), { ValueChevron(if (payDay > 0) stringResource(R.string.payday_value, payDay) else stringResource(R.string.payday_natural_short)) }) { dialog = "payday" } },
             { SettingRow(Icons.Filled.CurrencyExchange, Tint.Pink, stringResource(R.string.set_currency), stringResource(R.string.set_currency_sub), { ValueChevron(currencyLabel(currency)) }) { dialog = "currency" } },
         )
         GroupLabel(stringResource(R.string.set_group_sorting))
@@ -370,6 +373,7 @@ private fun LedgerSection(nav: SettingsNav) {
     when (dialog) {
         "budget" -> BudgetDialog(prefs) { dialog = ""; Widgets.scheduleUpdate(ctx) }
         "currency" -> CurrencyDialog(prefs) { dialog = ""; Widgets.scheduleUpdate(ctx) }
+        "payday" -> PayDayDialog(prefs) { dialog = "" }
     }
 }
 

@@ -106,4 +106,6 @@
     <string name="widget_over_budget"> · %s over budget</string>
     <string name="widget_pending">\n%d waiting for an amount</string>
     <string name="widget_add">+ Add</string>
+    <string name="cat_allowance">Allowance</string>
+    <string name="fmt_cycle_day">MMM d</string>
 </resources>
